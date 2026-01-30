@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Grande Annonce</title>
+
+<style>
+:root {
+    --fond: #f7f3ff;
+    --principal: #6c63ff;
+    --secondaire: #ffb703;
+    --texte: #333;
+    --blanc: #ffffff;
+}
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, var(--fond), #e6e1ff);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.card {
+    background: var(--blanc);
+    padding: 40px 50px;
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    text-align: center;
+    max-width: 600px;
+    z-index: 2;
+}
+
+.card h1 {
+    color: var(--principal);
+    font-size: 2.5em;
+    margin-bottom: 20px;
+}
+
+.card p {
+    color: var(--texte);
+    font-size: 1.15em;
+    line-height: 1.6;
+}
+
+.card .emoji {
+    font-size: 2em;
+    margin-top: 20px;
+}
+
+.falling {
+    position: absolute;
+    top: -10%;
+    animation: fall linear infinite;
+    pointer-events: none;
+}
+
+.confetti {
+    width: 12px;
+    height: 12px;
+    opacity: 0.8;
+}
+
+
+.lama {
+    font-size: 2rem;
+}
+
+/* 🎨 Couleurs confettis */
+.c1 { background: var(--principal); }
+.c2 { background: var(--secondaire); }
+.c3 { background: #ff6f91; }
+.c4 { background: #00c9a7; }
+.c5 { background: #845ec2; }
+
+/*  Animation chute + rotation libre */
+@keyframes fall {
+    0% {
+        transform: translateY(0) rotate(0deg);
+    }
+    100% {
+        transform: translateY(120vh) rotate(var(--rotation));
+    }
+}
+</style>
+</head>
+
+<body>
+
+<!-- 🎊🦙 Mélange confettis + lamas -->
+<div class="falling confetti c1" style="left:5%; animation-duration:5s; --rotation:720deg;"></div>
+<div class="falling lama" style="left:12%; animation-duration:7s; --rotation:-1080deg;">🦙</div>
+<div class="falling confetti c2" style="left:18%; animation-duration:6s; --rotation:540deg;"></div>
+<div class="falling lama" style="left:25%; animation-duration:8s; --rotation:900deg;">🦙</div>
+<div class="falling confetti c3" style="left:32%; animation-duration:4.5s; --rotation:-720deg;"></div>
+<div class="falling lama" style="left:38%; animation-duration:6.5s; --rotation:1260deg;">🦙</div>
+<div class="falling confetti c4" style="left:45%; animation-duration:5.8s; --rotation:360deg;"></div>
+<div class="falling lama" style="left:52%; animation-duration:7.2s; --rotation:-1440deg;">🦙</div>
+<div class="falling confetti c5" style="left:60%; animation-duration:6.1s; --rotation:900deg;"></div>
+<div class="falling lama" style="left:67%; animation-duration:8.5s; --rotation:-1080deg;">🦙</div>
+<div class="falling confetti c1" style="left:74%; animation-duration:5.3s; --rotation:720deg;"></div>
+<div class="falling lama" style="left:82%; animation-duration:7.9s; --rotation:1620deg;">🦙</div>
+<div class="falling confetti c2" style="left:90%; animation-duration:6.7s; --rotation:-900deg;"></div>
+
+
+<div class="card">
+    <h1>✨ SALUT LES AMIIIIIS ✨</h1>
+    <p>
+        J'ai enfin un nom de domaine !<br>
+        Je vais pouvoir poster et héberger sur internet mes projets et vous pourrez même y accéder gratuitement ! (je ne suis pas une catin lol)<br>
+        <strong>C'est génial !</strong>
+    </p>
+    <div class="emoji">
+        Je suis fière de moi 🦙
+    </div>
+</div>
+
+</body>
+</html>
