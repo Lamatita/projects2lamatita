@@ -62,6 +62,7 @@ body {
     justify-content: center;
     align-items: center;
     padding: 80px 20px 120px;
+    gap: 30px; /* Ajout d'un espacement entre les boutons */
 }
 
 .wheel-link {
@@ -91,6 +92,23 @@ body {
 
 .wheel-link:active {
     transform: translateY(-1px);
+}
+
+/* Styles pour cacher/révéler le bouton Solitaire */
+.hidden-link {
+    opacity: 0;
+    transform: translateY(30px);
+    visibility: hidden;
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out, visibility 0.6s;
+    /* On empêche le clic tant qu'il est caché */
+    pointer-events: none;
+}
+
+.visible-link {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+    pointer-events: auto;
 }
 
 .falling {
@@ -158,8 +176,32 @@ body {
 </div>
 
 <div class="bottom-section">
-    <a href="roue.html" class="wheel-link">🎡 Roue de la Fortune</a>
+    <!-- Le bouton Solitaire est placé à gauche de Roue de la fortune. 
+         Il possède la classe hidden-link au départ pour être invisible. -->
+    <a href="solitaire.html" class="wheel-link hidden-link" id="solitaire-link">Solitaire</a>
+    <a href="roue.html" class="wheel-link">Roue de la Fortune</a>
 </div>
+
+<script>
+// Script pour révéler le bouton Solitaire lors du défilement
+document.addEventListener("DOMContentLoaded", function() {
+    const solitaireLink = document.getElementById("solitaire-link");
+    
+    // Écoute l'événement de défilement (scroll)
+    window.addEventListener("scroll", function() {
+        // Si l'utilisateur a défilé de plus de 100 pixels vers le bas
+        if (window.scrollY > 100) {
+            // Affiche le bouton
+            solitaireLink.classList.add("visible-link");
+            solitaireLink.classList.remove("hidden-link");
+        } else {
+            // Cache le bouton s'il remonte tout en haut
+            solitaireLink.classList.remove("visible-link");
+            solitaireLink.classList.add("hidden-link");
+        }
+    });
+});
+</script>
 
 </body>
 
