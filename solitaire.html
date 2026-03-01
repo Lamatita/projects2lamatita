@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Solitaire - Version en ligne</title>
+
+<style>
+/* On reprend les mêmes variables de couleur que le site principal */
+:root {
+    --fond: #f7f3ff;
+    --principal: #6c63ff;
+    --secondaire: #ffb703;
+    --texte: #333;
+    --blanc: #ffffff;
+}
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, var(--fond), #e6e1ff);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+}
+
+/* Barre de navigation en haut de la page */
+.top-bar {
+    width: 100%;
+    padding: 15px 30px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 10;
+}
+
+/* Lien de retour vers l'accueil */
+.back-link {
+    color: var(--principal);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1em;
+    transition: opacity 0.2s;
+}
+
+.back-link:hover {
+    opacity: 0.7;
+}
+
+/* Titre de la page affiché en haut */
+.page-title {
+    color: var(--principal);
+    font-size: 1.4em;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* Conteneur principal qui accueille le jeu */
+.game-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    padding: 10px 20px 30px;
+    box-sizing: border-box;
+}
+
+/* Le cadre (iframe) dans lequel le jeu Pygame tourne via pygbag */
+.game-frame {
+    width: 100%;
+    max-width: 960px;
+    height: 75vh;
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    background: #000;
+}
+
+/* Message de chargement affiché pendant que le jeu se charge */
+.loading-msg {
+    color: var(--texte);
+    font-size: 1.1em;
+    text-align: center;
+    margin-top: 20px;
+    opacity: 0.7;
+}
+</style>
+</head>
+
+<body>
+
+<!-- Barre du haut avec le bouton retour et le titre -->
+<div class="top-bar">
+    <a href="index.html" class="back-link">← Retour à l'accueil</a>
+    <h1 class="page-title">🃏 Solitaire</h1>
+    <!-- Espace vide pour centrer le titre -->
+    <div style="width: 160px;"></div>
+</div>
+
+<!-- Zone du jeu : le jeu pygbag est chargé dans cet iframe -->
+<div class="game-container">
+    <iframe 
+        src="game/index.html" 
+        class="game-frame" 
+        id="game-iframe"
+        allow="cross-origin-isolated"
+        title="Jeu Solitaire"
+    ></iframe>
+</div>
+
+<!-- Message de chargement qui disparaît quand le jeu est prêt -->
+<p class="loading-msg" id="loading-msg">Chargement du jeu en cours...</p>
+
+<script>
+// Cache le message de chargement une fois que l'iframe a fini de charger
+document.getElementById("game-iframe").addEventListener("load", function() {
+    document.getElementById("loading-msg").style.display = "none";
+});
+</script>
+
+</body>
+</html>
