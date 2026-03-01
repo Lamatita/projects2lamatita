@@ -17,11 +17,17 @@ body {
     margin: 0;
     font-family: "Segoe UI", sans-serif;
     background: linear-gradient(135deg, var(--fond), #e6e1ff);
+    min-height: 200vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.hero {
     height: 100vh;
-    overflow: hidden;
     display: flex;
     justify-content: center;
     align-items: center;
+    position: relative;
 }
 
 .card {
@@ -51,8 +57,44 @@ body {
     margin-top: 20px;
 }
 
+.bottom-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 80px 20px 120px;
+}
+
+.wheel-link {
+    display: inline-block;
+    background: var(--blanc);
+    padding: 30px 50px;
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    text-align: center;
+    text-decoration: none;
+    color: var(--principal);
+    font-size: 1.6em;
+    font-weight: 700;
+    font-family: "Segoe UI", sans-serif;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 2px solid transparent;
+    z-index: 2;
+    position: relative;
+}
+
+.wheel-link:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 50px rgba(108, 99, 255, 0.25);
+    border-color: var(--principal);
+}
+
+.wheel-link:active {
+    transform: translateY(-1px);
+}
+
 .falling {
-    position: absolute;
+    position: fixed;
     top: -10%;
     animation: fall linear infinite;
     pointer-events: none;
@@ -64,19 +106,16 @@ body {
     opacity: 0.8;
 }
 
-
 .lama {
     font-size: 2rem;
 }
 
-/* 🎨 Couleurs confettis */
 .c1 { background: var(--principal); }
 .c2 { background: var(--secondaire); }
 .c3 { background: #ff6f91; }
 .c4 { background: #00c9a7; }
 .c5 { background: #845ec2; }
 
-/*  Animation chute + rotation libre */
 @keyframes fall {
     0% {
         transform: translateY(0) rotate(0deg);
@@ -90,7 +129,6 @@ body {
 
 <body>
 
-<!-- 🎊🦙 Mélange confettis + lamas -->
 <div class="falling confetti c1" style="left:5%; animation-duration:5s; --rotation:720deg;"></div>
 <div class="falling lama" style="left:12%; animation-duration:7s; --rotation:-1080deg;">🦙</div>
 <div class="falling confetti c2" style="left:18%; animation-duration:6s; --rotation:540deg;"></div>
@@ -105,22 +143,24 @@ body {
 <div class="falling lama" style="left:82%; animation-duration:7.9s; --rotation:1620deg;">🦙</div>
 <div class="falling confetti c2" style="left:90%; animation-duration:6.7s; --rotation:-900deg;"></div>
 
-
-<div class="card">
-    <h1>✨ Coucou ✨</h1>
-    <p>
-        Voici mon tout premier site internet !<br>
-        Très prochainement je posterai des projets que j'ai eu l'occasion de faire dans un cadre scolaire ou dans un cadre personnel. <br>
-        <strong>Au plaisir de vous revoir !</strong>
-    </p>
-    <div class="emoji">
-        Je suis fière de moi (sans faire ma dIVa) 
+<div class="hero">
+    <div class="card">
+        <h1>✨ Coucou ✨</h1>
+        <p>
+            Voici mon tout premier site internet !<br>
+            Très prochainement je posterai des projets que j'ai eu l'occasion de faire dans un cadre scolaire ou dans un cadre personnel. <br>
+            <strong>Au plaisir de vous revoir !</strong>
+        </p>
+        <div class="emoji">
+            Je suis fière de moi (sans faire ma dIVa) 
+        </div>
     </div>
+</div>
+
+<div class="bottom-section">
+    <a href="roue.html" class="wheel-link">🎡 Roue de la Fortune</a>
 </div>
 
 </body>
 
 </html>
-
-
-
