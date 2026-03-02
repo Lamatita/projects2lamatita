@@ -310,15 +310,8 @@ tbody td {
 <script>
 (function() {
     var currentView = 'general';
-    var currentUser = localStorage.getItem('lamatita_current_user') || '';
-
-    function loadScores() {
-        try { return JSON.parse(localStorage.getItem('lamatita_scores') || '[]'); } catch(e) { return []; }
-    }
-
-    function loadGroups() {
-        try { return JSON.parse(localStorage.getItem('lamatita_groups') || '[]'); } catch(e) { return []; }
-    }
+    var currentUser = '';
+    var userGroups = [];
 
     function formatTime(seconds) {
         var mins = Math.floor(seconds / 60);
@@ -337,108 +330,23 @@ tbody td {
     }
 
     function getRankIcon(rank) {
-        if (rank === 1) return '🥇';
-        if (rank === 2) return '🥈';
-        if (rank === 3) return '🥉';
+        if (rank === 1) return '\uD83E\uDD47';
+        if (rank === 2) return '\uD83E\uDD48';
+        if (rank === 3) return '\uD83E\uDD49';
         return rank;
-    }
-
-    function getBestScorePerPlayer(scores) {
-        var best = {};
-        for (var i = 0; i < scores.length; i++) {
-            var s = scores[i];
-            if (!best[s.player] || s.time < best[s.player].time) {
-                best[s.player] = s;
-            }
-        }
-        var result = [];
-        for (var player in best) {
-            result.push(best[player]);
-        }
-        result.sort(function(a, b) { return a.time - b.time; });
-        return result;
-    }
-
-    function getGeneralScores() {
-        var allScores = loadScores();
-        var groups = loadGroups();
-
-        var anonScores = allScores.filter(function(s) { return s.anonymous; });
-        var anonBest = getBestScorePerPlayer(anonScores);
-
-        var groupBestEntries = [];
-        var addedPlayers = {};
-
-        for (var g = 0; g < groups.length; g++) {
-            var group = groups[g];
-            var memberScores = allScores.filter(function(s) {
-                return !s.anonymous && group.members && group.members.indexOf(s.player) >= 0;
-            });
-            if (memberScores.length === 0) continue;
-            var bestPerMember = getBestScorePerPlayer(memberScores);
-            if (bestPerMember.length > 0) {
-                var leader = bestPerMember[0];
-                if (!addedPlayers[leader.player] || leader.time < addedPlayers[leader.player].time) {
-                    addedPlayers[leader.player] = {
-                        player: leader.player,
-                        time: leader.time,
-                        timerMode: leader.timerMode,
-                        hintMode: leader.hintMode,
-                        konami: leader.konami,
-                        anonymous: false,
-                        date: leader.date,
-                        groupName: group.name
-                    };
-                }
-            }
-        }
-
-        for (var p in addedPlayers) {
-            groupBestEntries.push(addedPlayers[p]);
-        }
-
-        var combined = anonBest.concat(groupBestEntries);
-        combined.sort(function(a, b) { return a.time - b.time; });
-        return combined;
-    }
-
-    function getGroupScores(groupId) {
-        var allScores = loadScores();
-        var groups = loadGroups();
-        var group = null;
-        for (var i = 0; i < groups.length; i++) {
-            if (groups[i].id === groupId) { group = groups[i]; break; }
-        }
-        if (!group) return [];
-        var memberScores = allScores.filter(function(s) {
-            return group.members && group.members.indexOf(s.player) >= 0;
-        });
-        return getBestScorePerPlayer(memberScores);
-    }
-
-    function getPersonalScores() {
-        if (!currentUser) return [];
-        var allScores = loadScores();
-        var myScores = allScores.filter(function(s) { return s.player === currentUser; });
-        myScores.sort(function(a, b) { return a.time - b.time; });
-        return myScores;
     }
 
     function renderTabs() {
         var tabsEl = document.getElementById('view-tabs');
-        var html = '<button class="view-tab' + (currentView === 'general' ? ' active' : '') + '" data-testid="tab-general" onclick="switchView(\'general\')">🌍 Général</button>';
+        var html = '<button class="view-tab' + (currentView === 'general' ? ' active' : '') + '" data-testid="tab-general" onclick="switchView(\'general\')">\uD83C\uDF0D G\u00e9n\u00e9ral</button>';
 
         if (currentUser) {
-            html += '<button class="view-tab' + (currentView === 'personal' ? ' active' : '') + '" data-testid="tab-personal" onclick="switchView(\'personal\')">👤 Mes Temps</button>';
+            html += '<button class="view-tab' + (currentView === 'personal' ? ' active' : '') + '" data-testid="tab-personal" onclick="switchView(\'personal\')">\uD83D\uDC64 Mes Temps</button>';
 
-            var groups = loadGroups();
-            var myGroups = groups.filter(function(g) {
-                return g.members && g.members.indexOf(currentUser) >= 0;
-            });
-            for (var i = 0; i < myGroups.length; i++) {
-                var g = myGroups[i];
+            for (var i = 0; i < userGroups.length; i++) {
+                var g = userGroups[i];
                 var isActive = currentView === 'group_' + g.id;
-                html += '<button class="view-tab' + (isActive ? ' active' : '') + '" data-testid="tab-group-' + g.id + '" onclick="switchView(\'group_' + g.id + '\')">👥 ' + g.name + '</button>';
+                html += '<button class="view-tab' + (isActive ? ' active' : '') + '" data-testid="tab-group-' + g.id + '" onclick="switchView(\'group_' + g.id + '\')">\uD83D\uDC65 ' + g.name + '</button>';
             }
         }
 
@@ -453,9 +361,9 @@ tbody td {
         if (scores.length === 0) {
             statsRow.innerHTML = '';
             content.innerHTML = '<div class="empty-state">' +
-                '<div class="emoji">🦙</div>' +
-                '<p>Aucun temps enregistré pour le moment !</p>' +
-                '<a href="solitaire.html" class="btn-play" data-testid="link-play-solitaire">🃏 Jouer au Solitaire</a>' +
+                '<div class="emoji">\uD83E\uDD99</div>' +
+                '<p>Aucun temps enregistr\u00e9 pour le moment !</p>' +
+                '<a href="solitaire.html" class="btn-play" data-testid="link-play-solitaire">\uD83C\uDCCF Jouer au Solitaire</a>' +
                 '</div>';
             actionsRow.innerHTML = '';
             return;
@@ -466,7 +374,7 @@ tbody td {
         var avgTime = Math.round(scores.reduce(function(sum, s) { return sum + s.time; }, 0) / totalEntries);
 
         statsRow.innerHTML =
-            '<div class="stat-box"><div class="stat-value" data-testid="text-total">' + totalEntries + '</div><div class="stat-label">' + (currentView === 'personal' ? 'Parties gagnées' : 'Joueurs') + '</div></div>' +
+            '<div class="stat-box"><div class="stat-value" data-testid="text-total">' + totalEntries + '</div><div class="stat-label">' + (currentView === 'personal' ? 'Parties gagn\u00e9es' : 'Joueurs') + '</div></div>' +
             '<div class="stat-box"><div class="stat-value" data-testid="text-best-time">' + formatTime(bestTime) + '</div><div class="stat-label">Meilleur temps</div></div>' +
             '<div class="stat-box"><div class="stat-value" data-testid="text-avg-time">' + formatTime(avgTime) + '</div><div class="stat-label">Temps moyen</div></div>';
 
@@ -488,13 +396,13 @@ tbody td {
 
             var timeDisplay = formatTime(s.time);
             if (s.konami) {
-                timeDisplay = '<span class="konami-time">🦙 ' + timeDisplay + ' 🦙</span>';
+                timeDisplay = '<span class="konami-time">\uD83E\uDD99 ' + timeDisplay + ' \uD83E\uDD99</span>';
             }
 
             var modeBadge = '<span class="badge ' + (s.timerMode === 'CHRONO' ? 'badge-chrono' : 'badge-flemme') + '">' +
-                (s.timerMode === 'CHRONO' ? '⏱ Chrono' : '😴 Flemme') + '</span>';
+                (s.timerMode === 'CHRONO' ? '\u23F1 Chrono' : '\uD83D\uDE34 Flemme') + '</span>';
             if (s.hintMode) {
-                modeBadge += ' <span class="badge badge-hint">💡 Indices</span>';
+                modeBadge += ' <span class="badge badge-hint">\uD83D\uDCA1 Indices</span>';
             }
 
             html += '<tr data-testid="row-score-' + i + '">' +
@@ -510,37 +418,65 @@ tbody td {
         content.innerHTML = html;
 
         actionsRow.innerHTML =
-            '<a href="solitaire.html" class="btn-play" data-testid="link-play-again">🃏 Jouer</a>';
+            '<a href="solitaire.html" class="btn-play" data-testid="link-play-again">\uD83C\uDCCF Jouer</a>';
     }
 
-    function render() {
+    function showLoading() {
+        document.getElementById('scores-content').innerHTML = '<div style="text-align:center;padding:40px;color:#888;">Chargement...</div>';
+        document.getElementById('stats-row').innerHTML = '';
+        document.getElementById('actions-row').innerHTML = '';
+    }
+
+    function fetchAndRender() {
         renderTabs();
         var titleEl = document.getElementById('view-title');
 
         if (currentView === 'general') {
-            titleEl.textContent = '🃏 Classement Général';
-            renderTable(getGeneralScores(), true);
+            titleEl.textContent = '\uD83C\uDCCF Classement G\u00e9n\u00e9ral';
+            showLoading();
+            fetch('/api/scores/general')
+                .then(function(r) { return r.ok ? r.json() : []; })
+                .then(function(scores) { renderTable(scores, true); })
+                .catch(function() { renderTable([], true); });
         } else if (currentView === 'personal') {
-            titleEl.textContent = '👤 Mes Temps — ' + currentUser;
-            renderTable(getPersonalScores(), false);
+            titleEl.textContent = '\uD83D\uDC64 Mes Temps \u2014 ' + currentUser;
+            showLoading();
+            fetch('/api/scores/personal', { credentials: 'include' })
+                .then(function(r) { return r.ok ? r.json() : []; })
+                .then(function(scores) { renderTable(scores, false); })
+                .catch(function() { renderTable([], false); });
         } else if (currentView.indexOf('group_') === 0) {
             var groupId = currentView.substring(6);
-            var groups = loadGroups();
             var groupName = '';
-            for (var i = 0; i < groups.length; i++) {
-                if (groups[i].id === groupId) { groupName = groups[i].name; break; }
+            for (var i = 0; i < userGroups.length; i++) {
+                if (String(userGroups[i].id) === groupId) { groupName = userGroups[i].name; break; }
             }
-            titleEl.textContent = '👥 ' + groupName;
-            renderTable(getGroupScores(groupId), false);
+            titleEl.textContent = '\uD83D\uDC65 ' + groupName;
+            showLoading();
+            fetch('/api/scores/group/' + groupId, { credentials: 'include' })
+                .then(function(r) { return r.ok ? r.json() : []; })
+                .then(function(scores) { renderTable(scores, false); })
+                .catch(function() { renderTable([], false); });
         }
     }
 
     window.switchView = function(view) {
         currentView = view;
-        render();
+        fetchAndRender();
     };
 
-    render();
+    fetch('/api/auth/me', { credentials: 'include' })
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(data) {
+            if (data && data.username) {
+                currentUser = data.username;
+                return fetch('/api/groups', { credentials: 'include' })
+                    .then(function(r) { return r.ok ? r.json() : []; })
+                    .then(function(groups) { userGroups = groups; });
+            }
+        })
+        .then(function() { fetchAndRender(); })
+        .catch(function() { fetchAndRender(); });
 })();
 </script>
 
