@@ -110,7 +110,7 @@ body {
 
 <div class="top-bar">
     <a href="index.html" class="back-link" data-testid="link-back">← Retour à l'accueil</a>
-    <h1 class="page-title">Solitaire</h1>
+    <h1 class="page-title">🃏 Solitaire</h1>
     <div style="width: 160px;"></div>
 </div>
 
@@ -141,6 +141,7 @@ body {
 
     const RULES_TEXT = [
         {text:"RÈGLES DU JEU - Le Solitaire (Klondike)", bold:true},
+        {text:"", bold:false},
         {text:"Objectif du jeu", bold:true},
         {text:"Le but est de reconstituer les 4 piles de fondation (♥ ♦ ♣ ♠),", bold:false},
         {text:"en ordre croissant de l'As au Roi.", bold:false},
@@ -259,28 +260,17 @@ body {
     function saveScore() {
         if (scoreSaved) return;
         scoreSaved = true;
-        var currentUser = localStorage.getItem('lamatita_current_user') || '';
-        var playerName = currentUser;
-        var isAnonymous = false;
-        if (!playerName) {
-            isAnonymous = true;
-            var anonCount = 0;
-            try { anonCount = parseInt(localStorage.getItem('lamatita_anon_count') || '0'); } catch(e) { anonCount = 0; }
-            playerName = 'Petit Random Malicieux ' + anonCount;
-            localStorage.setItem('lamatita_anon_count', String(anonCount + 1));
-        }
-        var scores = [];
-        try { scores = JSON.parse(localStorage.getItem('lamatita_scores') || '[]'); } catch(e) { scores = []; }
-        scores.push({
-            player: playerName,
-            time: Math.floor(elapsedTime),
-            timerMode: timerMode,
-            hintMode: hintMode,
-            konami: konamiFound,
-            anonymous: isAnonymous,
-            date: new Date().toISOString()
-        });
-        localStorage.setItem('lamatita_scores', JSON.stringify(scores));
+        fetch('/api/scores', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                timeSeconds: Math.floor(elapsedTime),
+                timerMode: timerMode,
+                hintMode: hintMode,
+                konami: konamiFound
+            })
+        }).catch(function() {});
     }
 
     function resetGame() {
