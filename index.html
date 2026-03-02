@@ -513,9 +513,9 @@ body {
 </div>
 
 <div class="bottom-section">
-    <a href="solitaire.html" class="wheel-link hidden-link" id="solitaire-link" data-testid="link-solitaire">🃏 Solitaire</a>
-    <a href="roue.html" class="wheel-link" data-testid="link-roue">🎡 Roue de la Fortune</a>
-    <a href="tableau_de_score.html" class="wheel-link" data-testid="link-scores">🏆 Tableau des Scores</a>
+    <a href="solitaire.html" class="wheel-link hidden-link" id="solitaire-link" data-testid="link-solitaire">Solitaire</a>
+    <a href="roue.html" class="wheel-link" data-testid="link-roue">Roue de la Fortune</a>
+    <a href="tableau_de_score.html" class="wheel-link" data-testid="link-scores">Tableau des Scores</a>
 </div>
 
 <div class="modal-overlay" id="auth-overlay">
@@ -547,7 +547,6 @@ body {
     <div class="modal group-modal">
         <button class="modal-close" onclick="closeGroupModal()">&times;</button>
         <div class="modal-header">
-            <div class="icon">👥</div>
             <h2>Groupes</h2>
         </div>
         <div class="group-tabs">
@@ -583,7 +582,6 @@ body {
     <div class="modal">
         <button class="modal-close" onclick="closeProfileModal()">&times;</button>
         <div class="modal-header">
-            <div class="icon">👤</div>
             <h2>Mon Profil</h2>
         </div>
         <div id="profile-content" data-testid="profile-content"></div>
@@ -639,7 +637,7 @@ function updateUI() {
     document.getElementById("btn-logout").style.display = loggedIn ? "inline-block" : "none";
     document.getElementById("username-label").style.display = loggedIn ? "inline" : "none";
     if (loggedIn) {
-        document.getElementById("username-label").textContent = "👋 " + currentUser;
+        document.getElementById("username-label").textContent = "🦙 " + currentUser;
         localStorage.setItem("lamatita_player", currentUser);
     }
 }
@@ -727,7 +725,7 @@ function switchGroupTab(tab) {
 }
 
 function generateCode() {
-    var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    var chars = "ABCDEFGHIJKLMNPQRSTUVWXYZ0123456789";
     var code = "";
     for (var i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
     return code;
@@ -757,7 +755,7 @@ function loadGroups() {
         html += '<span class="group-expand-arrow" id="arrow-' + g.id + '">▶</span>';
         html += '</div></div>';
         html += '<div class="group-members" id="members-' + g.id + '">';
-        html += '<div class="group-members-title">👥 Membres (' + g.members.length + ')</div>';
+        html += '<div class="group-members-title"> Membres (' + g.members.length + ')</div>';
         for (var j = 0; j < g.members.length; j++) {
             var m = g.members[j];
             var initials = m.substring(0, 2).toUpperCase();
@@ -912,3 +910,4 @@ checkAuth();
 
 </body>
 </html>
+
