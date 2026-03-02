@@ -1,44 +1,45 @@
--- ============================================
--- Lamatita - Schéma de base de données
--- (Référence uniquement - les scores sont
---  stockés dans localStorage du navigateur)
--- ============================================
+-- Lamatita - Cloudflare D1 Schema (SQLite)
 
--- Table des joueurs
-CREATE TABLE IF NOT EXISTS players (
+CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    password TEXT NOT NULL
 );
 
--- Table des scores du Solitaire
+CREATE TABLE IF NOT EXISTS sessions (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    expires_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS groups (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    code TEXT NOT NULL UNIQUE,
+    created_by INTEGER NOT NULL REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS group_members (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    group_id INTEGER NOT NULL REFERENCES groups(id),
+    user_id INTEGER NOT NULL REFERENCES users(id)
+);
+
 CREATE TABLE IF NOT EXISTS game_scores (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    player_id INTEGER NOT NULL,
-    score INTEGER NOT NULL DEFAULT 0,
+    user_id INTEGER REFERENCES users(id),
+    player_name TEXT NOT NULL,
+    game TEXT NOT NULL DEFAULT 'solitaire',
     time_seconds INTEGER NOT NULL,
-    timer_mode TEXT NOT NULL CHECK (timer_mode IN ('CHRONO', 'FLEMME')),
-    hint_mode BOOLEAN NOT NULL DEFAULT 0,
-    played_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (player_id) REFERENCES players(id)
+    timer_mode TEXT NOT NULL DEFAULT 'CHRONO',
+    hint_mode INTEGER NOT NULL DEFAULT 0,
+    konami INTEGER NOT NULL DEFAULT 0,
+    anonymous INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- Index pour les classements
-CREATE INDEX IF NOT EXISTS idx_scores_score ON game_scores(score DESC);
 CREATE INDEX IF NOT EXISTS idx_scores_time ON game_scores(time_seconds ASC);
-CREATE INDEX IF NOT EXISTS idx_scores_player ON game_scores(player_id);
-
--- ============================================
--- Format localStorage utilisé (clé: lamatita_scores)
--- ============================================
--- [
---   {
---     "player": "NomDuJoueur",
---     "score": 520,
---     "time": 185,
---     "timerMode": "CHRONO",
---     "hintMode": false,
---     "date": "2026-03-02T14:30:00.000Z"
---   }
--- ]
--- ============================================
+CREATE INDEX IF NOT EXISTS idx_scores_user ON game_scores(user_id);
+CREATE INDEX IF NOT EXISTS idx_scores_anonymous ON game_scores(anonymous);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
