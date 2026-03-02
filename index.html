@@ -2,8 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Grande Annonce</title>
-
+<title>Lamatita</title>
 <style>
 :root {
     --fond: #f7f3ff;
@@ -13,13 +12,58 @@
     --blanc: #ffffff;
 }
 
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
 body {
-    margin: 0;
     font-family: "Segoe UI", sans-serif;
     background: linear-gradient(135deg, var(--fond), #e6e1ff);
     min-height: 200vh;
     overflow-x: hidden;
     overflow-y: auto;
+}
+
+.top-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+}
+
+.top-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.top-btn {
+    background: var(--blanc);
+    padding: 10px 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 2px solid transparent;
+    color: var(--principal);
+    font-weight: 700;
+    font-family: "Segoe UI", sans-serif;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.top-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(108,99,255,0.2);
+    border-color: var(--principal);
+}
+
+.username-label {
+    font-size: 0.85em;
+    color: var(--principal);
+    font-weight: 600;
 }
 
 .hero {
@@ -62,7 +106,8 @@ body {
     justify-content: center;
     align-items: center;
     padding: 80px 20px 120px;
-    gap: 30px; /* Ajout d'un espacement entre les boutons */
+    gap: 30px;
+    flex-wrap: wrap;
 }
 
 .wheel-link {
@@ -94,13 +139,11 @@ body {
     transform: translateY(-1px);
 }
 
-/* Styles pour cacher/révéler le bouton Solitaire */
 .hidden-link {
     opacity: 0;
     transform: translateY(30px);
     visibility: hidden;
     transition: opacity 0.6s ease-out, transform 0.6s ease-out, visibility 0.6s;
-    /* On empêche le clic tant qu'il est caché */
     pointer-events: none;
 }
 
@@ -111,6 +154,300 @@ body {
     pointer-events: auto;
 }
 
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal {
+    background: var(--blanc);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    padding: 30px;
+    width: 420px;
+    max-width: 90vw;
+    max-height: 85vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.modal-close {
+    position: absolute;
+    top: 15px; right: 20px;
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    color: #999;
+    transition: color 0.2s;
+}
+
+.modal-close:hover { color: var(--principal); }
+
+.modal-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.modal-header .icon { font-size: 2em; }
+.modal-header h2 { color: var(--principal); margin-top: 8px; }
+
+.modal-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.modal-tab {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid var(--principal);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--principal);
+    font-weight: 600;
+    font-family: "Segoe UI", sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal-tab.active {
+    background: var(--principal);
+    color: white;
+}
+
+.modal-tab:not(.active):hover {
+    background: rgba(108,99,255,0.1);
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: var(--texte);
+    font-size: 0.9em;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e0daf7;
+    border-radius: 10px;
+    font-size: 1em;
+    font-family: "Segoe UI", sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+    border-color: var(--principal);
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: var(--principal);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.05em;
+    font-weight: 700;
+    font-family: "Segoe UI", sans-serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(108,99,255,0.3);
+}
+
+.group-modal { width: 480px; }
+
+.group-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.group-tab {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid var(--principal);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--principal);
+    font-weight: 600;
+    font-family: "Segoe UI", sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.group-tab.active {
+    background: var(--principal);
+    color: white;
+}
+
+.group-tab:not(.active):hover {
+    background: rgba(108,99,255,0.1);
+}
+
+.group-item {
+    background: var(--fond);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 10px;
+    transition: all 0.2s;
+}
+
+.group-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+.group-item-header:hover {
+    opacity: 0.8;
+}
+
+.group-item-name { font-weight: 700; color: var(--texte); }
+.group-item-code { font-size: 0.85em; color: #888; }
+
+.group-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.group-copy-btn {
+    background: var(--principal);
+    color: white;
+    border: none;
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 0.8em;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.group-copy-btn:hover { opacity: 0.8; }
+
+.group-expand-arrow {
+    font-size: 0.9em;
+    color: var(--principal);
+    transition: transform 0.3s ease;
+    display: inline-block;
+}
+
+.group-members {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+.group-members.open {
+    max-height: 500px;
+    padding-top: 12px;
+}
+
+.group-members-title {
+    font-size: 0.85em;
+    color: var(--principal);
+    font-weight: 700;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e0daf7;
+}
+
+.member-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 0.9em;
+    color: var(--texte);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.member-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--principal);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.75em;
+    flex-shrink: 0;
+}
+
+.member-name {
+    font-weight: 600;
+    color: var(--texte);
+    font-size: 0.9em;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 30px;
+    color: #888;
+}
+
+.empty-state .icon { font-size: 2em; margin-bottom: 10px; }
+
+.code-input {
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: var(--principal);
+    color: white;
+    padding: 16px 24px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    z-index: 200;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    max-width: 350px;
+}
+
+.toast.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.toast.error { background: #e74c3c; }
+.toast-title { font-weight: 700; margin-bottom: 4px; }
+.toast-desc { font-size: 0.9em; opacity: 0.9; }
+
 .falling {
     position: fixed;
     top: -10%;
@@ -118,16 +455,8 @@ body {
     pointer-events: none;
 }
 
-.confetti {
-    width: 12px;
-    height: 12px;
-    opacity: 0.8;
-}
-
-.lama {
-    font-size: 2rem;
-}
-
+.confetti { width: 12px; height: 12px; opacity: 0.8; }
+.lama { font-size: 2rem; }
 .c1 { background: var(--principal); }
 .c2 { background: var(--secondaire); }
 .c3 { background: #ff6f91; }
@@ -135,12 +464,8 @@ body {
 .c5 { background: #845ec2; }
 
 @keyframes fall {
-    0% {
-        transform: translateY(0) rotate(0deg);
-    }
-    100% {
-        transform: translateY(120vh) rotate(var(--rotation));
-    }
+    0% { transform: translateY(0) rotate(0deg); }
+    100% { transform: translateY(120vh) rotate(var(--rotation)); }
 }
 </style>
 </head>
@@ -161,9 +486,21 @@ body {
 <div class="falling lama" style="left:82%; animation-duration:7.9s; --rotation:1620deg;">🦙</div>
 <div class="falling confetti c2" style="left:90%; animation-duration:6.7s; --rotation:-900deg;"></div>
 
+<div class="top-bar">
+    <div class="top-bar-left">
+        <button class="top-btn" id="btn-groups" data-testid="button-groups" onclick="openGroupModal()" style="display:none;">Gestion des Groupes</button>
+    </div>
+    <div class="top-bar-left">
+        <span class="username-label" id="username-label" data-testid="text-username" style="display:none;"></span>
+        <button class="top-btn" id="btn-profile" data-testid="button-profile" onclick="openProfileModal()" style="display:none;">Mon Profil</button>
+        <button class="top-btn" id="btn-logout" data-testid="button-logout" onclick="doLogout()" style="display:none;">Se déconnecter</button>
+        <button class="top-btn" id="btn-auth" data-testid="button-login" onclick="openAuthModal()">Se Connecter</button>
+    </div>
+</div>
+
 <div class="hero">
     <div class="card">
-        <h1>✨ Coucou ✨</h1>
+        <h1 data-testid="text-hero-title">✨ Coucou ✨</h1>
         <p>
             Voici mon tout premier site internet !<br>
             Très prochainement je posterai des projets que j'ai eu l'occasion de faire dans un cadre scolaire ou dans un cadre personnel. <br>
@@ -176,33 +513,402 @@ body {
 </div>
 
 <div class="bottom-section">
-    <!-- Le bouton Solitaire est placé à gauche de Roue de la fortune. 
-         Il possède la classe hidden-link au départ pour être invisible. -->
-    <a href="solitaire.html" class="wheel-link hidden-link" id="solitaire-link">Solitaire</a>
-    <a href="roue.html" class="wheel-link">Roue de la Fortune</a>
+    <a href="solitaire.html" class="wheel-link hidden-link" id="solitaire-link" data-testid="link-solitaire">🃏 Solitaire</a>
+    <a href="roue.html" class="wheel-link" data-testid="link-roue">🎡 Roue de la Fortune</a>
+    <a href="tableau_de_score.html" class="wheel-link" data-testid="link-scores">🏆 Tableau des Scores</a>
+</div>
+
+<div class="modal-overlay" id="auth-overlay">
+    <div class="modal">
+        <button class="modal-close" onclick="closeAuthModal()">&times;</button>
+        <div class="modal-header">
+            <div class="icon">🦙</div>
+            <h2 id="auth-title">Connexion</h2>
+        </div>
+        <div class="modal-tabs">
+            <button class="modal-tab active" id="tab-login" data-testid="tab-login" onclick="switchAuthTab('login')">Connexion</button>
+            <button class="modal-tab" id="tab-register" data-testid="tab-register" onclick="switchAuthTab('register')">Inscription</button>
+        </div>
+        <form onsubmit="handleAuth(event)">
+            <div class="form-group">
+                <label>Nom d'utilisateur</label>
+                <input type="text" id="auth-username" data-testid="input-username" required>
+            </div>
+            <div class="form-group">
+                <label>Mot de passe</label>
+                <input type="password" id="auth-password" data-testid="input-password" required>
+            </div>
+            <button type="submit" class="btn-primary" id="auth-submit" data-testid="button-submit-auth">Se Connecter</button>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="group-overlay">
+    <div class="modal group-modal">
+        <button class="modal-close" onclick="closeGroupModal()">&times;</button>
+        <div class="modal-header">
+            <div class="icon">👥</div>
+            <h2>Groupes</h2>
+        </div>
+        <div class="group-tabs">
+            <button class="group-tab active" id="gtab-list" data-testid="tab-group-list" onclick="switchGroupTab('list')">Mes Groupes</button>
+            <button class="group-tab" id="gtab-create" data-testid="tab-group-create" onclick="switchGroupTab('create')">Créer</button>
+            <button class="group-tab" id="gtab-join" data-testid="tab-group-join" onclick="switchGroupTab('join')">Rejoindre</button>
+        </div>
+        <div id="group-content">
+            <div id="group-list" data-testid="group-list"></div>
+            <div id="group-create-form" style="display:none;">
+                <form onsubmit="handleCreateGroup(event)">
+                    <div class="form-group">
+                        <label>Nom du groupe</label>
+                        <input type="text" id="group-name-input" data-testid="input-group-name" required>
+                    </div>
+                    <button type="submit" class="btn-primary" data-testid="button-create-group-submit">Créer le Groupe</button>
+                </form>
+            </div>
+            <div id="group-join-form" style="display:none;">
+                <form onsubmit="handleJoinGroup(event)">
+                    <div class="form-group">
+                        <label>Code du groupe</label>
+                        <input type="text" id="group-code-input" data-testid="input-group-code" class="code-input" maxlength="8" required>
+                    </div>
+                    <button type="submit" class="btn-primary" data-testid="button-join-group-submit">Rejoindre</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="profile-overlay">
+    <div class="modal">
+        <button class="modal-close" onclick="closeProfileModal()">&times;</button>
+        <div class="modal-header">
+            <div class="icon">👤</div>
+            <h2>Mon Profil</h2>
+        </div>
+        <div id="profile-content" data-testid="profile-content"></div>
+    </div>
+</div>
+
+<div class="toast" id="toast">
+    <div class="toast-title" id="toast-title"></div>
+    <div class="toast-desc" id="toast-desc"></div>
 </div>
 
 <script>
-// Script pour révéler le bouton Solitaire lors du défilement
-document.addEventListener("DOMContentLoaded", function() {
-    const solitaireLink = document.getElementById("solitaire-link");
-    
-    // Écoute l'événement de défilement (scroll)
-    window.addEventListener("scroll", function() {
-        // Si l'utilisateur a défilé de plus de 100 pixels vers le bas
-        if (window.scrollY > 100) {
-            // Affiche le bouton
-            solitaireLink.classList.add("visible-link");
-            solitaireLink.classList.remove("hidden-link");
-        } else {
-            // Cache le bouton s'il remonte tout en haut
-            solitaireLink.classList.remove("visible-link");
-            solitaireLink.classList.add("hidden-link");
+var currentUser = null;
+var authMode = "login";
+
+function showToast(title, desc, isError) {
+    var t = document.getElementById("toast");
+    document.getElementById("toast-title").textContent = title;
+    document.getElementById("toast-desc").textContent = desc || "";
+    t.className = "toast show" + (isError ? " error" : "");
+    setTimeout(function() { t.className = "toast"; }, 3000);
+}
+
+function getUsers() {
+    try { return JSON.parse(localStorage.getItem("lamatita_users") || "{}"); } catch(e) { return {}; }
+}
+
+function saveUsers(users) {
+    localStorage.setItem("lamatita_users", JSON.stringify(users));
+}
+
+function getGroups() {
+    try { return JSON.parse(localStorage.getItem("lamatita_groups") || "[]"); } catch(e) { return []; }
+}
+
+function saveGroups(groups) {
+    localStorage.setItem("lamatita_groups", JSON.stringify(groups));
+}
+
+function checkAuth() {
+    var saved = localStorage.getItem("lamatita_current_user");
+    if (saved) {
+        currentUser = saved;
+    }
+    updateUI();
+}
+
+function updateUI() {
+    var loggedIn = !!currentUser;
+    document.getElementById("btn-auth").style.display = loggedIn ? "none" : "inline-block";
+    document.getElementById("btn-groups").style.display = loggedIn ? "inline-block" : "none";
+    document.getElementById("btn-profile").style.display = loggedIn ? "inline-block" : "none";
+    document.getElementById("btn-logout").style.display = loggedIn ? "inline-block" : "none";
+    document.getElementById("username-label").style.display = loggedIn ? "inline" : "none";
+    if (loggedIn) {
+        document.getElementById("username-label").textContent = "👋 " + currentUser;
+        localStorage.setItem("lamatita_player", currentUser);
+    }
+}
+
+function openAuthModal() {
+    document.getElementById("auth-overlay").classList.add("active");
+    switchAuthTab("login");
+}
+
+function closeAuthModal() {
+    document.getElementById("auth-overlay").classList.remove("active");
+    document.getElementById("auth-username").value = "";
+    document.getElementById("auth-password").value = "";
+}
+
+function switchAuthTab(mode) {
+    authMode = mode;
+    document.getElementById("tab-login").className = "modal-tab" + (mode === "login" ? " active" : "");
+    document.getElementById("tab-register").className = "modal-tab" + (mode === "register" ? " active" : "");
+    document.getElementById("auth-title").textContent = mode === "login" ? "Connexion" : "Inscription";
+    document.getElementById("auth-submit").textContent = mode === "login" ? "Se Connecter" : "S'inscrire";
+}
+
+function handleAuth(e) {
+    e.preventDefault();
+    var username = document.getElementById("auth-username").value.trim();
+    var password = document.getElementById("auth-password").value;
+    if (!username || !password) return;
+
+    var users = getUsers();
+
+    if (authMode === "register") {
+        if (users[username]) {
+            showToast("Erreur", "Ce nom d'utilisateur existe déjà", true);
+            return;
         }
+        users[username] = { password: password, createdAt: new Date().toISOString() };
+        saveUsers(users);
+        currentUser = username;
+        localStorage.setItem("lamatita_current_user", username);
+        closeAuthModal();
+        updateUI();
+        showToast("Bienvenue !", "Compte créé avec succès");
+    } else {
+        if (!users[username] || users[username].password !== password) {
+            showToast("Erreur", "Nom d'utilisateur ou mot de passe incorrect", true);
+            return;
+        }
+        currentUser = username;
+        localStorage.setItem("lamatita_current_user", username);
+        closeAuthModal();
+        updateUI();
+        showToast("Content de vous revoir !", "Connecté en tant que " + username);
+    }
+}
+
+function doLogout() {
+    currentUser = null;
+    localStorage.removeItem("lamatita_current_user");
+    updateUI();
+    showToast("À bientôt !", "Vous êtes déconnecté");
+}
+
+function openGroupModal() {
+    if (!currentUser) {
+        showToast("Erreur", "Connectez-vous d'abord", true);
+        return;
+    }
+    document.getElementById("group-overlay").classList.add("active");
+    switchGroupTab("list");
+    loadGroups();
+}
+
+function closeGroupModal() {
+    document.getElementById("group-overlay").classList.remove("active");
+}
+
+function switchGroupTab(tab) {
+    document.getElementById("gtab-list").className = "group-tab" + (tab === "list" ? " active" : "");
+    document.getElementById("gtab-create").className = "group-tab" + (tab === "create" ? " active" : "");
+    document.getElementById("gtab-join").className = "group-tab" + (tab === "join" ? " active" : "");
+    document.getElementById("group-list").style.display = tab === "list" ? "block" : "none";
+    document.getElementById("group-create-form").style.display = tab === "create" ? "block" : "none";
+    document.getElementById("group-join-form").style.display = tab === "join" ? "block" : "none";
+}
+
+function generateCode() {
+    var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    var code = "";
+    for (var i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+    return code;
+}
+
+function loadGroups() {
+    var groups = getGroups();
+    var myGroups = groups.filter(function(g) {
+        return g.members && g.members.indexOf(currentUser) >= 0;
     });
+    var container = document.getElementById("group-list");
+
+    if (myGroups.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="icon">👥</div><p>Aucun groupe pour le moment</p></div>';
+        return;
+    }
+
+    var html = "";
+    for (var i = 0; i < myGroups.length; i++) {
+        var g = myGroups[i];
+        html += '<div class="group-item" data-testid="group-item-' + g.id + '">';
+        html += '<div class="group-item-header" onclick="toggleGroupMembers(\'' + g.id + '\')">';
+        html += '<div><div class="group-item-name">' + g.name + '</div>';
+        html += '<div class="group-item-code">Code : ' + g.code + '</div></div>';
+        html += '<div class="group-item-actions">';
+        html += '<button class="group-copy-btn" onclick="event.stopPropagation(); copyCode(\'' + g.code + '\')">📋 Copier</button>';
+        html += '<span class="group-expand-arrow" id="arrow-' + g.id + '">▶</span>';
+        html += '</div></div>';
+        html += '<div class="group-members" id="members-' + g.id + '">';
+        html += '<div class="group-members-title">👥 Membres (' + g.members.length + ')</div>';
+        for (var j = 0; j < g.members.length; j++) {
+            var m = g.members[j];
+            var initials = m.substring(0, 2).toUpperCase();
+            html += '<div class="member-item"><div class="member-avatar">' + initials + '</div>';
+            html += '<span class="member-name">' + m + '</span></div>';
+        }
+        html += '</div></div>';
+    }
+    container.innerHTML = html;
+}
+
+function toggleGroupMembers(groupId) {
+    var el = document.getElementById("members-" + groupId);
+    var arrow = document.getElementById("arrow-" + groupId);
+    if (el.classList.contains("open")) {
+        el.classList.remove("open");
+        arrow.style.transform = "rotate(0deg)";
+    } else {
+        el.classList.add("open");
+        arrow.style.transform = "rotate(90deg)";
+    }
+}
+
+function copyCode(code) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(code);
+    }
+    showToast("Copié !", "Code : " + code);
+}
+
+function handleCreateGroup(e) {
+    e.preventDefault();
+    var name = document.getElementById("group-name-input").value.trim();
+    if (!name) return;
+
+    var groups = getGroups();
+    var newGroup = {
+        id: "g_" + Date.now(),
+        name: name,
+        code: generateCode(),
+        members: [currentUser],
+        createdBy: currentUser,
+        createdAt: new Date().toISOString()
+    };
+    groups.push(newGroup);
+    saveGroups(groups);
+
+    document.getElementById("group-name-input").value = "";
+    showToast("Groupe créé !", "Code : " + newGroup.code);
+    switchGroupTab("list");
+    loadGroups();
+}
+
+function handleJoinGroup(e) {
+    e.preventDefault();
+    var code = document.getElementById("group-code-input").value.trim().toUpperCase();
+    if (!code) return;
+
+    var groups = getGroups();
+    var found = false;
+    for (var i = 0; i < groups.length; i++) {
+        if (groups[i].code === code) {
+            if (groups[i].members.indexOf(currentUser) >= 0) {
+                showToast("Info", "Vous êtes déjà dans ce groupe");
+            } else {
+                groups[i].members.push(currentUser);
+                saveGroups(groups);
+                showToast("Groupe rejoint !", 'Vous avez rejoint "' + groups[i].name + '"');
+            }
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        showToast("Erreur", "Aucun groupe trouvé avec ce code", true);
+    }
+    document.getElementById("group-code-input").value = "";
+    switchGroupTab("list");
+    loadGroups();
+}
+
+function openProfileModal() {
+    if (!currentUser) return;
+    document.getElementById("profile-overlay").classList.add("active");
+
+    var scores = [];
+    try { scores = JSON.parse(localStorage.getItem("lamatita_scores") || "[]"); } catch(e) {}
+    var myScores = scores.filter(function(s) { return s.player === currentUser; });
+    var totalGames = myScores.length;
+    var bestTime = totalGames > 0 ? Math.min.apply(null, myScores.map(function(s) { return s.time; })) : 0;
+
+    var groups = getGroups();
+    var myGroups = groups.filter(function(g) { return g.members && g.members.indexOf(currentUser) >= 0; });
+
+    function fmtTime(sec) {
+        return String(Math.floor(sec/60)).padStart(2,'0') + ':' + String(sec%60).padStart(2,'0');
+    }
+
+    var html = '<div style="text-align:center; margin-bottom:20px;">';
+    html += '<div style="width:60px;height:60px;border-radius:50%;background:var(--principal);color:white;display:inline-flex;align-items:center;justify-content:center;font-size:1.5em;font-weight:700;">';
+    html += currentUser.substring(0,2).toUpperCase();
+    html += '</div>';
+    html += '<div style="margin-top:10px;font-weight:700;color:var(--principal);font-size:1.2em;">' + currentUser + '</div>';
+    html += '</div>';
+
+    html += '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;">';
+    html += '<div style="background:var(--fond);border-radius:12px;padding:12px 20px;text-align:center;min-width:80px;">';
+    html += '<div style="font-size:1.5em;font-weight:700;color:var(--principal);">' + totalGames + '</div>';
+    html += '<div style="font-size:0.8em;color:#888;">Victoires</div></div>';
+    html += '<div style="background:var(--fond);border-radius:12px;padding:12px 20px;text-align:center;min-width:80px;">';
+    html += '<div style="font-size:1.5em;font-weight:700;color:var(--principal);">' + (totalGames > 0 ? fmtTime(bestTime) : '--:--') + '</div>';
+    html += '<div style="font-size:0.8em;color:#888;">Meilleur temps</div></div>';
+    html += '<div style="background:var(--fond);border-radius:12px;padding:12px 20px;text-align:center;min-width:80px;">';
+    html += '<div style="font-size:1.5em;font-weight:700;color:var(--principal);">' + myGroups.length + '</div>';
+    html += '<div style="font-size:0.8em;color:#888;">Groupes</div></div>';
+    html += '</div>';
+
+    document.getElementById("profile-content").innerHTML = html;
+}
+
+function closeProfileModal() {
+    document.getElementById("profile-overlay").classList.remove("active");
+}
+
+document.getElementById("auth-overlay").addEventListener("click", function(e) {
+    if (e.target === this) closeAuthModal();
 });
+document.getElementById("group-overlay").addEventListener("click", function(e) {
+    if (e.target === this) closeGroupModal();
+});
+document.getElementById("profile-overlay").addEventListener("click", function(e) {
+    if (e.target === this) closeProfileModal();
+});
+
+document.getElementById("group-code-input").addEventListener("input", function() {
+    this.value = this.value.toUpperCase();
+});
+
+var solitaireLink = document.getElementById("solitaire-link");
+window.addEventListener("scroll", function() {
+    if (window.scrollY > 100) {
+        solitaireLink.classList.add("visible-link");
+        solitaireLink.classList.remove("hidden-link");
+    } else {
+        solitaireLink.classList.remove("visible-link");
+        solitaireLink.classList.add("hidden-link");
+    }
+});
+
+checkAuth();
 </script>
 
 </body>
-
 </html>
