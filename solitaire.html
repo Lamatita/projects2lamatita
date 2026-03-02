@@ -110,7 +110,7 @@ body {
 
 <div class="top-bar">
     <a href="index.html" class="back-link" data-testid="link-back">← Retour à l'accueil</a>
-    <h1 class="page-title">Solitaire</h1>
+    <h1 class="page-title">🃏 Solitaire</h1>
     <div style="width: 160px;"></div>
 </div>
 
@@ -612,13 +612,17 @@ body {
         try {
             if (!konamiVideo) {
                 konamiVideo = document.createElement('video');
-                konamiVideo.src = 'attached_assets/chèvre_1770762071299.mp4';
+                konamiVideo.src = 'chevre.mp4';
                 konamiVideo.loop = true;
-                konamiVideo.muted = false;
                 konamiVideo.playsInline = true;
             }
+            konamiVideo.muted = false;
+            konamiVideo.volume = 1.0;
             konamiVideo.currentTime = 0;
-            konamiVideo.play().catch(()=>{});
+            konamiVideo.play().catch(()=>{
+                konamiVideo.muted = true;
+                konamiVideo.play().catch(()=>{});
+            });
         } catch(e) {}
     }
 
@@ -1210,4 +1214,3 @@ body {
 
 </body>
 </html>
-
