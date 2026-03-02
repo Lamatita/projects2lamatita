@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Projets2Lamatita</title>
+<title>Lamatita</title>
 <style>
 :root {
     --fond: #f7f3ff;
@@ -513,9 +513,9 @@ body {
 </div>
 
 <div class="bottom-section">
-    <a href="solitaire.html" class="wheel-link hidden-link" id="solitaire-link" data-testid="link-solitaire">Solitaire</a>
-    <a href="roue.html" class="wheel-link" data-testid="link-roue">Roue de la Fortune</a>
-    <a href="tableau_de_score.html" class="wheel-link" data-testid="link-scores">Tableau des Scores</a>
+    <a href="solitaire.html" class="wheel-link hidden-link" id="solitaire-link" data-testid="link-solitaire">🃏 Solitaire</a>
+    <a href="roue.html" class="wheel-link" data-testid="link-roue">🎡 Roue de la Fortune</a>
+    <a href="tableau_de_score.html" class="wheel-link" data-testid="link-scores">🏆 Tableau des Scores</a>
 </div>
 
 <div class="modal-overlay" id="auth-overlay">
@@ -547,6 +547,7 @@ body {
     <div class="modal group-modal">
         <button class="modal-close" onclick="closeGroupModal()">&times;</button>
         <div class="modal-header">
+            <div class="icon">👥</div>
             <h2>Groupes</h2>
         </div>
         <div class="group-tabs">
@@ -582,6 +583,7 @@ body {
     <div class="modal">
         <button class="modal-close" onclick="closeProfileModal()">&times;</button>
         <div class="modal-header">
+            <div class="icon">👤</div>
             <h2>Mon Profil</h2>
         </div>
         <div id="profile-content" data-testid="profile-content"></div>
@@ -595,6 +597,7 @@ body {
 
 <script>
 var currentUser = null;
+var currentGroups = [];
 var authMode = "login";
 
 function showToast(title, desc, isError) {
@@ -605,30 +608,6 @@ function showToast(title, desc, isError) {
     setTimeout(function() { t.className = "toast"; }, 3000);
 }
 
-function getUsers() {
-    try { return JSON.parse(localStorage.getItem("lamatita_users") || "{}"); } catch(e) { return {}; }
-}
-
-function saveUsers(users) {
-    localStorage.setItem("lamatita_users", JSON.stringify(users));
-}
-
-function getGroups() {
-    try { return JSON.parse(localStorage.getItem("lamatita_groups") || "[]"); } catch(e) { return []; }
-}
-
-function saveGroups(groups) {
-    localStorage.setItem("lamatita_groups", JSON.stringify(groups));
-}
-
-function checkAuth() {
-    var saved = localStorage.getItem("lamatita_current_user");
-    if (saved) {
-        currentUser = saved;
-    }
-    updateUI();
-}
-
 function updateUI() {
     var loggedIn = !!currentUser;
     document.getElementById("btn-auth").style.display = loggedIn ? "none" : "inline-block";
@@ -637,9 +616,20 @@ function updateUI() {
     document.getElementById("btn-logout").style.display = loggedIn ? "inline-block" : "none";
     document.getElementById("username-label").style.display = loggedIn ? "inline" : "none";
     if (loggedIn) {
-        document.getElementById("username-label").textContent = "🦙 " + currentUser;
-        localStorage.setItem("lamatita_player", currentUser);
+        document.getElementById("username-label").textContent = "\uD83D\uDC4B " + currentUser;
     }
+}
+
+function checkAuth() {
+    fetch("/api/auth/me", { credentials: "include" })
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(data) {
+            if (data && data.username) {
+                currentUser = data.username;
+            }
+            updateUI();
+        })
+        .catch(function() { updateUI(); });
 }
 
 function openAuthModal() {
@@ -667,38 +657,46 @@ function handleAuth(e) {
     var password = document.getElementById("auth-password").value;
     if (!username || !password) return;
 
-    var users = getUsers();
+    var url = authMode === "register" ? "/api/auth/register" : "/api/auth/login";
 
-    if (authMode === "register") {
-        if (users[username]) {
-            showToast("Erreur", "Ce nom d'utilisateur existe déjà", true);
+    fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ username: username, password: password })
+    })
+    .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(result) {
+        if (!result.ok) {
+            showToast("Erreur", result.data.message, true);
             return;
         }
-        users[username] = { password: password, createdAt: new Date().toISOString() };
-        saveUsers(users);
-        currentUser = username;
-        localStorage.setItem("lamatita_current_user", username);
+        currentUser = result.data.username;
         closeAuthModal();
         updateUI();
-        showToast("Bienvenue !", "Compte créé avec succès");
-    } else {
-        if (!users[username] || users[username].password !== password) {
-            showToast("Erreur", "Nom d'utilisateur ou mot de passe incorrect", true);
-            return;
+        if (authMode === "register") {
+            showToast("Bienvenue !", "Compte cr\u00e9\u00e9 avec succ\u00e8s");
+        } else {
+            showToast("Content de vous revoir !", "Connect\u00e9 en tant que " + currentUser);
         }
-        currentUser = username;
-        localStorage.setItem("lamatita_current_user", username);
-        closeAuthModal();
-        updateUI();
-        showToast("Content de vous revoir !", "Connecté en tant que " + username);
-    }
+    })
+    .catch(function() {
+        showToast("Erreur", "Probl\u00e8me de connexion au serveur", true);
+    });
 }
 
 function doLogout() {
-    currentUser = null;
-    localStorage.removeItem("lamatita_current_user");
-    updateUI();
-    showToast("À bientôt !", "Vous êtes déconnecté");
+    fetch("/api/auth/logout", { method: "POST", credentials: "include" })
+        .then(function() {
+            currentUser = null;
+            currentGroups = [];
+            updateUI();
+            showToast("\u00C0 bient\u00F4t !", "Vous \u00EAtes d\u00E9connect\u00E9");
+        })
+        .catch(function() {
+            currentUser = null;
+            updateUI();
+        });
 }
 
 function openGroupModal() {
@@ -724,47 +722,46 @@ function switchGroupTab(tab) {
     document.getElementById("group-join-form").style.display = tab === "join" ? "block" : "none";
 }
 
-function generateCode() {
-    var chars = "ABCDEFGHIJKLMNPQRSTUVWXYZ0123456789";
-    var code = "";
-    for (var i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
-    return code;
-}
-
 function loadGroups() {
-    var groups = getGroups();
-    var myGroups = groups.filter(function(g) {
-        return g.members && g.members.indexOf(currentUser) >= 0;
-    });
     var container = document.getElementById("group-list");
+    container.innerHTML = '<div style="text-align:center;padding:20px;color:#888;">Chargement...</div>';
 
-    if (myGroups.length === 0) {
-        container.innerHTML = '<div class="empty-state"><div class="icon">👥</div><p>Aucun groupe pour le moment</p></div>';
-        return;
-    }
+    fetch("/api/groups", { credentials: "include" })
+        .then(function(r) { return r.ok ? r.json() : []; })
+        .then(function(groups) {
+            currentGroups = groups;
+            if (groups.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">\uD83D\uDC65</div><p>Aucun groupe pour le moment</p></div>';
+                return;
+            }
 
-    var html = "";
-    for (var i = 0; i < myGroups.length; i++) {
-        var g = myGroups[i];
-        html += '<div class="group-item" data-testid="group-item-' + g.id + '">';
-        html += '<div class="group-item-header" onclick="toggleGroupMembers(\'' + g.id + '\')">';
-        html += '<div><div class="group-item-name">' + g.name + '</div>';
-        html += '<div class="group-item-code">Code : ' + g.code + '</div></div>';
-        html += '<div class="group-item-actions">';
-        html += '<button class="group-copy-btn" onclick="event.stopPropagation(); copyCode(\'' + g.code + '\')">📋 Copier</button>';
-        html += '<span class="group-expand-arrow" id="arrow-' + g.id + '">▶</span>';
-        html += '</div></div>';
-        html += '<div class="group-members" id="members-' + g.id + '">';
-        html += '<div class="group-members-title"> Membres (' + g.members.length + ')</div>';
-        for (var j = 0; j < g.members.length; j++) {
-            var m = g.members[j];
-            var initials = m.substring(0, 2).toUpperCase();
-            html += '<div class="member-item"><div class="member-avatar">' + initials + '</div>';
-            html += '<span class="member-name">' + m + '</span></div>';
-        }
-        html += '</div></div>';
-    }
-    container.innerHTML = html;
+            var html = "";
+            for (var i = 0; i < groups.length; i++) {
+                var g = groups[i];
+                var membersList = g.members || [];
+                html += '<div class="group-item" data-testid="group-item-' + g.id + '">';
+                html += '<div class="group-item-header" onclick="toggleGroupMembers(\'' + g.id + '\')">';
+                html += '<div><div class="group-item-name">' + g.name + '</div>';
+                html += '<div class="group-item-code">Code : ' + g.code + '</div></div>';
+                html += '<div class="group-item-actions">';
+                html += '<button class="group-copy-btn" onclick="event.stopPropagation(); copyCode(\'' + g.code + '\')">📋 Copier</button>';
+                html += '<span class="group-expand-arrow" id="arrow-' + g.id + '">\u25B6</span>';
+                html += '</div></div>';
+                html += '<div class="group-members" id="members-' + g.id + '">';
+                html += '<div class="group-members-title">\uD83D\uDC65 Membres (' + membersList.length + ')</div>';
+                for (var j = 0; j < membersList.length; j++) {
+                    var m = membersList[j].username || membersList[j];
+                    var initials = m.substring(0, 2).toUpperCase();
+                    html += '<div class="member-item"><div class="member-avatar">' + initials + '</div>';
+                    html += '<span class="member-name">' + m + '</span></div>';
+                }
+                html += '</div></div>';
+            }
+            container.innerHTML = html;
+        })
+        .catch(function() {
+            container.innerHTML = '<div class="empty-state"><p>Erreur de chargement</p></div>';
+        });
 }
 
 function toggleGroupMembers(groupId) {
@@ -783,7 +780,7 @@ function copyCode(code) {
     if (navigator.clipboard) {
         navigator.clipboard.writeText(code);
     }
-    showToast("Copié !", "Code : " + code);
+    showToast("Copi\u00e9 !", "Code : " + code);
 }
 
 function handleCreateGroup(e) {
@@ -791,22 +788,26 @@ function handleCreateGroup(e) {
     var name = document.getElementById("group-name-input").value.trim();
     if (!name) return;
 
-    var groups = getGroups();
-    var newGroup = {
-        id: "g_" + Date.now(),
-        name: name,
-        code: generateCode(),
-        members: [currentUser],
-        createdBy: currentUser,
-        createdAt: new Date().toISOString()
-    };
-    groups.push(newGroup);
-    saveGroups(groups);
-
-    document.getElementById("group-name-input").value = "";
-    showToast("Groupe créé !", "Code : " + newGroup.code);
-    switchGroupTab("list");
-    loadGroups();
+    fetch("/api/groups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ name: name })
+    })
+    .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(result) {
+        if (!result.ok) {
+            showToast("Erreur", result.data.message, true);
+            return;
+        }
+        document.getElementById("group-name-input").value = "";
+        showToast("Groupe cr\u00e9\u00e9 !", "Code : " + result.data.code);
+        switchGroupTab("list");
+        loadGroups();
+    })
+    .catch(function() {
+        showToast("Erreur", "Impossible de cr\u00e9er le groupe", true);
+    });
 }
 
 function handleJoinGroup(e) {
@@ -814,66 +815,73 @@ function handleJoinGroup(e) {
     var code = document.getElementById("group-code-input").value.trim().toUpperCase();
     if (!code) return;
 
-    var groups = getGroups();
-    var found = false;
-    for (var i = 0; i < groups.length; i++) {
-        if (groups[i].code === code) {
-            if (groups[i].members.indexOf(currentUser) >= 0) {
-                showToast("Info", "Vous êtes déjà dans ce groupe");
+    fetch("/api/groups/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ code: code })
+    })
+    .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, status: r.status, data: d }; }); })
+    .then(function(result) {
+        if (!result.ok) {
+            if (result.status === 409) {
+                showToast("Info", "Vous \u00EAtes d\u00e9j\u00e0 dans ce groupe");
             } else {
-                groups[i].members.push(currentUser);
-                saveGroups(groups);
-                showToast("Groupe rejoint !", 'Vous avez rejoint "' + groups[i].name + '"');
+                showToast("Erreur", result.data.message, true);
             }
-            found = true;
-            break;
+        } else {
+            showToast("Groupe rejoint !", 'Vous avez rejoint "' + result.data.name + '"');
         }
-    }
-    if (!found) {
-        showToast("Erreur", "Aucun groupe trouvé avec ce code", true);
-    }
-    document.getElementById("group-code-input").value = "";
-    switchGroupTab("list");
-    loadGroups();
+        document.getElementById("group-code-input").value = "";
+        switchGroupTab("list");
+        loadGroups();
+    })
+    .catch(function() {
+        showToast("Erreur", "Impossible de rejoindre le groupe", true);
+    });
 }
 
 function openProfileModal() {
     if (!currentUser) return;
     document.getElementById("profile-overlay").classList.add("active");
+    document.getElementById("profile-content").innerHTML = '<div style="text-align:center;padding:20px;color:#888;">Chargement...</div>';
 
-    var scores = [];
-    try { scores = JSON.parse(localStorage.getItem("lamatita_scores") || "[]"); } catch(e) {}
-    var myScores = scores.filter(function(s) { return s.player === currentUser; });
-    var totalGames = myScores.length;
-    var bestTime = totalGames > 0 ? Math.min.apply(null, myScores.map(function(s) { return s.time; })) : 0;
+    Promise.all([
+        fetch("/api/scores/personal", { credentials: "include" }).then(function(r) { return r.ok ? r.json() : []; }),
+        fetch("/api/groups", { credentials: "include" }).then(function(r) { return r.ok ? r.json() : []; })
+    ]).then(function(results) {
+        var myScores = results[0];
+        var myGroups = results[1];
+        var totalGames = myScores.length;
+        var bestTime = totalGames > 0 ? Math.min.apply(null, myScores.map(function(s) { return s.time; })) : 0;
 
-    var groups = getGroups();
-    var myGroups = groups.filter(function(g) { return g.members && g.members.indexOf(currentUser) >= 0; });
+        function fmtTime(sec) {
+            return String(Math.floor(sec/60)).padStart(2,'0') + ':' + String(sec%60).padStart(2,'0');
+        }
 
-    function fmtTime(sec) {
-        return String(Math.floor(sec/60)).padStart(2,'0') + ':' + String(sec%60).padStart(2,'0');
-    }
+        var html = '<div style="text-align:center; margin-bottom:20px;">';
+        html += '<div style="width:60px;height:60px;border-radius:50%;background:var(--principal);color:white;display:inline-flex;align-items:center;justify-content:center;font-size:1.5em;font-weight:700;">';
+        html += currentUser.substring(0,2).toUpperCase();
+        html += '</div>';
+        html += '<div style="margin-top:10px;font-weight:700;color:var(--principal);font-size:1.2em;">' + currentUser + '</div>';
+        html += '</div>';
 
-    var html = '<div style="text-align:center; margin-bottom:20px;">';
-    html += '<div style="width:60px;height:60px;border-radius:50%;background:var(--principal);color:white;display:inline-flex;align-items:center;justify-content:center;font-size:1.5em;font-weight:700;">';
-    html += currentUser.substring(0,2).toUpperCase();
-    html += '</div>';
-    html += '<div style="margin-top:10px;font-weight:700;color:var(--principal);font-size:1.2em;">' + currentUser + '</div>';
-    html += '</div>';
+        html += '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;">';
+        html += '<div style="background:var(--fond);border-radius:12px;padding:12px 20px;text-align:center;min-width:80px;">';
+        html += '<div style="font-size:1.5em;font-weight:700;color:var(--principal);">' + totalGames + '</div>';
+        html += '<div style="font-size:0.8em;color:#888;">Victoires</div></div>';
+        html += '<div style="background:var(--fond);border-radius:12px;padding:12px 20px;text-align:center;min-width:80px;">';
+        html += '<div style="font-size:1.5em;font-weight:700;color:var(--principal);">' + (totalGames > 0 ? fmtTime(bestTime) : '--:--') + '</div>';
+        html += '<div style="font-size:0.8em;color:#888;">Meilleur temps</div></div>';
+        html += '<div style="background:var(--fond);border-radius:12px;padding:12px 20px;text-align:center;min-width:80px;">';
+        html += '<div style="font-size:1.5em;font-weight:700;color:var(--principal);">' + myGroups.length + '</div>';
+        html += '<div style="font-size:0.8em;color:#888;">Groupes</div></div>';
+        html += '</div>';
 
-    html += '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;">';
-    html += '<div style="background:var(--fond);border-radius:12px;padding:12px 20px;text-align:center;min-width:80px;">';
-    html += '<div style="font-size:1.5em;font-weight:700;color:var(--principal);">' + totalGames + '</div>';
-    html += '<div style="font-size:0.8em;color:#888;">Victoires</div></div>';
-    html += '<div style="background:var(--fond);border-radius:12px;padding:12px 20px;text-align:center;min-width:80px;">';
-    html += '<div style="font-size:1.5em;font-weight:700;color:var(--principal);">' + (totalGames > 0 ? fmtTime(bestTime) : '--:--') + '</div>';
-    html += '<div style="font-size:0.8em;color:#888;">Meilleur temps</div></div>';
-    html += '<div style="background:var(--fond);border-radius:12px;padding:12px 20px;text-align:center;min-width:80px;">';
-    html += '<div style="font-size:1.5em;font-weight:700;color:var(--principal);">' + myGroups.length + '</div>';
-    html += '<div style="font-size:0.8em;color:#888;">Groupes</div></div>';
-    html += '</div>';
-
-    document.getElementById("profile-content").innerHTML = html;
+        document.getElementById("profile-content").innerHTML = html;
+    }).catch(function() {
+        document.getElementById("profile-content").innerHTML = '<div style="text-align:center;padding:20px;color:#888;">Erreur de chargement</div>';
+    });
 }
 
 function closeProfileModal() {
@@ -910,5 +918,3 @@ checkAuth();
 
 </body>
 </html>
-
-
