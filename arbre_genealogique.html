@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arbre Généalogique</title>
+
+<style>
+:root {
+    --fond: #f7f3ff;
+    --principal: #6c63ff;
+    --secondaire: #ffb703;
+    --texte: #333;
+    --blanc: #ffffff;
+    --rose: #ff6f91;
+    --vert: #00c9a7;
+    --violet: #845ec2;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, var(--fond), #e6e1ff);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── TOP BAR ── */
+.top-bar {
+    width: 100%;
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 200;
+    position: relative;
+    flex-shrink: 0;
+}
+.back-link {
+    color: var(--principal);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1em;
+    transition: opacity 0.2s;
+}
+.back-link:hover { opacity: 0.7; }
+.page-title {
+    color: var(--principal);
+    font-size: 1.4em;
+    font-weight: 700;
+}
+.toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.toolbar-btn {
+    background: white;
+    border: 1.5px solid rgba(108,99,255,0.3);
+    border-radius: 8px;
+    color: var(--principal);
+    font-size: 0.82em;
+    font-weight: 600;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: all 0.18s;
+}
+.toolbar-btn:hover {
+    background: var(--principal);
+    color: white;
+    border-color: var(--principal);
+}
+
+/* ── CONFETTI ── */
+.falling {
+    position: fixed;
+    top: -10%;
+    animation: fall linear infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+.confetti { width: 12px; height: 12px; opacity: 0.7; display: block; }
+.lama { font-size: 2rem; line-height: 1; display: block; }
+.c1 { background: var(--principal); }
+.c2 { background: var(--secondaire); }
+.c3 { background: var(--rose); }
+.c4 { background: var(--vert); }
+.c5 { background: var(--violet); }
+@keyframes fall {
+    0%   { transform: translateY(0) rotate(0deg); }
+    100% { transform: translateY(120vh) rotate(var(--rotation)); }
+}
+
+/* ── CANVAS AREA ── */
+.canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    cursor: grab;
+}
+.canvas-wrap.panning { cursor: grabbing; }
+
+#treeCanvas {
+    position: absolute;
+    top: 0; left: 0;
+    transform-origin: 0 0;
+}
+
+/* ── HINT ── */
+.hint {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(108,99,255,0.2);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 0.78em;
+    color: #888;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* ── NODE ── */
+.node {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    z-index: 5;
+}
+
+.node-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid var(--principal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+    position: relative;
+}
+.node-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.node-avatar svg {
+    width: 42px;
+    height: 42px;
+    opacity: 0.45;
+}
+.node:hover .node-avatar,
+.node.hovered .node-avatar {
+    border-color: var(--secondaire);
+    box-shadow: 0 0 0 4px rgba(255,183,3,0.25);
+    transform: scale(1.07);
+}
+.node.root .node-avatar {
+    width: 84px;
+    height: 84px;
+    border-width: 4px;
+    box-shadow: 0 4px 16px rgba(108,99,255,0.25);
+}
+.node.root .node-avatar svg { width: 50px; height: 50px; }
+
+.node-label {
+    margin-top: 6px;
+    font-size: 0.82em;
+    font-weight: 700;
+    color: var(--texte);
+    text-align: center;
+    max-width: 90px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: text;
+    border-bottom: 1.5px dashed transparent;
+    transition: border-color 0.15s;
+    padding: 0 2px 1px;
+    line-height: 1.3;
+}
+.node-label:hover { border-bottom-color: var(--principal); }
+
+.node-role {
+    font-size: 0.7em;
+    color: #999;
+    font-weight: 500;
+    text-align: center;
+    margin-top: 1px;
+    min-height: 1em;
+}
+
+/* ── ARROW BUTTONS ── */
+.arrows {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s;
+}
+.node:hover .arrows,
+.node.hovered .arrows {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.arrow-btn {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid var(--principal);
+    color: var(--principal);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, transform 0.15s;
+    z-index: 20;
+    box-shadow: 0 2px 8px rgba(108,99,255,0.2);
+    line-height: 1;
+}
+.arrow-btn:hover {
+    background: var(--principal);
+    color: white;
+    transform: scale(1.15);
+}
+/* positions relative to node center (node-avatar ~72px radius ~36px) */
+.arrow-up    { top: -64px;  left: 50%; transform: translateX(-50%); }
+.arrow-up:hover { transform: translateX(-50%) scale(1.15); }
+.arrow-down  { top:  64px;  left: 50%; transform: translateX(-50%); }
+.arrow-down:hover  { transform: translateX(-50%) scale(1.15); }
+.arrow-left  { top: 50%;   left: -68px; transform: translateY(-50%); }
+.arrow-left:hover  { transform: translateY(-50%) scale(1.15); }
+.arrow-right { top: 50%;   right: -68px; left: auto; transform: translateY(-50%); }
+.arrow-right:hover { transform: translateY(-50%) scale(1.15); }
+
+/* ── SVG CONNECTOR LAYER ── */
+#connectors {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+    overflow: visible;
+}
+
+/* ── TOOLTIP on arrows ── */
+.arrow-btn::after {
+    content: attr(data-tip);
+    position: absolute;
+    background: rgba(50,40,80,0.82);
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 7px;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    top: -26px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.arrow-btn:hover::after { opacity: 1; }
+
+/* ── PHOTO OVERLAY ── */
+.photo-hint {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(108,99,255,0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.18s;
+    font-size: 20px;
+}
+.node-avatar:hover .photo-hint { opacity: 1; }
+input.file-input { display: none; }
+</style>
+</head>
+<body>
+
+<!-- CONFETTI + LAMAS -->
+<div class="falling confetti c1" style="left:4%;  animation-duration:5s;   --rotation:720deg;"></div>
+<div class="falling lama"        style="left:8%;  animation-duration:7.2s; --rotation:-1080deg;">🦙</div>
+<div class="falling confetti c2" style="left:13%; animation-duration:6.1s; --rotation:540deg;"></div>
+<div class="falling confetti c3" style="left:19%; animation-duration:4.8s; --rotation:-720deg;"></div>
+<div class="falling lama"        style="left:24%; animation-duration:8.4s; --rotation:900deg;">🦙</div>
+<div class="falling confetti c4" style="left:30%; animation-duration:5.6s; --rotation:1260deg;"></div>
+<div class="falling confetti c5" style="left:36%; animation-duration:7s;   --rotation:360deg;"></div>
+<div class="falling lama"        style="left:41%; animation-duration:6.8s; --rotation:-1440deg;">🦙</div>
+<div class="falling confetti c1" style="left:47%; animation-duration:5.2s; --rotation:900deg;"></div>
+<div class="falling confetti c2" style="left:53%; animation-duration:6.5s; --rotation:-1080deg;"></div>
+<div class="falling lama"        style="left:58%; animation-duration:9s;   --rotation:1620deg;">🦙</div>
+<div class="falling confetti c3" style="left:64%; animation-duration:5.4s; --rotation:-900deg;"></div>
+<div class="falling confetti c4" style="left:70%; animation-duration:7.8s; --rotation:720deg;"></div>
+<div class="falling lama"        style="left:76%; animation-duration:6.4s; --rotation:-1260deg;">🦙</div>
+<div class="falling confetti c5" style="left:82%; animation-duration:5.9s; --rotation:1080deg;"></div>
+<div class="falling confetti c1" style="left:88%; animation-duration:7.3s; --rotation:-540deg;"></div>
+<div class="falling lama"        style="left:94%; animation-duration:8.6s; --rotation:1440deg;">🦙</div>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+    <a href="index.html" class="back-link">← Retour à l'accueil</a>
+    <span class="page-title">Arbre Généalogique</span>
+    <div class="toolbar">
+        <button class="toolbar-btn" id="btnCenter">⌖ Recentrer</button>
+        <button class="toolbar-btn" id="btnZoomIn">＋</button>
+        <button class="toolbar-btn" id="btnZoomOut">－</button>
+        <button class="toolbar-btn" id="btnSave">💾 Sauvegarder</button>
+        <button class="toolbar-btn" id="btnLoad">📂 Charger</button>
+    </div>
+</div>
+
+<!-- TREE CANVAS -->
+<div class="canvas-wrap" id="canvasWrap">
+    <div id="treeCanvas">
+        <svg id="connectors" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div class="hint">🖱 Glisser pour naviguer · Molette pour zoomer · Survoler une personne pour l'agrandir</div>
+</div>
+
+<!-- Hidden file input -->
+<input type="file" id="globalFileInput" accept="image/*" style="display:none">
+
+<script>
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+let nodes = [];   // { id, x, y, name, role, photo, isRoot }
+let edges = [];   // { from, to, type }  type: up/down/left/right
+let nextId = 1;
+
+let scale = 1;
+let panX = 0, panY = 0;
+
+// ─────────────────────────────────────────────
+// DOM REFERENCES
+// ─────────────────────────────────────────────
+const wrap      = document.getElementById('canvasWrap');
+const canvas    = document.getElementById('treeCanvas');
+const svgEl     = document.getElementById('connectors');
+const fileInput = document.getElementById('globalFileInput');
+
+// ─────────────────────────────────────────────
+// NODE SPACING
+// ─────────────────────────────────────────────
+const SPACING_X = 160;
+const SPACING_Y = 160;
+
+// ─────────────────────────────────────────────
+// INIT ROOT
+// ─────────────────────────────────────────────
+function init() {
+    const cx = wrap.clientWidth  / 2;
+    const cy = wrap.clientHeight / 2;
+    addNode(cx, cy, 'Moi', '', true, null);
+    applyTransform();
+}
+
+// ─────────────────────────────────────────────
+// ADD NODE
+// ─────────────────────────────────────────────
+function addNode(x, y, name, role, isRoot, photo) {
+    const id = nextId++;
+    nodes.push({ id, x, y, name, role: role || '', isRoot: !!isRoot, photo: photo || null });
+    renderNode(nodes[nodes.length - 1]);
+    return id;
+}
+
+// ─────────────────────────────────────────────
+// RENDER A SINGLE NODE
+// ─────────────────────────────────────────────
+function renderNode(node) {
+    // Remove existing element if any
+    const old = document.getElementById('node-' + node.id);
+    if (old) old.remove();
+
+    const div = document.createElement('div');
+    div.className = 'node' + (node.isRoot ? ' root' : '');
+    div.id = 'node-' + node.id;
+
+    // Width of node div for centering: ~90px
+    const W = 90;
+    div.style.left = (node.x - W/2) + 'px';
+    div.style.top  = (node.y - 50) + 'px';
+    div.style.width = W + 'px';
+
+    // Avatar
+    const avatar = document.createElement('div');
+    avatar.className = 'node-avatar';
+
+    if (node.photo) {
+        const img = document.createElement('img');
+        img.src = node.photo;
+        avatar.appendChild(img);
+    } else {
+        // Default person SVG icon
+        avatar.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#6c63ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+        </svg>`;
+    }
+
+    // Photo hover hint
+    const hint = document.createElement('div');
+    hint.className = 'photo-hint';
+    hint.textContent = '📷';
+    avatar.appendChild(hint);
+
+    // Click avatar → pick photo
+    avatar.addEventListener('click', (e) => {
+        e.stopPropagation();
+        fileInput.dataset.nodeId = node.id;
+        fileInput.click();
+    });
+
+    div.appendChild(avatar);
+
+    // Name label (editable)
+    const label = document.createElement('div');
+    label.className = 'node-label';
+    label.textContent = node.name;
+    label.contentEditable = true;
+    label.spellcheck = false;
+    label.addEventListener('input', () => {
+        node.name = label.textContent.trim();
+    });
+    label.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); label.blur(); } });
+    label.addEventListener('click', e => e.stopPropagation());
+    div.appendChild(label);
+
+    // Role
+    const roleEl = document.createElement('div');
+    roleEl.className = 'node-role';
+    roleEl.textContent = node.role;
+    div.appendChild(roleEl);
+
+    // Arrow buttons
+    const arrowsDiv = document.createElement('div');
+    arrowsDiv.className = 'arrows';
+
+    const arrowDefs = [
+        { dir: 'up',    symbol: '↑', label: 'Parent',  tip: 'Ajouter un parent' },
+        { dir: 'down',  symbol: '↓', label: 'Enfant',  tip: 'Ajouter un enfant' },
+        { dir: 'left',  symbol: '←', label: 'Fratrie', tip: 'Ajouter fratrie' },
+        { dir: 'right', symbol: '→', label: 'Couple',  tip: 'Ajouter couple' },
+    ];
+
+    arrowDefs.forEach(({ dir, symbol, tip }) => {
+        // Only show an arrow if no node already exists in that direction from this node
+        const btn = document.createElement('button');
+        btn.className = `arrow-btn arrow-${dir}`;
+        btn.textContent = symbol;
+        btn.dataset.tip = tip;
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            handleArrow(node.id, dir);
+        });
+        arrowsDiv.appendChild(btn);
+    });
+
+    div.appendChild(arrowsDiv);
+
+    // Make node draggable within tree
+    makeDraggable(div, node);
+
+    canvas.appendChild(div);
+}
+
+// ─────────────────────────────────────────────
+// HANDLE ARROW CLICK
+// ─────────────────────────────────────────────
+const ROLE_MAP = {
+    up:    { roles: ['Maman', 'Papa'],      default: 'Maman' },
+    down:  { roles: ['Fils', 'Fille'],      default: 'Fils' },
+    left:  { roles: ['Frère', 'Sœur'],     default: 'Sœur' },
+    right: { roles: ['Amoureux', 'Amoureuse'], default: 'Amoureuse' },
+};
+
+function handleArrow(fromId, dir) {
+    const fromNode = nodes.find(n => n.id === fromId);
+    if (!fromNode) return;
+
+    // Compute new position
+    let nx = fromNode.x;
+    let ny = fromNode.y;
+    if (dir === 'up')    ny -= SPACING_Y;
+    if (dir === 'down')  ny += SPACING_Y;
+    if (dir === 'left')  nx -= SPACING_X;
+    if (dir === 'right') nx += SPACING_X;
+
+    // Nudge if a node already sits near that spot
+    nx = nudgePosition(nx, ny, fromId).x;
+    ny = nudgePosition(nx, ny, fromId).y;
+
+    const info = ROLE_MAP[dir];
+    const role = info.default;
+    const name = role;
+
+    const newId = addNode(nx, ny, name, role, false, null);
+    edges.push({ from: fromId, to: newId, type: dir });
+    drawConnectors();
+}
+
+function nudgePosition(x, y, excludeId) {
+    let attempts = 0;
+    while (attempts < 20) {
+        const clash = nodes.find(n => n.id !== excludeId &&
+            Math.abs(n.x - x) < 60 && Math.abs(n.y - y) < 60);
+        if (!clash) break;
+        x += 20;
+        attempts++;
+    }
+    return { x, y };
+}
+
+// ─────────────────────────────────────────────
+// DRAW SVG CONNECTORS
+// ─────────────────────────────────────────────
+function drawConnectors() {
+    svgEl.innerHTML = '';
+    edges.forEach(edge => {
+        const from = nodes.find(n => n.id === edge.from);
+        const to   = nodes.find(n => n.id === edge.to);
+        if (!from || !to) return;
+
+        const x1 = from.x, y1 = from.y;
+        const x2 = to.x,   y2 = to.y;
+
+        // Determine connector style based on relation type
+        let color = '#6c63ff';
+        let dash  = '';
+        if (edge.type === 'right') { color = '#ff6f91'; dash = '6,3'; } // couple
+        if (edge.type === 'left')  { color = '#00c9a7'; }               // fratrie
+        if (edge.type === 'up')    { color = '#845ec2'; }               // parents
+        if (edge.type === 'down')  { color = '#ffb703'; }               // enfants
+
+        // Curved path
+        const cx = (x1 + x2) / 2;
+        const cy = (y1 + y2) / 2;
+        const dx = x2 - x1, dy = y2 - y1;
+
+        let d;
+        if (Math.abs(dx) < 10) {
+            // Vertical
+            d = `M ${x1} ${y1} C ${x1} ${cy} ${x2} ${cy} ${x2} ${y2}`;
+        } else if (Math.abs(dy) < 10) {
+            // Horizontal
+            d = `M ${x1} ${y1} C ${cx} ${y1} ${cx} ${y2} ${x2} ${y2}`;
+        } else {
+            d = `M ${x1} ${y1} C ${x1} ${y2} ${x2} ${y1} ${x2} ${y2}`;
+        }
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', d);
+        path.setAttribute('stroke', color);
+        path.setAttribute('stroke-width', '2.5');
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke-linecap', 'round');
+        if (dash) path.setAttribute('stroke-dasharray', dash);
+        path.setAttribute('opacity', '0.7');
+        svgEl.appendChild(path);
+
+        // Arrow head
+        const arrowSize = 8;
+        const angle = Math.atan2(y2 - y1, x2 - x1);
+        const ax = x2 - Math.cos(angle) * 36;
+        const ay = y2 - Math.sin(angle) * 36;
+        const a1x = ax - arrowSize * Math.cos(angle - 0.4);
+        const a1y = ay - arrowSize * Math.sin(angle - 0.4);
+        const a2x = ax - arrowSize * Math.cos(angle + 0.4);
+        const a2y = ay - arrowSize * Math.sin(angle + 0.4);
+
+        const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        arrow.setAttribute('points', `${ax},${ay} ${a1x},${a1y} ${a2x},${a2y}`);
+        arrow.setAttribute('fill', color);
+        arrow.setAttribute('opacity', '0.8');
+        svgEl.appendChild(arrow);
+    });
+}
+
+// ─────────────────────────────────────────────
+// NODE DRAG (within tree canvas)
+// ─────────────────────────────────────────────
+function makeDraggable(div, node) {
+    let dragging = false;
+    let startX, startY, startNodeX, startNodeY;
+    const W = 90;
+
+    div.addEventListener('mousedown', (e) => {
+        if (e.target.classList.contains('arrow-btn')) return;
+        if (e.target.closest('.node-label')) return;
+        if (e.target.closest('.node-avatar')) return;
+        e.stopPropagation();
+        dragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        startNodeX = node.x;
+        startNodeY = node.y;
+        div.style.zIndex = 50;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!dragging) return;
+        const dx = (e.clientX - startX) / scale;
+        const dy = (e.clientY - startY) / scale;
+        node.x = startNodeX + dx;
+        node.y = startNodeY + dy;
+        div.style.left = (node.x - W/2) + 'px';
+        div.style.top  = (node.y - 50) + 'px';
+        drawConnectors();
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (dragging) { dragging = false; div.style.zIndex = 5; }
+    });
+}
+
+// ─────────────────────────────────────────────
+// PAN & ZOOM
+// ─────────────────────────────────────────────
+let isPanning = false;
+let panStartX, panStartY;
+
+wrap.addEventListener('mousedown', (e) => {
+    if (e.target.closest('.node')) return;
+    isPanning = true;
+    panStartX = e.clientX - panX;
+    panStartY = e.clientY - panY;
+    wrap.classList.add('panning');
+});
+document.addEventListener('mousemove', (e) => {
+    if (!isPanning) return;
+    panX = e.clientX - panStartX;
+    panY = e.clientY - panStartY;
+    applyTransform();
+});
+document.addEventListener('mouseup', () => {
+    isPanning = false;
+    wrap.classList.remove('panning');
+});
+
+wrap.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const zoomFactor = e.deltaY < 0 ? 1.1 : 0.91;
+    const rect = wrap.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    // Zoom toward cursor
+    panX = mx - (mx - panX) * zoomFactor;
+    panY = my - (my - panY) * zoomFactor;
+    scale *= zoomFactor;
+    scale = Math.min(Math.max(scale, 0.15), 3);
+    applyTransform();
+}, { passive: false });
+
+// Touch support
+let lastTouchDist = null;
+wrap.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+        lastTouchDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+    } else if (e.touches.length === 1) {
+        isPanning = true;
+        panStartX = e.touches[0].clientX - panX;
+        panStartY = e.touches[0].clientY - panY;
+    }
+}, { passive: true });
+
+wrap.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && lastTouchDist) {
+        const dist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+        const zf = dist / lastTouchDist;
+        scale *= zf;
+        scale = Math.min(Math.max(scale, 0.15), 3);
+        lastTouchDist = dist;
+        applyTransform();
+    } else if (e.touches.length === 1 && isPanning) {
+        panX = e.touches[0].clientX - panStartX;
+        panY = e.touches[0].clientY - panStartY;
+        applyTransform();
+    }
+    e.preventDefault();
+}, { passive: false });
+
+wrap.addEventListener('touchend', () => {
+    isPanning = false;
+    lastTouchDist = null;
+});
+
+function applyTransform() {
+    canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+}
+
+// ─────────────────────────────────────────────
+// TOOLBAR BUTTONS
+// ─────────────────────────────────────────────
+document.getElementById('btnCenter').addEventListener('click', () => {
+    const root = nodes.find(n => n.isRoot);
+    if (!root) return;
+    scale = 1;
+    panX = wrap.clientWidth  / 2 - root.x;
+    panY = wrap.clientHeight / 2 - root.y;
+    applyTransform();
+});
+document.getElementById('btnZoomIn').addEventListener('click', () => {
+    scale = Math.min(scale * 1.2, 3);
+    applyTransform();
+});
+document.getElementById('btnZoomOut').addEventListener('click', () => {
+    scale = Math.max(scale * 0.83, 0.15);
+    applyTransform();
+});
+
+// ─────────────────────────────────────────────
+// SAVE / LOAD (localStorage)
+// ─────────────────────────────────────────────
+document.getElementById('btnSave').addEventListener('click', () => {
+    const data = JSON.stringify({ nodes, edges, nextId, scale, panX, panY });
+    localStorage.setItem('arbre_genealogique', data);
+    showToast('✓ Arbre sauvegardé !');
+});
+document.getElementById('btnLoad').addEventListener('click', () => {
+    const raw = localStorage.getItem('arbre_genealogique');
+    if (!raw) { showToast('Aucune sauvegarde trouvée.'); return; }
+    const data = JSON.parse(raw);
+    nodes = data.nodes;
+    edges = data.edges;
+    nextId = data.nextId;
+    scale = data.scale;
+    panX  = data.panX;
+    panY  = data.panY;
+    // Re-render all nodes
+    canvas.querySelectorAll('.node').forEach(n => n.remove());
+    nodes.forEach(n => renderNode(n));
+    drawConnectors();
+    applyTransform();
+    showToast('✓ Arbre chargé !');
+});
+
+function showToast(msg) {
+    let t = document.getElementById('toast');
+    if (!t) {
+        t = document.createElement('div');
+        t.id = 'toast';
+        t.style.cssText = `position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+            background:rgba(108,99,255,0.92);color:white;padding:8px 20px;border-radius:20px;
+            font-size:0.85em;font-weight:600;z-index:9999;transition:opacity 0.3s;pointer-events:none;`;
+        document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.opacity = '1';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.style.opacity = '0', 2200);
+}
+
+// ─────────────────────────────────────────────
+// PHOTO UPLOAD
+// ─────────────────────────────────────────────
+fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const id = parseInt(fileInput.dataset.nodeId);
+    const node = nodes.find(n => n.id === id);
+    if (!node) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        node.photo = ev.target.result;
+        renderNode(node);
+        drawConnectors();
+    };
+    reader.readAsDataURL(file);
+    fileInput.value = '';
+});
+
+// ─────────────────────────────────────────────
+// AUTO-LOAD if saved data exists, else init
+// ─────────────────────────────────────────────
+const saved = localStorage.getItem('arbre_genealogique');
+if (saved) {
+    try {
+        const data = JSON.parse(saved);
+        nodes = data.nodes;
+        edges = data.edges;
+        nextId = data.nextId;
+        scale = data.scale || 1;
+        panX  = data.panX  || 0;
+        panY  = data.panY  || 0;
+        nodes.forEach(n => renderNode(n));
+        drawConnectors();
+        applyTransform();
+    } catch(e) { init(); }
+} else {
+    init();
+}
+</script>
+</body>
+</html>
