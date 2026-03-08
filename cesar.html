@@ -18,6 +18,31 @@ body {
   justify-content: center;
 }
 
+/* ── Back button ── */
+.back-btn {
+  position: fixed;
+  top: 20px; left: 20px;
+  z-index: 10;
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 18px;
+  background: #ffffff;
+  border: none; border-radius: 999px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  color: #6c63ff; font-size: 0.88em; font-weight: 700;
+  font-family: "Segoe UI", sans-serif;
+  cursor: pointer; text-decoration: none;
+  transition: all 0.2s ease;
+}
+.back-btn:hover {
+  box-shadow: 0 6px 22px rgba(108,99,255,0.25);
+  transform: translateX(-2px);
+}
+.back-btn svg {
+  width: 16px; height: 16px;
+  stroke: #6c63ff; fill: none; stroke-width: 2.5;
+  flex-shrink: 0;
+}
+
 @keyframes confetti-fall {
   0% { transform: translateY(-10vh) rotate(0deg); opacity: 0.9; }
   100% { transform: translateY(115vh) rotate(var(--rot)); opacity: 0.5; }
@@ -358,9 +383,15 @@ textarea::placeholder { color: #c8c3de; }
 <!-- Confetti background -->
 <div id="confetti-container"></div>
 
+<!-- Back button -->
+<button class="back-btn" onclick="history.back()">
+  <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+  Retour à l'accueil
+</button>
+
 <div class="page-wrapper">
   <div class="page-title">
-    <h1>Chiffrement de César</h1>
+    <h1>🔐 Chiffrement de César</h1>
     <p>Entrez votre texte et choisissez une clé pour le chiffrer</p>
   </div>
 
@@ -562,6 +593,24 @@ clearBtn.addEventListener('click', () => {
       --delay: -${Math.random() * 10}s;
       --rot: ${Math.random() > 0.5 ? '' : '-'}${180 + Math.random() * 360}deg;
       opacity: 0.4;
+    `;
+    container.appendChild(el);
+  }
+  // Lamas 🦙
+  for (let i = 0; i < 8; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    const size = 18 + Math.random() * 14;
+    el.textContent = '🦙';
+    el.style.cssText = `
+      left: ${Math.random() * 100}vw;
+      width: ${size}px; height: ${size}px;
+      font-size: ${size}px; line-height: 1;
+      background: transparent;
+      --dur: ${6 + Math.random() * 8}s;
+      --delay: -${Math.random() * 12}s;
+      --rot: ${Math.random() > 0.5 ? '' : '-'}${90 + Math.random() * 180}deg;
+      opacity: 0.85;
     `;
     container.appendChild(el);
   }
