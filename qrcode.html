@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur de QR Code</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: "Segoe UI", sans-serif;
+  background: linear-gradient(135deg, #f7f3ff, #e6e1ff);
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 20px 60px;
+}
+
+/* ── Confetti ── */
+@keyframes confetti-fall {
+  0%   { transform: translateY(-10vh) rotate(0deg); opacity: 0.9; }
+  100% { transform: translateY(115vh) rotate(var(--rot)); opacity: 0.5; }
+}
+.confetti-piece {
+  position: fixed; top: -30px;
+  animation: confetti-fall var(--dur) linear infinite;
+  animation-delay: var(--delay);
+  pointer-events: none; z-index: 0;
+}
+
+/* ── Layout ── */
+.page-wrapper {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 620px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 28px;
+}
+
+.page-title { text-align: center; }
+.page-title h1 {
+  font-size: 2em; font-weight: 800;
+  color: #6c63ff; letter-spacing: -0.5px;
+}
+.page-title p { color: #9992bb; font-size: 0.95em; margin-top: 6px; }
+
+/* ── Card ── */
+.card {
+  background: #fff; border-radius: 24px;
+  padding: 32px 36px;
+  box-shadow: 0 15px 45px rgba(0,0,0,0.12);
+  width: 100%;
+  display: flex; flex-direction: column; gap: 24px;
+}
+
+/* ── URL input row ── */
+.url-row {
+  display: flex; align-items: center; gap: 10px;
+}
+.url-icon {
+  width: 40px; height: 40px; flex-shrink: 0;
+  background: #f0edf5; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  color: #6c63ff;
+}
+.url-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+.url-input {
+  flex: 1; height: 44px;
+  border: 2px solid #e0dce8; border-radius: 12px;
+  padding: 0 16px;
+  font-size: 0.95em; font-family: "Segoe UI", sans-serif;
+  color: #333; outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #faf8ff;
+}
+.url-input::placeholder { color: #c8c3de; }
+.url-input:focus {
+  border-color: #6c63ff;
+  box-shadow: 0 0 0 3px rgba(108,99,255,0.12);
+  background: #fff;
+}
+.gen-btn {
+  height: 44px; padding: 0 20px; flex-shrink: 0;
+  border: none; border-radius: 12px;
+  background: #6c63ff; color: #fff;
+  font-size: 0.9em; font-weight: 700;
+  font-family: "Segoe UI", sans-serif;
+  cursor: pointer;
+  box-shadow: 0 3px 12px rgba(108,99,255,0.35);
+  transition: all 0.2s ease;
+}
+.gen-btn:hover {
+  background: #5a51e8;
+  box-shadow: 0 5px 18px rgba(108,99,255,0.45);
+  transform: translateY(-1px);
+}
+.gen-btn:active { transform: translateY(0); }
+
+/* ── QR display area ── */
+.qr-section {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 20px;
+}
+
+.qr-placeholder {
+  width: 260px; height: 260px;
+  border: 2px dashed #d0c8e8; border-radius: 20px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px; color: #c8c3de;
+  font-size: 0.88em; font-weight: 600;
+  transition: all 0.3s;
+}
+.qr-placeholder svg { width: 48px; height: 48px; stroke: #d0c8e8; fill: none; stroke-width: 1.5; }
+.qr-placeholder.hidden { display: none; }
+
+.qr-canvas-wrap {
+  position: relative;
+  width: 260px; height: 260px;
+  display: none;
+  border-radius: 16px;
+  overflow: visible;
+}
+.qr-canvas-wrap.visible { display: block; }
+
+/* The actual QR canvas/img sits inside */
+#qr-render {
+  width: 260px; height: 260px;
+  border-radius: 16px;
+  display: block;
+  box-shadow: 0 8px 32px rgba(108,99,255,0.18);
+}
+
+/* Overlay canvas for the center logo */
+#qr-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 260px; height: 260px;
+  border-radius: 16px;
+  pointer-events: none;
+}
+
+/* ── Custom options panel ── */
+.custom-panel {
+  width: 100%;
+  background: #f7f3ff;
+  border-radius: 16px;
+  padding: 20px 22px;
+  display: none; flex-direction: column; gap: 18px;
+}
+.custom-panel.visible { display: flex; }
+
+.panel-title {
+  font-size: 0.78em; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.8px;
+  color: #9992bb;
+}
+
+/* Mode selector tabs */
+.mode-selector {
+  display: flex;
+  background: #e9e3f5;
+  border-radius: 999px;
+  padding: 4px; gap: 2px;
+}
+.mode-btn {
+  flex: 1; padding: 8px 10px;
+  border: none; background: transparent;
+  color: #777; font-size: 13px; font-weight: 600;
+  cursor: pointer; border-radius: 999px;
+  transition: all 0.25s ease;
+  font-family: "Segoe UI", sans-serif;
+  white-space: nowrap;
+}
+.mode-btn.active {
+  color: #fff; background: #6c63ff;
+  box-shadow: 0 3px 12px rgba(108,99,255,0.35);
+}
+
+/* Sub-panels */
+.sub-panel { display: none; flex-direction: column; gap: 12px; }
+.sub-panel.active { display: flex; }
+
+/* Emoji picker */
+.emoji-input-row {
+  display: flex; align-items: center; gap: 10px;
+}
+.emoji-input {
+  width: 60px; height: 50px;
+  border: 2px solid #e0dce8; border-radius: 12px;
+  background: #fff; text-align: center;
+  font-size: 1.8em; outline: none; cursor: pointer;
+  transition: border-color 0.2s;
+}
+.emoji-input:focus { border-color: #6c63ff; }
+.emoji-hint { font-size: 0.82em; color: #9992bb; }
+
+.emoji-presets {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.emoji-preset-btn {
+  width: 40px; height: 40px;
+  border: 2px solid #e0dce8; border-radius: 10px;
+  background: #fff; font-size: 1.3em;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.emoji-preset-btn:hover, .emoji-preset-btn.active {
+  border-color: #6c63ff;
+  background: #f0edf5;
+  transform: scale(1.1);
+}
+
+/* Image uploader */
+.drop-zone {
+  border: 2px dashed #d0c8e8; border-radius: 14px;
+  padding: 24px; text-align: center;
+  cursor: pointer; transition: all 0.2s;
+  background: #fff;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.drop-zone:hover { border-color: #6c63ff; background: rgba(108,99,255,0.03); }
+.drop-zone svg { width: 28px; height: 28px; stroke: #c8c3de; fill: none; stroke-width: 1.5; }
+.drop-zone span { font-size: 0.85em; color: #9992bb; font-weight: 600; }
+.drop-zone small { font-size: 0.75em; color: #c8c3de; }
+#img-input { display: none; }
+
+.img-preview-row {
+  display: flex; align-items: center; gap: 12px;
+  display: none;
+}
+.img-preview-row.visible { display: flex; }
+.img-thumb {
+  width: 52px; height: 52px; object-fit: cover;
+  border-radius: 10px;
+  border: 2px solid #e0dce8;
+}
+.img-remove {
+  padding: 6px 14px; border: none; border-radius: 999px;
+  background: rgba(255,107,107,0.1); color: #ff6b6b;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  font-family: "Segoe UI", sans-serif;
+  transition: background 0.2s;
+}
+.img-remove:hover { background: rgba(255,107,107,0.2); }
+
+/* Logo size slider */
+.size-row {
+  display: flex; align-items: center; gap: 12px;
+}
+.size-row label { font-size: 0.82em; color: #9992bb; font-weight: 600; white-space: nowrap; }
+input[type=range] {
+  flex: 1; -webkit-appearance: none; height: 4px;
+  background: #e0dce8; border-radius: 4px; outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px;
+  border-radius: 50%; background: #6c63ff;
+  cursor: pointer; box-shadow: 0 2px 6px rgba(108,99,255,0.4);
+}
+.size-val {
+  font-size: 0.82em; font-weight: 700; color: #6c63ff;
+  width: 36px; text-align: right;
+}
+
+/* Style options (colors) */
+.color-row {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.color-row label { font-size: 0.82em; color: #9992bb; font-weight: 600; }
+.color-swatch-group { display: flex; gap: 8px; }
+.color-swatch {
+  width: 28px; height: 28px; border-radius: 8px;
+  border: 2px solid transparent; cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+}
+.color-swatch:hover { transform: scale(1.15); }
+.color-swatch.active { border-color: #6c63ff; transform: scale(1.15); }
+.color-custom {
+  width: 28px; height: 28px; border-radius: 8px;
+  border: 2px solid #e0dce8; overflow: hidden;
+  cursor: pointer; position: relative;
+}
+.color-custom input[type=color] {
+  position: absolute; top: -4px; left: -4px;
+  width: 36px; height: 36px; border: none; cursor: pointer;
+  opacity: 0;
+}
+.color-custom-preview {
+  width: 100%; height: 100%;
+  background: #333;
+  pointer-events: none;
+}
+
+/* ── Download button ── */
+.download-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 14px;
+  border: none; border-radius: 14px;
+  background: linear-gradient(135deg, #6c63ff, #a18cd1);
+  color: #fff; font-size: 1em; font-weight: 700;
+  font-family: "Segoe UI", sans-serif;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(108,99,255,0.35);
+  transition: all 0.25s ease;
+  display: none;
+}
+.download-btn.visible { display: flex; }
+.download-btn:hover {
+  box-shadow: 0 8px 28px rgba(108,99,255,0.5);
+  transform: translateY(-2px);
+}
+.download-btn svg { width: 18px; height: 18px; stroke: #fff; fill: none; stroke-width: 2.2; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: 32px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: #333; color: #fff;
+  padding: 12px 24px; border-radius: 999px;
+  font-size: 14px; font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+  opacity: 0; z-index: 100;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+@media (max-width: 520px) {
+  .card { padding: 24px 18px; }
+  .url-row { flex-wrap: wrap; }
+  .gen-btn { width: 100%; }
+  .qr-placeholder, .qr-canvas-wrap, #qr-render, #qr-overlay { width: 220px; height: 220px; }
+}
+</style>
+</head>
+<body>
+
+<div id="confetti-container"></div>
+
+<div class="page-wrapper">
+  <div class="page-title">
+    <h1>📱 Générateur de QR Code</h1>
+    <p>Collez ou tapez un lien pour générer votre QR code personnalisé</p>
+  </div>
+
+  <div class="card">
+
+    <!-- URL Input -->
+    <div class="url-row">
+      <div class="url-icon">
+        <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      </div>
+      <input class="url-input" type="url" id="urlInput" placeholder="https://exemple.com" autocomplete="off" spellcheck="false">
+      <button class="gen-btn" id="genBtn">Générer</button>
+    </div>
+
+    <!-- QR display -->
+    <div class="qr-section">
+      <div class="qr-placeholder" id="qrPlaceholder">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="5" y="5" width="3" height="3"/><rect x="16" y="5" width="3" height="3"/><rect x="5" y="16" width="3" height="3"/><path d="M14 14h3v3h-3zM17 17h3v3h-3zM14 20h3"/></svg>
+        Votre QR code apparaîtra ici
+      </div>
+
+      <div class="qr-canvas-wrap" id="qrWrap">
+        <!-- Clean canvas QR rendering -->
+        <canvas id="qr-main" style="position:absolute;top:0;left:0;width:260px;height:260px;border-radius:16px;box-shadow:0 8px 32px rgba(108,99,255,0.18);"></canvas>
+        <canvas id="qr-overlay"></canvas>
+      </div>
+    </div>
+
+    <!-- Customization panel -->
+    <div class="custom-panel" id="customPanel">
+      <div class="panel-title">✦ Personnalisation</div>
+
+      <!-- Mode tabs -->
+      <div class="mode-selector">
+        <button class="mode-btn active" data-mode="none">Aucun logo</button>
+        <button class="mode-btn" data-mode="emoji">Emoji</button>
+        <button class="mode-btn" data-mode="image">Image</button>
+      </div>
+
+      <!-- Sub-panel: Emoji -->
+      <div class="sub-panel" id="emojiPanel">
+        <div class="emoji-input-row">
+          <input class="emoji-input" type="text" id="emojiInput" maxlength="2" placeholder="😀">
+          <span class="emoji-hint">Tapez ou collez un emoji, ou choisissez ci-dessous</span>
+        </div>
+        <div class="emoji-presets">
+          <button class="emoji-preset-btn" data-emoji="⭐">⭐</button>
+          <button class="emoji-preset-btn" data-emoji="🔗">🔗</button>
+          <button class="emoji-preset-btn" data-emoji="❤️">❤️</button>
+          <button class="emoji-preset-btn" data-emoji="🚀">🚀</button>
+          <button class="emoji-preset-btn" data-emoji="💡">💡</button>
+          <button class="emoji-preset-btn" data-emoji="🎯">🎯</button>
+          <button class="emoji-preset-btn" data-emoji="🌐">🌐</button>
+          <button class="emoji-preset-btn" data-emoji="📷">📷</button>
+          <button class="emoji-preset-btn" data-emoji="🎵">🎵</button>
+          <button class="emoji-preset-btn" data-emoji="🔒">🔒</button>
+        </div>
+        <div class="size-row">
+          <label>Taille</label>
+          <input type="range" id="emojiSize" min="20" max="60" value="36">
+          <span class="size-val" id="emojiSizeVal">36px</span>
+        </div>
+      </div>
+
+      <!-- Sub-panel: Image -->
+      <div class="sub-panel" id="imagePanel">
+        <div class="drop-zone" id="dropZone">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <span>Glissez une image ou cliquez pour parcourir</span>
+          <small>PNG, JPG, SVG — de préférence avec fond transparent</small>
+          <input type="file" id="img-input" accept="image/*">
+        </div>
+        <div class="img-preview-row" id="imgPreviewRow">
+          <img class="img-thumb" id="imgThumb" src="" alt="preview">
+          <span style="font-size:0.85em;color:#9992bb;flex:1;" id="imgName"></span>
+          <button class="img-remove" id="imgRemove">✕ Retirer</button>
+        </div>
+        <div class="size-row">
+          <label>Taille</label>
+          <input type="range" id="imgSize" min="20" max="80" value="52">
+          <span class="size-val" id="imgSizeVal">52px</span>
+        </div>
+      </div>
+
+      <!-- QR color -->
+      <div>
+        <div class="panel-title" style="margin-bottom:10px;">Couleur du QR code</div>
+        <div class="color-row">
+          <label>Points</label>
+          <div class="color-swatch-group" id="darkSwatches">
+            <div class="color-swatch active" style="background:#1a1a1a;" data-color="#1a1a1a"></div>
+            <div class="color-swatch" style="background:#6c63ff;" data-color="#6c63ff"></div>
+            <div class="color-swatch" style="background:#00c9a7;" data-color="#00c9a7"></div>
+            <div class="color-swatch" style="background:#ff6b6b;" data-color="#ff6b6b"></div>
+            <div class="color-swatch" style="background:#ffb703;" data-color="#ffb703"></div>
+            <div class="color-custom" title="Couleur personnalisée">
+              <input type="color" id="darkColorCustom" value="#1a1a1a">
+              <div class="color-custom-preview" id="darkCustomPreview" style="background:#1a1a1a;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Download -->
+    <button class="download-btn" id="downloadBtn">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Télécharger le QR Code (PNG)
+    </button>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ────────────────────────────────────────────────────
+let qrGenerated = false;
+let currentMode = 'none';
+let emojiChar   = '';
+let uploadedImg = null;
+let darkColor   = '#1a1a1a';
+let emojiSizePx = 36;
+let imgSizePx   = 52;
+let lastUrl     = '';
+
+// Internal high-res canvas size for crisp rendering
+const QR_CANVAS = 520;
+// Display size (CSS)
+const QR_SIZE   = 260;
+
+// ── DOM ──────────────────────────────────────────────────────
+const urlInput      = document.getElementById('urlInput');
+const genBtn        = document.getElementById('genBtn');
+const qrPlaceholder = document.getElementById('qrPlaceholder');
+const qrWrap        = document.getElementById('qrWrap');
+const qrMain        = document.getElementById('qr-main');
+const overlay       = document.getElementById('qr-overlay');
+const customPanel   = document.getElementById('customPanel');
+const downloadBtn   = document.getElementById('downloadBtn');
+const toastEl       = document.getElementById('toast');
+
+// ── Utility ──────────────────────────────────────────────────
+function showToast(msg, duration = 2200) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  setTimeout(() => toastEl.classList.remove('show'), duration);
+}
+
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// ── Draw QR onto canvas ───────────────────────────────────────
+// Uses qrcode-generator which exposes isDark(row, col)
+function drawQRCanvas(url) {
+  // Generate QR matrix — type 0 = auto, error level H
+  const qr = qrcode(0, 'H');
+  qr.addData(url);
+  qr.make();
+
+  const moduleCount = qr.getModuleCount();
+  const margin      = 3; // quiet zone in modules
+  const total       = moduleCount + margin * 2;
+  const cell        = QR_CANVAS / total;
+
+  const ctx = qrMain.getContext('2d');
+  qrMain.width  = QR_CANVAS;
+  qrMain.height = QR_CANVAS;
+
+  // White background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, QR_CANVAS, QR_CANVAS);
+
+  // Draw each module as a perfect square
+  ctx.fillStyle = darkColor;
+  for (let row = 0; row < moduleCount; row++) {
+    for (let col = 0; col < moduleCount; col++) {
+      if (qr.isDark(row, col)) {
+        const x = Math.round((col + margin) * cell);
+        const y = Math.round((row + margin) * cell);
+        const s = Math.round(cell);
+        ctx.fillRect(x, y, s, s);
+      }
+    }
+  }
+}
+
+// ── Generate QR ──────────────────────────────────────────────
+function generateQR() {
+  let url = urlInput.value.trim();
+  if (!url) { showToast('⚠️ Veuillez entrer un lien'); return; }
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  try { new URL(url); } catch { showToast('⚠️ Lien invalide'); return; }
+
+  lastUrl = url;
+  drawQRCanvas(url);
+
+  qrPlaceholder.classList.add('hidden');
+  qrWrap.classList.add('visible');
+  customPanel.classList.add('visible');
+  downloadBtn.classList.add('visible');
+  qrGenerated = true;
+
+  drawOverlay();
+}
+
+// ── Draw overlay (emoji / image logo on the overlay canvas) ──
+function drawOverlay() {
+  if (!qrGenerated) return;
+
+  // Always work in the same coordinate space as the CSS display size
+  const S = QR_SIZE;
+  overlay.width  = S;
+  overlay.height = S;
+  overlay.style.width  = S + 'px';
+  overlay.style.height = S + 'px';
+
+  const ctx = overlay.getContext('2d');
+  ctx.clearRect(0, 0, S, S);
+
+  if (currentMode === 'none') return;
+
+  const cx = S / 2;
+  const cy = S / 2;
+
+  if (currentMode === 'emoji' && emojiChar) {
+    const sz     = emojiSizePx;
+    const radius = sz * 0.72;
+    // White circle background
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fillStyle   = '#ffffff';
+    ctx.shadowColor = 'rgba(0,0,0,0.15)';
+    ctx.shadowBlur  = 10;
+    ctx.fill();
+    ctx.shadowBlur  = 0;
+
+    // Render emoji on an offscreen canvas then find its real pixel bounds
+    const off   = document.createElement('canvas');
+    off.width   = sz * 3;
+    off.height  = sz * 3;
+    const octx  = off.getContext('2d');
+    octx.font   = `${sz}px serif`;
+    octx.textAlign    = 'left';
+    octx.textBaseline = 'top';
+    octx.fillText(emojiChar, sz, sz);
+
+    // Scan pixels to find actual bounding box
+    const px   = octx.getImageData(0, 0, off.width, off.height).data;
+    let minX = off.width, maxX = 0, minY = off.height, maxY = 0;
+    for (let y = 0; y < off.height; y++) {
+      for (let x = 0; x < off.width; x++) {
+        if (px[(y * off.width + x) * 4 + 3] > 10) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+
+    // Draw the emoji slice centred on (cx, cy)
+    if (maxX > minX && maxY > minY) {
+      const ew = maxX - minX;
+      const eh = maxY - minY;
+      ctx.drawImage(off, minX, minY, ew, eh,
+                    cx - ew / 2, cy - eh / 2, ew, eh);
+    }
+  }
+
+  if (currentMode === 'image' && uploadedImg) {
+    const sz   = imgSizePx;
+    const half = sz / 2;
+    const pad  = 7;
+    // White rounded-square background
+    roundRectPath(ctx, cx - half - pad, cy - half - pad, sz + pad * 2, sz + pad * 2, 12);
+    ctx.fillStyle   = '#ffffff';
+    ctx.shadowColor = 'rgba(0,0,0,0.15)';
+    ctx.shadowBlur  = 10;
+    ctx.fill();
+    ctx.shadowBlur  = 0;
+    // Clip & draw image centred
+    ctx.save();
+    roundRectPath(ctx, cx - half, cy - half, sz, sz, 8);
+    ctx.clip();
+    ctx.drawImage(uploadedImg, cx - half, cy - half, sz, sz);
+    ctx.restore();
+  }
+}
+
+// ── Mode tabs ────────────────────────────────────────────────
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMode = btn.dataset.mode;
+    document.getElementById('emojiPanel').classList.remove('active');
+    document.getElementById('imagePanel').classList.remove('active');
+    if (currentMode === 'emoji') document.getElementById('emojiPanel').classList.add('active');
+    if (currentMode === 'image') document.getElementById('imagePanel').classList.add('active');
+    drawOverlay();
+  });
+});
+
+// ── Emoji ────────────────────────────────────────────────────
+const emojiInput = document.getElementById('emojiInput');
+emojiInput.addEventListener('input', () => {
+  emojiChar = emojiInput.value;
+  document.querySelectorAll('.emoji-preset-btn').forEach(b => b.classList.remove('active'));
+  drawOverlay();
+});
+document.querySelectorAll('.emoji-preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    emojiChar = btn.dataset.emoji;
+    emojiInput.value = emojiChar;
+    document.querySelectorAll('.emoji-preset-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    drawOverlay();
+  });
+});
+document.getElementById('emojiSize').addEventListener('input', function() {
+  emojiSizePx = parseInt(this.value);
+  document.getElementById('emojiSizeVal').textContent = emojiSizePx + 'px';
+  drawOverlay();
+});
+
+// ── Image upload ─────────────────────────────────────────────
+const dropZone     = document.getElementById('dropZone');
+const imgFileInput = document.getElementById('img-input');
+dropZone.addEventListener('click', () => imgFileInput.click());
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.style.borderColor = '#6c63ff'; });
+dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = ''; });
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.style.borderColor = '';
+  if (e.dataTransfer.files[0]) handleImageFile(e.dataTransfer.files[0]);
+});
+imgFileInput.addEventListener('change', () => {
+  if (imgFileInput.files[0]) handleImageFile(imgFileInput.files[0]);
+});
+function handleImageFile(file) {
+  if (!file.type.startsWith('image/')) { showToast('⚠️ Fichier image uniquement'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      uploadedImg = img;
+      document.getElementById('imgThumb').src = e.target.result;
+      document.getElementById('imgName').textContent = file.name;
+      document.getElementById('imgPreviewRow').classList.add('visible');
+      drawOverlay();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+document.getElementById('imgRemove').addEventListener('click', () => {
+  uploadedImg = null;
+  imgFileInput.value = '';
+  document.getElementById('imgPreviewRow').classList.remove('visible');
+  document.getElementById('imgThumb').src = '';
+  drawOverlay();
+});
+document.getElementById('imgSize').addEventListener('input', function() {
+  imgSizePx = parseInt(this.value);
+  document.getElementById('imgSizeVal').textContent = imgSizePx + 'px';
+  drawOverlay();
+});
+
+// ── Color swatches ───────────────────────────────────────────
+document.querySelectorAll('#darkSwatches .color-swatch').forEach(sw => {
+  sw.addEventListener('click', () => {
+    document.querySelectorAll('#darkSwatches .color-swatch').forEach(s => s.classList.remove('active'));
+    sw.classList.add('active');
+    darkColor = sw.dataset.color;
+    if (qrGenerated) generateQR();
+  });
+});
+const darkColorCustom   = document.getElementById('darkColorCustom');
+const darkCustomPreview = document.getElementById('darkCustomPreview');
+darkColorCustom.addEventListener('input', () => {
+  darkColor = darkColorCustom.value;
+  darkCustomPreview.style.background = darkColor;
+  document.querySelectorAll('#darkSwatches .color-swatch').forEach(s => s.classList.remove('active'));
+  if (qrGenerated) generateQR();
+});
+
+// ── Download — flatten QR + overlay into one PNG ─────────────
+downloadBtn.addEventListener('click', () => {
+  if (!qrGenerated) return;
+  const final = document.createElement('canvas');
+  final.width  = QR_CANVAS;
+  final.height = QR_CANVAS;
+  const ctx = final.getContext('2d');
+  // QR main is QR_CANVAS (520px)
+  ctx.drawImage(qrMain, 0, 0, QR_CANVAS, QR_CANVAS);
+  // Overlay is QR_SIZE (260px) — scale up to match
+  ctx.drawImage(overlay, 0, 0, QR_CANVAS, QR_CANVAS);
+  const link = document.createElement('a');
+  link.download = 'qrcode.png';
+  link.href = final.toDataURL('image/png');
+  link.click();
+  showToast('✓ QR Code téléchargé !');
+});
+
+// ── Generate on Enter ────────────────────────────────────────
+urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') generateQR(); });
+genBtn.addEventListener('click', generateQR);
+
+// ── Confetti ─────────────────────────────────────────────────
+(function() {
+  const colors = ['#6c63ff','#ffb703','#00c9a7','#ff6b6b','#a18cd1','#ffd93d'];
+  const container = document.getElementById('confetti-container');
+  for (let i = 0; i < 30; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    const size = 6 + Math.random() * 8;
+    el.style.cssText = `
+      left:${Math.random()*100}vw;
+      width:${size}px; height:${size}px;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      border-radius:${Math.random()>.5?'50%':'2px'};
+      --dur:${4+Math.random()*8}s;
+      --delay:-${Math.random()*10}s;
+      --rot:${Math.random()>.5?'':'-'}${180+Math.random()*360}deg;
+      opacity:0.4;
+    `;
+    container.appendChild(el);
+  }
+  // Lamas 🦙
+  for (let i = 0; i < 8; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    const size = 18 + Math.random() * 14;
+    el.textContent = '🦙';
+    el.style.cssText = `
+      left:${Math.random()*100}vw;
+      width:${size}px; height:${size}px;
+      font-size:${size}px; line-height:1;
+      background:transparent;
+      --dur:${6+Math.random()*8}s;
+      --delay:-${Math.random()*12}s;
+      --rot:${Math.random()>.5?'':'-'}${90+Math.random()*180}deg;
+      opacity:0.85;
+    `;
+    container.appendChild(el);
+  }
+})();
+</script>
+</body>
+</html>
