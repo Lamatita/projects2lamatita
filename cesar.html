@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chiffrement de César</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: "Segoe UI", sans-serif;
+  background: linear-gradient(135deg, #f7f3ff, #e6e1ff);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-10vh) rotate(0deg); opacity: 0.9; }
+  100% { transform: translateY(115vh) rotate(var(--rot)); opacity: 0.5; }
+}
+.confetti-piece {
+  position: fixed;
+  top: -30px;
+  animation: confetti-fall var(--dur) linear infinite;
+  animation-delay: var(--delay);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.page-wrapper {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 900px;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+.page-title {
+  text-align: center;
+}
+.page-title h1 {
+  font-size: 2em;
+  font-weight: 800;
+  color: #6c63ff;
+  letter-spacing: -0.5px;
+}
+.page-title p {
+  color: #9992bb;
+  font-size: 0.95em;
+  margin-top: 6px;
+}
+
+/* ── Card ── */
+.card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 32px 36px;
+  box-shadow: 0 15px 45px rgba(0,0,0,0.12);
+  width: 100%;
+}
+
+/* ── Key row ── */
+.key-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid #f0edf5;
+}
+.key-row label {
+  font-size: 0.85em;
+  font-weight: 700;
+  color: #9992bb;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  white-space: nowrap;
+}
+.key-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.key-arrow {
+  width: 34px; height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: #f0edf5;
+  color: #6c63ff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.key-arrow:hover {
+  background: #6c63ff;
+  color: #fff;
+  box-shadow: 0 3px 12px rgba(108,99,255,0.35);
+}
+.key-display {
+  width: 64px; height: 44px;
+  border: 2px solid #e0dce8;
+  border-radius: 12px;
+  background: #f7f3ff;
+  text-align: center;
+  font-size: 1.3em;
+  font-weight: 800;
+  color: #6c63ff;
+  outline: none;
+  font-family: "Segoe UI", sans-serif;
+  -moz-appearance: textfield;
+}
+.key-display::-webkit-outer-spin-button,
+.key-display::-webkit-inner-spin-button { -webkit-appearance: none; }
+.key-display:focus {
+  border-color: #6c63ff;
+  box-shadow: 0 0 0 3px rgba(108,99,255,0.12);
+}
+
+/* ── Alphabet strip ── */
+.alphabet-strip {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.alpha-pair {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.alpha-cell {
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.alpha-cell.top {
+  background: #f0edf5;
+  color: #9992bb;
+}
+.alpha-cell.bottom {
+  background: #6c63ff;
+  color: #fff;
+  transition: background 0.3s;
+}
+
+/* ── Translation columns ── */
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: 2px solid #e0dce8;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.col-header {
+  padding: 12px 18px;
+  background: #f7f3ff;
+  border-bottom: 2px solid #e0dce8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.col-header:first-child {
+  border-right: 2px solid #e0dce8;
+}
+.col-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+}
+.col-dot.plain { background: #9992bb; }
+.col-dot.cipher { background: #6c63ff; }
+.col-header span {
+  font-size: 0.8em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: #9992bb;
+}
+
+.col-body {
+  position: relative;
+}
+.col-body:first-of-type {
+  border-right: 2px solid #e0dce8;
+}
+
+textarea {
+  width: 100%;
+  height: 180px;
+  border: none;
+  outline: none;
+  resize: none;
+  padding: 16px 18px;
+  font-size: 0.95em;
+  font-family: "Segoe UI", sans-serif;
+  color: #333;
+  background: #fff;
+  line-height: 1.6;
+}
+textarea::placeholder { color: #c8c3de; }
+
+.output-area {
+  width: 100%;
+  height: 180px;
+  padding: 16px 18px;
+  font-size: 0.95em;
+  font-family: "Segoe UI", monospace;
+  color: #6c63ff;
+  font-weight: 600;
+  line-height: 1.6;
+  background: #faf8ff;
+  overflow-y: auto;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+.output-area.empty {
+  color: #c8c3de;
+  font-weight: 400;
+  font-family: "Segoe UI", sans-serif;
+}
+
+/* ── Footer row with copy button ── */
+.col-footer {
+  padding: 10px 14px;
+  background: #f7f3ff;
+  border-top: 2px solid #e0dce8;
+  display: flex;
+  justify-content: flex-end;
+}
+.col-footer:first-child {
+  border-right: 2px solid #e0dce8;
+}
+.col-footer.left-footer {
+  justify-content: flex-start;
+}
+
+.char-count {
+  font-size: 12px;
+  color: #c8c3de;
+  font-weight: 600;
+  padding: 4px 0;
+}
+
+.copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border: none;
+  border-radius: 999px;
+  background: #6c63ff;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: "Segoe UI", sans-serif;
+  box-shadow: 0 3px 10px rgba(108,99,255,0.3);
+}
+.copy-btn:hover {
+  background: #5a51e8;
+  box-shadow: 0 4px 16px rgba(108,99,255,0.45);
+  transform: translateY(-1px);
+}
+.copy-btn:active { transform: translateY(0); }
+.copy-btn.copied {
+  background: #00c9a7;
+  box-shadow: 0 3px 10px rgba(0,201,167,0.35);
+}
+.copy-btn svg {
+  width: 13px; height: 13px;
+  stroke: currentColor; fill: none; stroke-width: 2.5;
+}
+
+/* ── Grid footer ── */
+.grid-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 2px solid #e0dce8;
+}
+
+/* ── Clear button ── */
+.clear-btn {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  border: 2px solid #e0dce8;
+  border-radius: 999px;
+  background: transparent;
+  color: #9992bb;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: "Segoe UI", sans-serif;
+  align-self: center;
+}
+.clear-btn:hover {
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+  background: rgba(255,107,107,0.05);
+}
+
+/* ── Toast notification ── */
+.toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: #333;
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s;
+  opacity: 0;
+  z-index: 100;
+}
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+@media (max-width: 600px) {
+  .columns { grid-template-columns: 1fr; }
+  .col-body:first-of-type { border-right: none; border-bottom: 2px solid #e0dce8; }
+  .col-header:first-child { border-right: none; }
+  .col-footer:first-child { border-right: none; }
+  .alphabet-strip { gap: 2px; }
+  .alpha-cell { width: 22px; height: 22px; font-size: 10px; border-radius: 4px; }
+  .card { padding: 24px 18px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Confetti background -->
+<div id="confetti-container"></div>
+
+<div class="page-wrapper">
+  <div class="page-title">
+    <h1>🔐 Chiffrement de César</h1>
+    <p>Entrez votre texte et choisissez une clé pour le chiffrer</p>
+  </div>
+
+  <div class="card">
+
+    <!-- Key selector -->
+    <div class="key-row">
+      <label>Clé de chiffrement</label>
+      <div class="key-controls">
+        <button class="key-arrow" id="keyDown" title="Diminuer">−</button>
+        <input class="key-display" type="number" id="keyInput" value="3" min="-25" max="25">
+        <button class="key-arrow" id="keyUp" title="Augmenter">+</button>
+      </div>
+    </div>
+
+    <!-- Alphabet preview strip -->
+    <div class="alphabet-strip" id="alphabetStrip"></div>
+
+    <!-- Text columns -->
+    <div class="columns">
+      <!-- Left header -->
+      <div class="col-header">
+        <div class="col-dot plain"></div>
+        <span>Texte original</span>
+      </div>
+      <!-- Right header -->
+      <div class="col-header">
+        <div class="col-dot cipher"></div>
+        <span>Texte chiffré</span>
+      </div>
+
+      <!-- Left body -->
+      <div class="col-body">
+        <textarea id="inputText" placeholder="Saisissez votre texte ici…" spellcheck="false"></textarea>
+      </div>
+      <!-- Right body -->
+      <div class="col-body">
+        <div class="output-area empty" id="outputText">Le texte chiffré apparaîtra ici…</div>
+      </div>
+
+      <!-- Footer row -->
+      <div class="grid-footer">
+        <div class="col-footer left-footer">
+          <span class="char-count" id="charCount">0 caractère</span>
+        </div>
+        <div class="col-footer">
+          <button class="copy-btn" id="copyBtn">
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copier
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:center;">
+      <button class="clear-btn" id="clearBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        Effacer
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast">✓ Texte copié !</div>
+
+<script>
+// ── Caesar cipher ──────────────────────────────────────────────
+const ACCENTS = {
+  'à':'a','â':'a','ä':'a','é':'e','è':'e','ê':'e','ë':'e',
+  'î':'i','ï':'i','ô':'o','ö':'o','ù':'u','û':'u','ü':'u',
+  'ÿ':'y','ç':'c',
+  'À':'A','Â':'A','Ä':'A','É':'E','È':'E','Ê':'E','Ë':'E',
+  'Î':'I','Ï':'I','Ô':'O','Ö':'O','Ù':'U','Û':'U','Ü':'U',
+  'Ÿ':'Y','Ç':'C'
+};
+
+function removeAccents(text) {
+  return text.split('').map(c => ACCENTS[c] || c).join('');
+}
+
+function caesarCipher(text, key) {
+  text = removeAccents(text);
+  return text.split('').map(c => {
+    if (/[a-zA-Z]/.test(c)) {
+      const base = c === c.toUpperCase() ? 65 : 97;
+      return String.fromCharCode(((c.charCodeAt(0) - base + ((key % 26) + 26)) % 26) + base);
+    }
+    return c;
+  }).join('');
+}
+
+// ── DOM refs ───────────────────────────────────────────────────
+const keyInput   = document.getElementById('keyInput');
+const inputText  = document.getElementById('inputText');
+const outputText = document.getElementById('outputText');
+const charCount  = document.getElementById('charCount');
+const copyBtn    = document.getElementById('copyBtn');
+const clearBtn   = document.getElementById('clearBtn');
+const toast      = document.getElementById('toast');
+const strip      = document.getElementById('alphabetStrip');
+
+// ── Alphabet strip ─────────────────────────────────────────────
+function buildStrip(key) {
+  strip.innerHTML = '';
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  for (let i = 0; i < 26; i++) {
+    const shifted = letters[(i + ((key % 26) + 26)) % 26];
+    const pair = document.createElement('div');
+    pair.className = 'alpha-pair';
+    pair.innerHTML = `
+      <div class="alpha-cell top">${letters[i]}</div>
+      <div class="alpha-cell bottom">${shifted}</div>
+    `;
+    strip.appendChild(pair);
+  }
+}
+
+// ── Update output ──────────────────────────────────────────────
+function update() {
+  const key  = parseInt(keyInput.value) || 0;
+  const text = inputText.value;
+  const len  = text.length;
+
+  charCount.textContent = len === 0 ? '0 caractère' : len === 1 ? '1 caractère' : `${len} caractères`;
+
+  if (text.trim() === '') {
+    outputText.textContent = 'Le texte chiffré apparaîtra ici…';
+    outputText.classList.add('empty');
+  } else {
+    outputText.textContent = caesarCipher(text, key);
+    outputText.classList.remove('empty');
+  }
+
+  buildStrip(key);
+}
+
+// ── Key controls ───────────────────────────────────────────────
+document.getElementById('keyUp').addEventListener('click', () => {
+  let v = parseInt(keyInput.value) || 0;
+  keyInput.value = v >= 25 ? -25 : v + 1;
+  update();
+});
+document.getElementById('keyDown').addEventListener('click', () => {
+  let v = parseInt(keyInput.value) || 0;
+  keyInput.value = v <= -25 ? 25 : v - 1;
+  update();
+});
+keyInput.addEventListener('input', update);
+
+// ── Text input ─────────────────────────────────────────────────
+inputText.addEventListener('input', update);
+
+// ── Copy button ────────────────────────────────────────────────
+let toastTimeout;
+copyBtn.addEventListener('click', () => {
+  const out = outputText.textContent;
+  if (outputText.classList.contains('empty')) return;
+  navigator.clipboard.writeText(out).then(() => {
+    copyBtn.classList.add('copied');
+    copyBtn.innerHTML = `
+      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      Copié !
+    `;
+    toast.classList.add('show');
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+      copyBtn.classList.remove('copied');
+      copyBtn.innerHTML = `
+        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copier
+      `;
+      toast.classList.remove('show');
+    }, 2000);
+  });
+});
+
+// ── Clear button ───────────────────────────────────────────────
+clearBtn.addEventListener('click', () => {
+  inputText.value = '';
+  update();
+});
+
+// ── Confetti ───────────────────────────────────────────────────
+(function generateConfetti() {
+  const colors = ['#6c63ff','#ffb703','#00c9a7','#ff6b6b','#a18cd1','#ffd93d'];
+  const container = document.getElementById('confetti-container');
+  for (let i = 0; i < 30; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    const size = 6 + Math.random() * 8;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    el.style.cssText = `
+      left: ${Math.random() * 100}vw;
+      width: ${size}px; height: ${size}px;
+      background: ${color};
+      border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+      --dur: ${4 + Math.random() * 8}s;
+      --delay: -${Math.random() * 10}s;
+      --rot: ${Math.random() > 0.5 ? '' : '-'}${180 + Math.random() * 360}deg;
+      opacity: 0.4;
+    `;
+    container.appendChild(el);
+  }
+})();
+
+// ── Init ───────────────────────────────────────────────────────
+update();
+</script>
+</body>
+</html>
