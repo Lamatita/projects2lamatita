@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Morpion Test</title>
+<title>Morpion Ultimate - Multijoueur</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300..800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
@@ -566,7 +566,7 @@ body {
 <!-- TOP BAR -->
 <div class="top-bar">
     <a href="index.html" class="back-link">← Retour à l'accueil</a>
-    <span class="page-title">Morpion Test</span>
+    <span class="page-title">Morpion Ultimate</span>
     <div style="width:180px"></div>
 </div>
 
@@ -966,198 +966,140 @@ function render(mode) {
 }
 
 // =====================================================================
-// MULTIPLAYER SYSTEM
+// MULTIPLAYER SYSTEM — shared state via localStorage + BroadcastChannel
+// =====================================================================
+// Principe : les deux joueurs partagent UNE seule clé localStorage
+// identifiée par le code de partie (celui du joueur X / hôte).
+// Chaque coup écrit l'état complet dans cette clé.
+// L'autre joueur le lit via BroadcastChannel (même navigateur, instantané)
+// ou via un polling léger toutes les 600ms (onglets différents).
 // =====================================================================
 
 const mp = {
-    myCode: '',          // this player's session code
-    partnerCode: '',     // opponent's code
-    connected: false,    // is there a second player?
-    mySymbol: 'X',       // X = host, O = guest
-    isHost: false,
-    pollInterval: null,
-    lastSeen: 0,
+    myCode:    '',      // code affiché à l'écran (généré à l'ouverture)
+    roomCode:  '',      // clé partagée = code de l'hôte (X)
+    connected: false,
+    mySymbol:  'X',
+    channel:   null,    // BroadcastChannel
+    pollTimer: null,
+    lastTs:    0,
 };
 
-// Generate a random 10-char alphanumeric code
+const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 function genCode() {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    return Array.from({length:10}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    return Array.from({length:10}, () => CHARS[Math.floor(Math.random() * CHARS.length)]).join('');
 }
 
-// Storage key for a session
-function sessionKey(code) { return 'morpion_session_' + code; }
-function stateKey(code) { return 'morpion_state_' + code; }
+// Clé unique dans localStorage pour la room
+function roomKey(code) { return 'morpion_room_' + code; }
 
-// Initialize this player's code
-function initMP() {
-    mp.myCode = genCode();
-    mp.isHost = true;
-    mp.mySymbol = 'X';
-    document.getElementById('myCode').textContent = mp.myCode;
-
-    // Write our "session alive" heartbeat to localStorage
-    writeSession(mp.myCode, { alive: true, ts: Date.now(), hasPartner: false });
-
-    // Poll for someone joining us
-    mp.pollInterval = setInterval(pollForPartner, 1500);
+// ── Lire / écrire l'état partagé ──────────────────────────────────────
+function saveSharedState() {
+    if (!mp.roomCode) return;
+    const payload = JSON.stringify({ classic, duration, ultimate, currentMode, ts: Date.now() });
+    try { localStorage.setItem(roomKey(mp.roomCode), payload); } catch(e) {}
+    // Notifier via BroadcastChannel si disponible
+    if (mp.channel) try { mp.channel.postMessage(payload); } catch(e) {}
 }
 
-function writeSession(code, data) {
-    try { localStorage.setItem(sessionKey(code), JSON.stringify(data)); } catch(e) {}
-}
-function readSession(code) {
-    try { const d = localStorage.getItem(sessionKey(code)); return d ? JSON.parse(d) : null; } catch(e) { return null; }
-}
-function writeState(code, state) {
-    try { localStorage.setItem(stateKey(code), JSON.stringify({...state, ts: Date.now()})); } catch(e) {}
-}
-function readState(code) {
-    try { const d = localStorage.getItem(stateKey(code)); return d ? JSON.parse(d) : null; } catch(e) { return null; }
+function loadSharedState() {
+    if (!mp.roomCode) return;
+    try {
+        const raw = localStorage.getItem(roomKey(mp.roomCode));
+        if (raw) applyState(JSON.parse(raw));
+    } catch(e) {}
 }
 
-function pollForPartner() {
-    // Check if anyone wrote a "join request" on our session key with their code
-    const sess = readSession(mp.myCode);
-    if (sess && sess.joinerCode && !mp.connected) {
-        // Someone is joining us!
-        mp.partnerCode = sess.joinerCode;
-        mp.connected = true;
-        mp.isHost = true;
-        mp.mySymbol = 'X';
-        // Acknowledge
-        writeSession(mp.myCode, { alive: true, ts: Date.now(), hasPartner: true, joinerCode: mp.partnerCode, ack: true });
-        onConnected();
-        startStatePoll();
-    }
-}
-
-function joinSession(code) {
-    code = code.toUpperCase().trim();
-    if (code.length !== 10) { alert('Le code doit faire 10 caractères.'); return; }
-    if (code === mp.myCode) { alert('Vous ne pouvez pas rejoindre votre propre partie !'); return; }
-
-    // Check if host session exists
-    const sess = readSession(code);
-    if (!sess || !sess.alive) {
-        // Try anyway — host might not be on same device. Attempt join and poll for ack.
-    }
-
-    mp.partnerCode = code;
-    mp.isHost = false;
-    mp.mySymbol = 'O';
-
-    // Write our join request onto the host's session
-    const current = readSession(code) || {};
-    writeSession(code, { ...current, joinerCode: mp.myCode, ts: Date.now() });
-
-    // Write our own session too
-    writeSession(mp.myCode, { alive: true, ts: Date.now(), hasPartner: false });
-
-    // Poll for host ack and then start
-    let tries = 0;
-    const tryJoin = setInterval(() => {
-        tries++;
-        const hostSess = readSession(code);
-        if (hostSess && hostSess.ack) {
-            clearInterval(tryJoin);
-            mp.connected = true;
-            onConnected();
-            startStatePoll();
-        } else if (tries > 20) {
-            // proceed anyway — maybe cross-tab storage is blocked; try BroadcastChannel
-            clearInterval(tryJoin);
-            mp.connected = true;
-            onConnected();
-            startStatePoll();
-        }
-    }, 500);
-}
-
-function onConnected() {
-    clearInterval(mp.pollInterval);
-    updateMPStatus();
-    // If guest, load host state
-    if (!mp.isHost) {
-        const st = readState(mp.partnerCode);
-        if (st) applyRemoteState(st);
-    } else {
-        // Host pushes current state for guest
-        pushState();
-    }
-}
-
-function startStatePoll() {
-    if (mp.pollInterval) clearInterval(mp.pollInterval);
-    mp.pollInterval = setInterval(() => {
-        const targetCode = mp.isHost ? mp.myCode : mp.partnerCode;
-        const remoteCode = mp.isHost ? mp.partnerCode : mp.myCode;
-
-        // Read state from the other player
-        const st = readState(remoteCode);
-        if (st && st.ts > mp.lastSeen) {
-            mp.lastSeen = st.ts;
-            applyRemoteState(st);
-        }
-
-        // Keep our session alive
-        const curr = readSession(mp.myCode) || {};
-        writeSession(mp.myCode, { ...curr, alive: true, ts: Date.now() });
-
-        // Check partner still alive
-        const partnerSess = readSession(mp.isHost ? mp.partnerCode : mp.partnerCode);
-        if (partnerSess && Date.now() - partnerSess.ts > 8000) {
-            // partner seems gone — show offline notice but don't disconnect
-            document.getElementById('offlineNotice').classList.add('show');
-        } else {
-            document.getElementById('offlineNotice').classList.remove('show');
-        }
-    }, 800);
-}
-
-function pushState() {
-    if (!mp.connected) return;
-    const state = {
-        classic, duration, ultimate,
-        currentMode,
-        ts: Date.now(),
-    };
-    writeState(mp.myCode, state);
-}
-
-function applyRemoteState(st) {
-    // Only update what the remote player controls
-    // Guest sees host move (X moves), host sees guest move (O moves)
+function applyState(st) {
+    if (!st || st.ts <= mp.lastTs) return;
+    mp.lastTs = st.ts;
     let changed = false;
-    if (st.classic && JSON.stringify(st.classic) !== JSON.stringify(classic)) {
-        classic = st.classic; changed = true;
-    }
-    if (st.duration && JSON.stringify(st.duration) !== JSON.stringify(duration)) {
-        duration = st.duration; changed = true;
-    }
-    if (st.ultimate && JSON.stringify(st.ultimate) !== JSON.stringify(ultimate)) {
-        ultimate = st.ultimate; changed = true;
-    }
-    if (st.currentMode && st.currentMode !== currentMode) {
+    if (st.classic   && JSON.stringify(st.classic)   !== JSON.stringify(classic))   { classic   = st.classic;   changed = true; }
+    if (st.duration  && JSON.stringify(st.duration)  !== JSON.stringify(duration))  { duration  = st.duration;  changed = true; }
+    if (st.ultimate  && JSON.stringify(st.ultimate)  !== JSON.stringify(ultimate))  { ultimate  = st.ultimate;  changed = true; }
+    if (st.currentMode !== undefined && st.currentMode !== currentMode) {
         currentMode = st.currentMode;
-        if (currentMode) { showPage(currentMode); }
-        else { showPage('home'); }
+        showPage(currentMode || 'home');
         changed = true;
     }
     if (changed && currentMode) render(currentMode);
 }
 
+// ── Démarrage ─────────────────────────────────────────────────────────
+function initMP() {
+    mp.myCode = genCode();
+    document.getElementById('myCode').textContent = mp.myCode;
+}
+
+// ── Rejoindre une room (le joueur O entre le code du joueur X) ────────
+function joinSession(code) {
+    code = code.toUpperCase().trim();
+    if (code.length !== 10)    { alert('Le code doit faire 10 caractères.'); return; }
+    if (code === mp.myCode)    { alert('Vous ne pouvez pas rejoindre votre propre partie !'); return; }
+
+    mp.roomCode  = code;          // la room = le code de l'hôte
+    mp.mySymbol  = 'O';
+    mp.connected = true;
+    mp.lastTs    = 0;
+
+    openChannel();
+    loadSharedState();            // charger l'état existant de l'hôte
+    startPoll();
+    updateMPStatus();
+}
+
+// Appelé quand le joueur X (hôte) fait son premier coup ou démarre une partie
+// Sa room = son propre code
+function ensureHost() {
+    if (mp.roomCode) return;      // déjà initialisé
+    mp.roomCode  = mp.myCode;
+    mp.mySymbol  = 'X';
+    mp.connected = true;          // prêt à recevoir un invité
+    openChannel();
+    startPoll();
+    updateMPStatus();
+}
+
+// ── BroadcastChannel (même navigateur, réactif) ───────────────────────
+function openChannel() {
+    if (!window.BroadcastChannel) return;
+    if (mp.channel) mp.channel.close();
+    mp.channel = new BroadcastChannel(roomKey(mp.roomCode));
+    mp.channel.onmessage = (e) => {
+        try { applyState(JSON.parse(e.data)); } catch(err) {}
+    };
+}
+
+// ── Polling léger (fallback multi-appareils / onglets) ────────────────
+function startPoll() {
+    clearInterval(mp.pollTimer);
+    mp.pollTimer = setInterval(() => {
+        try {
+            const raw = localStorage.getItem(roomKey(mp.roomCode));
+            if (raw) applyState(JSON.parse(raw));
+        } catch(e) {}
+    }, 600);
+}
+
+// ── pushState : alias public utilisé après chaque coup ───────────────
+function pushState() {
+    if (mp.mySymbol === 'X') ensureHost();   // l'hôte initialise la room au 1er coup
+    if (!mp.connected) return;
+    saveSharedState();
+}
+
+// ── Quitter ───────────────────────────────────────────────────────────
 function leaveSession() {
-    if (mp.pollInterval) clearInterval(mp.pollInterval);
-    try { localStorage.removeItem(sessionKey(mp.myCode)); } catch(e) {}
+    clearInterval(mp.pollTimer);
+    if (mp.channel) { mp.channel.close(); mp.channel = null; }
+    try { if (mp.roomCode) localStorage.removeItem(roomKey(mp.roomCode)); } catch(e) {}
     mp.connected = false;
-    mp.partnerCode = '';
-    mp.isHost = true;
-    mp.mySymbol = 'X';
+    mp.roomCode  = '';
+    mp.mySymbol  = 'X';
+    mp.lastTs    = 0;
     document.getElementById('joinInput').value = '';
     document.getElementById('leaveBtn').style.display = 'none';
     document.getElementById('offlineNotice').classList.remove('show');
-    // Re-init
     initMP();
     updateMPStatus();
 }
@@ -1169,13 +1111,9 @@ function updateMPStatus() {
         el.className = 'mp-status solo';
         el.textContent = 'Solo';
         lb.style.display = 'none';
-    } else if (mp.isHost) {
-        el.className = 'mp-status connected';
-        el.textContent = `✓ Connecté — Vous êtes X`;
-        lb.style.display = 'inline-block';
     } else {
-        el.className = 'mp-status joined';
-        el.textContent = `✓ Connecté — Vous êtes O`;
+        el.className = mp.mySymbol === 'X' ? 'mp-status connected' : 'mp-status joined';
+        el.textContent = `✓ Connecté — Vous êtes ${mp.mySymbol}`;
         lb.style.display = 'inline-block';
     }
 }
@@ -1194,10 +1132,6 @@ document.getElementById('joinBtn').addEventListener('click', () => {
     if (!code) return;
     joinSession(code);
     document.getElementById('joinInput').value = '';
-    // Update status to waiting
-    const el = document.getElementById('mpStatus');
-    el.className = 'mp-status waiting';
-    el.textContent = '⏳ Connexion…';
 });
 
 document.getElementById('joinInput').addEventListener('keydown', (e) => {
