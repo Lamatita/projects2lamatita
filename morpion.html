@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Morpion Ultimate - Multijoueur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300..800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    /* Page (solitaire palette) */
+    --fond-page: #f7f3ff;
+    --fond-page2: #e6e1ff;
+    --principal-page: #6c63ff;
+
+    /* Game window (original morpion dark palette) */
+    --fond: #0d0518;
+    --principal: #a855f7;
+    --accent: #f472b6;
+    --texte: #d4b8ff;
+    --surface: rgba(168,85,247,0.08);
+    --surface-hover: rgba(168,85,247,0.15);
+    --border: rgba(168,85,247,0.25);
+    --glow: rgba(168,85,247,0.4);
+    --blanc: #ffffff;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Outfit', sans-serif;
+    background: linear-gradient(135deg, var(--fond-page), var(--fond-page2));
+    color: #333;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── TOP BAR ── */
+.top-bar {
+    width: 100%;
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 100;
+    flex-shrink: 0;
+    position: relative;
+}
+.back-link {
+    color: var(--principal-page);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1em;
+    transition: opacity 0.2s;
+    display: flex; align-items: center; gap: 6px;
+}
+.back-link:hover { opacity: 0.7; }
+.page-title {
+    color: var(--principal-page);
+    font-size: 1.4em;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+/* ── MULTIPLAYER BAR ── */
+.mp-bar {
+    width: 100%;
+    padding: 7px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    background: rgba(108,99,255,0.07);
+    border-bottom: 1px solid rgba(108,99,255,0.18);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+.mp-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.mp-label {
+    font-size: 0.78em;
+    color: #6c63ff;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+.mp-code {
+    font-family: 'Space Mono', monospace;
+    font-size: 1em;
+    font-weight: 700;
+    color: #4a3fbf;
+    background: rgba(108,99,255,0.1);
+    border: 1px solid rgba(108,99,255,0.35);
+    padding: 5px 12px;
+    border-radius: 8px;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    user-select: all;
+}
+.mp-code:hover {
+    background: rgba(108,99,255,0.18);
+    border-color: var(--principal-page);
+    box-shadow: 0 0 10px rgba(108,99,255,0.25);
+}
+.mp-divider {
+    width: 1px; height: 28px;
+    background: rgba(108,99,255,0.2);
+}
+.mp-join-input {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.9em;
+    background: rgba(255,255,255,0.7);
+    border: 1px solid rgba(108,99,255,0.3);
+    border-radius: 8px;
+    color: #333;
+    padding: 5px 10px;
+    width: 140px;
+    letter-spacing: 0.1em;
+    outline: none;
+    transition: all 0.2s;
+    text-transform: uppercase;
+}
+.mp-join-input:focus {
+    border-color: var(--principal-page);
+    background: #fff;
+    box-shadow: 0 0 8px rgba(108,99,255,0.2);
+}
+.mp-join-input::placeholder { color: #a9a4d4; letter-spacing: 0.05em; }
+.mp-btn {
+    padding: 5px 14px;
+    background: rgba(108,99,255,0.12);
+    border: 1px solid rgba(108,99,255,0.4);
+    border-radius: 8px;
+    color: #4a3fbf;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.85em;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.mp-btn:hover {
+    background: rgba(108,99,255,0.22);
+    border-color: var(--principal-page);
+    box-shadow: 0 0 10px rgba(108,99,255,0.2);
+}
+.mp-btn.danger {
+    background: rgba(239,68,68,0.08);
+    border-color: rgba(239,68,68,0.35);
+    color: #dc2626;
+}
+.mp-btn.danger:hover {
+    background: rgba(239,68,68,0.15);
+    border-color: #ef4444;
+    box-shadow: 0 0 10px rgba(239,68,68,0.2);
+}
+.mp-status {
+    font-size: 0.8em;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.mp-status.solo { background: rgba(150,150,150,0.12); color: #888; border: 1px solid rgba(150,150,150,0.25); }
+.mp-status.waiting { background: rgba(251,191,36,0.15); color: #b45309; border: 1px solid rgba(251,191,36,0.4); animation: pulse-status 1.5s ease-in-out infinite; }
+.mp-status.connected { background: rgba(34,197,94,0.12); color: #15803d; border: 1px solid rgba(34,197,94,0.35); }
+.mp-status.joined { background: rgba(99,102,241,0.12); color: #4338ca; border: 1px solid rgba(99,102,241,0.35); }
+@keyframes pulse-status {
+    0%,100% { opacity: 1; } 50% { opacity: 0.6; }
+}
+.copy-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(108,99,255,0.92);
+    color: white;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+    z-index: 9999;
+}
+.copy-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── GAME AREA ── */
+.game-wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    padding: 8px 12px;
+    position: relative;
+    z-index: 1;
+    min-height: 0;
+}
+
+.game-window {
+    background: rgba(20,8,38,0.97);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: 0 0 60px rgba(168,85,247,0.2), 0 0 120px rgba(168,85,247,0.08), inset 0 1px 0 rgba(255,255,255,0.05);
+    padding: 16px 20px;
+    overflow: hidden;
+    width: fit-content;
+    max-width: calc(100vw - 24px);
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 1;
+}
+
+/* ── PAGES ── */
+.page { display: none; }
+.page.active {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 0;
+    flex: 1;
+}
+
+/* HOME PAGE */
+.home-title {
+    font-size: clamp(1.6rem, 4vh, 2.8rem);
+    font-weight: 800;
+    color: #d8b4fe;
+    text-shadow: 0 0 30px rgba(216,180,254,0.5), 0 0 60px rgba(168,85,247,0.2);
+    margin-bottom: 0.2rem;
+    text-align: center;
+}
+.home-subtitle {
+    font-size: clamp(0.8rem, 1.5vh, 1rem);
+    color: #9b7cc8;
+    margin-bottom: clamp(0.8rem, 2vh, 1.5rem);
+    text-align: center;
+}
+.modes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(0.6rem, 1.5vw, 1.2rem);
+    min-width: 560px;
+}
+.mode-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: clamp(1rem, 2.5vh, 1.8rem) 1rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-align: center;
+}
+.mode-card:hover {
+    border-color: rgba(168,85,247,0.6);
+    background: var(--surface-hover);
+    transform: translateY(-4px);
+    box-shadow: 0 0 25px rgba(168,85,247,0.2);
+}
+.mode-icon { font-size: clamp(1.4rem, 3vh, 2.2rem); margin-bottom: 0.5rem; color: var(--principal); }
+.mode-card h2 { font-size: clamp(1rem, 2vh, 1.3rem); margin-bottom: 0.4rem; color: #c084fc; }
+.mode-card p { font-size: clamp(0.75rem, 1.4vh, 0.85rem); color: #9b7cc8; line-height: 1.4; }
+
+/* GAME PAGE */
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: clamp(0.5rem, 1.5vh, 1rem);
+    gap: 1rem;
+    width: 100%;
+}
+.game-title { font-size: clamp(1.1rem, 2.5vh, 1.6rem); color: #c084fc; }
+.back-game-link {
+    color: #9b7cc8;
+    text-decoration: none;
+    font-size: 0.88rem;
+    display: flex; align-items: center; gap: 4px;
+    transition: color 0.2s;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.back-game-link:hover { color: var(--principal); }
+
+.status-bar {
+    text-align: center;
+    margin-bottom: clamp(0.4rem, 1.2vh, 1rem);
+    font-size: clamp(0.85rem, 1.8vh, 1.1rem);
+    font-weight: 600;
+    color: #d8b4fe;
+    min-height: 1.6rem;
+    line-height: 1.4;
+}
+.player-x { color: #c084fc; text-shadow: 0 0 8px rgba(192,132,252,0.6); }
+.player-o { color: #f472b6; text-shadow: 0 0 8px rgba(244,114,182,0.6); }
+.winner-msg { font-size: 1.4rem; font-weight: 800; animation: scaleIn 0.3s ease-out; }
+
+@keyframes scaleIn { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+
+/* CLASSIC / DURATION GRID */
+.grid-3x3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    width: clamp(200px, 32vh, 300px);
+    margin: 0 auto clamp(0.5rem, 1.5vh, 1.2rem);
+    background: var(--principal);
+    border-radius: 12px;
+    padding: 4px;
+    box-shadow: 0 0 20px rgba(168,85,247,0.5), 0 0 40px rgba(168,85,247,0.2);
+}
+.cell {
+    aspect-ratio: 1;
+    background: #1a0a2e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(1.6rem, 5vh, 2.4rem);
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: none;
+    position: relative;
+    font-family: 'Outfit', sans-serif;
+}
+.cell:first-child{border-radius:8px 0 0 0}
+.cell:nth-child(3){border-radius:0 8px 0 0}
+.cell:nth-child(7){border-radius:0 0 0 8px}
+.cell:nth-child(9){border-radius:0 0 8px 0}
+.cell:hover:not(.disabled) { background: rgba(168,85,247,0.18); }
+.cell.disabled { cursor: default; }
+.cell.winning { background: rgba(168,85,247,0.28); }
+.cell.fading { opacity: 0.35; }
+.symbol-x { color: #c084fc; text-shadow: 0 0 10px rgba(192,132,252,0.7); animation: scaleIn 0.2s ease-out; }
+.symbol-o { color: #f472b6; text-shadow: 0 0 10px rgba(244,114,182,0.7); animation: scaleIn 0.2s ease-out; }
+
+/* ACTIONS */
+.actions {
+    text-align: center;
+    margin-top: clamp(0.4rem, 1.2vh, 1rem);
+    display: flex;
+    justify-content: center;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+}
+.btn {
+    padding: 0.5rem 1.4rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--texte);
+    font-family: 'Outfit', sans-serif;
+    font-size: clamp(0.8rem, 1.6vh, 0.95rem);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn:hover {
+    background: rgba(168,85,247,0.25);
+    border-color: rgba(168,85,247,0.7);
+    box-shadow: 0 0 15px rgba(168,85,247,0.3);
+    transform: translateY(-1px);
+}
+.btn-primary { background: rgba(168,85,247,0.3); border-color: var(--principal); }
+
+/* TURN INDICATOR for multiplayer */
+.turn-indicator {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75em;
+    font-weight: 700;
+    margin-top: 3px;
+}
+.turn-mine { background: rgba(168,85,247,0.25); color: #c084fc; border: 1px solid rgba(168,85,247,0.5); }
+.turn-opponent { background: rgba(244,114,182,0.15); color: #f472b6; border: 1px solid rgba(244,114,182,0.4); }
+
+/* ULTIMATE GRID */
+.ultimate-container {
+    width: clamp(300px, 55vh, 500px);
+    margin: 0 auto clamp(0.4rem, 1.2vh, 1.2rem);
+}
+.win-condition-selector {
+    display: flex;
+    gap: 0.7rem;
+    justify-content: center;
+    margin-bottom: clamp(0.4rem, 1.2vh, 1.2rem);
+    flex-wrap: wrap;
+}
+.win-option {
+    padding: 0.45rem 0.9rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: #9b7cc8;
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+    font-size: clamp(0.75rem, 1.4vh, 0.85rem);
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+.win-option:hover, .win-option.active {
+    background: rgba(168,85,247,0.2);
+    border-color: var(--principal);
+    color: #d8b4fe;
+    box-shadow: 0 0 10px rgba(168,85,247,0.2);
+}
+.mega-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    background: var(--principal);
+    border-radius: 14px;
+    padding: 5px;
+    box-shadow: 0 0 40px rgba(168,85,247,0.7), 0 0 80px rgba(168,85,247,0.3);
+}
+.sub-board {
+    background: #1a0a2e;
+    border-radius: 6px;
+    padding: 3px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+.sub-board.active-target { background: rgba(168,85,247,0.15); box-shadow: inset 0 0 15px rgba(168,85,247,0.2); }
+.sub-board.won-x { background: rgba(192,132,252,0.15); }
+.sub-board.won-o { background: rgba(244,114,182,0.15); }
+.sub-board.drawn { background: rgba(100,60,150,0.1); }
+.sub-board.win-line { box-shadow: 0 0 20px rgba(168,85,247,0.6); }
+.sub-board-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.8rem;
+    font-weight: 800;
+    border-radius: 6px;
+    z-index: 2;
+    animation: scaleIn 0.3s ease-out;
+}
+.overlay-x { color: #c084fc; text-shadow: 0 0 20px rgba(192,132,252,0.8); background: rgba(26,10,46,0.85); }
+.overlay-o { color: #f472b6; text-shadow: 0 0 20px rgba(244,114,182,0.8); background: rgba(26,10,46,0.85); }
+.overlay-draw { color: #9b7cc8; background: rgba(26,10,46,0.8); font-size: 2rem; }
+.mini-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: rgba(168,85,247,0.18);
+    border-radius: 4px;
+}
+.mini-cell {
+    aspect-ratio: 1;
+    background: #1a0a2e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    border: none;
+    font-family: 'Outfit', sans-serif;
+}
+.mini-cell:first-child{border-radius:3px 0 0 0}
+.mini-cell:nth-child(3){border-radius:0 3px 0 0}
+.mini-cell:nth-child(7){border-radius:0 0 0 3px}
+.mini-cell:nth-child(9){border-radius:0 0 3px 0}
+.mini-cell:hover:not(.disabled) { background: rgba(168,85,247,0.12); }
+.mini-cell.disabled { cursor: default; }
+
+.scoreboard {
+    display: flex;
+    justify-content: center;
+    gap: 2.5rem;
+    margin-bottom: clamp(0.4rem, 1.2vh, 1rem);
+}
+.score-item { text-align: center; }
+.score-label { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.15rem; }
+.score-value { font-size: clamp(1.2rem, 3vh, 1.8rem); font-weight: 800; }
+.score-x .score-label, .score-x .score-value { color: #c084fc; }
+.score-o .score-label, .score-o .score-value { color: #f472b6; }
+
+/* OFFLINE INDICATOR */
+.offline-notice {
+    text-align: center;
+    font-size: 0.75em;
+    color: #b45309;
+    margin-top: 6px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.offline-notice.show { opacity: 1; }
+
+/* FLOATING CONFETTI like solitaire */
+.falling {
+    position: fixed;
+    top: -10%;
+    animation: fall linear infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+.confetti { width: 12px; height: 12px; opacity: 0.75; }
+.lama { font-size: 1.8rem; }
+.cc1 { background: #6c63ff; }
+.cc2 { background: #ffb703; }
+.cc3 { background: #ff6f91; }
+.cc4 { background: #00c9a7; }
+.cc5 { background: #845ec2; }
+
+@keyframes fall {
+    0%   { transform: translateY(0) rotate(0deg); }
+    100% { transform: translateY(120vh) rotate(var(--rotation)); }
+}
+
+@media (max-width: 700px) {
+    .modes { grid-template-columns: 1fr; min-width: unset; }
+    .game-window { padding: 16px; }
+    .mp-bar { gap: 8px; padding: 6px 12px; }
+    .mp-divider { display: none; }
+    .mega-grid { gap: 4px; padding: 4px; }
+    .sub-board-overlay { font-size: 2rem; }
+    .mini-cell { font-size: 0.7rem; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- Falling confetti + lamas (solitaire style) -->
+<div class="falling confetti cc1" style="left:5%;  animation-duration:5s;   --rotation:720deg;"></div>
+<div class="falling lama"         style="left:9%;  animation-duration:7s;   --rotation:-1080deg;">🦙</div>
+<div class="falling confetti cc2" style="left:14%; animation-duration:6.2s; --rotation:540deg;"></div>
+<div class="falling confetti cc3" style="left:20%; animation-duration:4.8s; --rotation:-720deg;"></div>
+<div class="falling lama"         style="left:26%; animation-duration:8.1s; --rotation:900deg;">🦙</div>
+<div class="falling confetti cc4" style="left:31%; animation-duration:5.5s; --rotation:1260deg;"></div>
+<div class="falling confetti cc5" style="left:37%; animation-duration:6.9s; --rotation:360deg;"></div>
+<div class="falling lama"         style="left:42%; animation-duration:7.4s; --rotation:-1440deg;">🦙</div>
+<div class="falling confetti cc1" style="left:48%; animation-duration:5.1s; --rotation:900deg;"></div>
+<div class="falling confetti cc2" style="left:54%; animation-duration:6.6s; --rotation:-1080deg;"></div>
+<div class="falling lama"         style="left:59%; animation-duration:8.8s; --rotation:1620deg;">🦙</div>
+<div class="falling confetti cc3" style="left:65%; animation-duration:5.3s; --rotation:-900deg;"></div>
+<div class="falling confetti cc4" style="left:71%; animation-duration:7.7s; --rotation:720deg;"></div>
+<div class="falling lama"         style="left:77%; animation-duration:6.3s; --rotation:-1260deg;">🦙</div>
+<div class="falling confetti cc5" style="left:83%; animation-duration:5.9s; --rotation:1080deg;"></div>
+<div class="falling confetti cc1" style="left:89%; animation-duration:7.2s; --rotation:-540deg;"></div>
+<div class="falling lama"         style="left:94%; animation-duration:8.4s; --rotation:1440deg;">🦙</div>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+    <a href="index.html" class="back-link">← Retour à l'accueil</a>
+    <span class="page-title">Morpion Ultimate</span>
+    <div style="width:180px"></div>
+</div>
+
+<!-- MULTIPLAYER BAR -->
+<div class="mp-bar">
+    <div class="mp-section">
+        <span class="mp-label">Votre code :</span>
+        <span class="mp-code" id="myCode" title="Cliquer pour copier">–––––––––––</span>
+    </div>
+    <div class="mp-divider"></div>
+    <div class="mp-section">
+        <span class="mp-label">Rejoindre :</span>
+        <input class="mp-join-input" id="joinInput" placeholder="CODE PARTIE" maxlength="10" spellcheck="false">
+        <button class="mp-btn" id="joinBtn">Rejoindre</button>
+    </div>
+    <div class="mp-divider"></div>
+    <div class="mp-section">
+        <span class="mp-status solo" id="mpStatus">Solo</span>
+        <button class="mp-btn danger" id="leaveBtn" style="display:none">Quitter</button>
+    </div>
+    <div class="offline-notice" id="offlineNotice">⚠ Synchronisation impossible</div>
+</div>
+
+<!-- GAME WRAPPER -->
+<div class="game-wrapper">
+    <div class="game-window" id="gameWindow">
+
+        <!-- HOME PAGE -->
+        <div class="page active" id="page-home">
+            <h1 class="home-title">Morpion Ultimate</h1>
+            <p class="home-subtitle">Choisissez votre mode de jeu</p>
+            <div class="modes">
+                <div class="mode-card" onclick="startGame('classic')">
+                    <div class="mode-icon">✕ ○</div>
+                    <h2>Classique</h2>
+                    <p>Alignez 3 symboles dans une grille 3×3. Le morpion traditionnel.</p>
+                </div>
+                <div class="mode-card" onclick="startGame('duration')">
+                    <div class="mode-icon">∞</div>
+                    <h2>Durée</h2>
+                    <p>Vos symboles disparaissent après 3 poses. Plus de match nul possible !</p>
+                </div>
+                <div class="mode-card" onclick="startGame('ultimate')">
+                    <div class="mode-icon">⊞</div>
+                    <h2>9×9</h2>
+                    <p>Super Morpion : 9 sous-grilles imbriquées. Stratégie avancée !</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- CLASSIC PAGE -->
+        <div class="page" id="page-classic">
+            <div class="game-header">
+                <span class="back-game-link" onclick="goHome()">← Retour</span>
+                <span class="game-title">Mode Classique</span>
+                <div style="width:80px"></div>
+            </div>
+            <div class="status-bar" id="classic-status">Au tour de X</div>
+            <div class="grid-3x3" id="classic-grid"></div>
+            <div class="actions">
+                <button class="btn btn-primary" onclick="resetGame('classic')">Nouvelle partie</button>
+                <button class="btn" onclick="goHome()">Menu</button>
+            </div>
+        </div>
+
+        <!-- DURATION PAGE -->
+        <div class="page" id="page-duration">
+            <div class="game-header">
+                <span class="back-game-link" onclick="goHome()">← Retour</span>
+                <span class="game-title">Mode Durée</span>
+                <div style="width:80px"></div>
+            </div>
+            <div class="status-bar" id="duration-status">Au tour de X</div>
+            <div class="grid-3x3" id="duration-grid"></div>
+            <div class="actions">
+                <button class="btn btn-primary" onclick="resetGame('duration')">Nouvelle partie</button>
+                <button class="btn" onclick="goHome()">Menu</button>
+            </div>
+        </div>
+
+        <!-- ULTIMATE PAGE -->
+        <div class="page" id="page-ultimate">
+            <div class="game-header">
+                <span class="back-game-link" onclick="goHome()">← Retour</span>
+                <span class="game-title">Mode 9×9</span>
+                <div style="width:80px"></div>
+            </div>
+            <div class="win-condition-selector" id="ultimate-mode-selector">
+                <button class="win-option active" id="btn-mode-points" onclick="setUltimateMode('points')">🏆 Points (max sous-cases)</button>
+                <button class="win-option" id="btn-mode-align" onclick="setUltimateMode('align')">➡ Aligner 3 victoires</button>
+            </div>
+            <div class="scoreboard" id="ultimate-scoreboard" style="display:none">
+                <div class="score-item score-x"><div class="score-label">Joueur X</div><div class="score-value" id="score-x">0</div></div>
+                <div class="score-item score-o"><div class="score-label">Joueur O</div><div class="score-value" id="score-o">0</div></div>
+            </div>
+            <div class="status-bar" id="ultimate-status">Au tour de X</div>
+            <div class="ultimate-container">
+                <div class="mega-grid" id="ultimate-grid"></div>
+            </div>
+            <div class="actions">
+                <button class="btn btn-primary" onclick="resetGame('ultimate')">Nouvelle partie</button>
+                <button class="btn" onclick="goHome()">Menu</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="copy-toast" id="copyToast">✓ Code copié !</div>
+
+<script>
+// =====================================================================
+// GAME STATE
+// =====================================================================
+
+const LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+function checkWinner(board) {
+    for (const [a,b,c] of LINES) {
+        if (board[a] && board[a] === board[b] && board[a] === board[c])
+            return { winner: board[a], line: [a,b,c] };
+    }
+    return { winner: null, line: null };
+}
+
+// Classic state
+let classic = null;
+// Duration state
+let duration = null;
+// Ultimate state
+let ultimate = null;
+
+let currentMode = null;
+
+function freshClassic() {
+    return { board: Array(9).fill(null), current: 'X', winner: null, winLine: null };
+}
+function freshDuration() {
+    return { board: Array(9).fill(null), current: 'X', winner: null, winLine: null, history: [] };
+}
+function freshUltimate(winMode = 'points') {
+    return {
+        boards: Array.from({length:9}, () => Array(9).fill(null)),
+        current: 'X', winner: null, winLine: null,
+        subWinners: Array(9).fill(null), subDraws: Array(9).fill(false),
+        activeGrid: null, winMode,
+    };
+}
+
+function resetGame(mode) {
+    if (mode === 'classic') { classic = freshClassic(); renderClassic(); }
+    else if (mode === 'duration') { duration = freshDuration(); renderDuration(); }
+    else if (mode === 'ultimate') {
+        const wm = ultimate ? ultimate.winMode : 'points';
+        ultimate = freshUltimate(wm);
+        renderUltimate();
+    }
+    pushState();
+}
+
+// =====================================================================
+// PAGE NAVIGATION
+// =====================================================================
+
+function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+}
+
+function goHome() {
+    currentMode = null;
+    showPage('home');
+}
+
+function startGame(mode) {
+    currentMode = mode;
+    if (mode === 'classic' && !classic) classic = freshClassic();
+    if (mode === 'duration' && !duration) duration = freshDuration();
+    if (mode === 'ultimate' && !ultimate) ultimate = freshUltimate();
+    showPage(mode);
+    render(mode);
+    pushState();
+}
+
+// =====================================================================
+// CLASSIC LOGIC
+// =====================================================================
+
+function classicClick(i) {
+    if (!classic || classic.winner || classic.board[i]) return;
+    if (mp.connected && mp.mySymbol !== classic.current) return; // not your turn in MP
+    classic.board[i] = classic.current;
+    const r = checkWinner(classic.board);
+    if (r.winner) { classic.winner = r.winner; classic.winLine = r.line; }
+    else if (!classic.board.includes(null)) { classic.winner = 'Draw'; }
+    else { classic.current = classic.current === 'X' ? 'O' : 'X'; }
+    renderClassic();
+    pushState();
+}
+
+function renderClassic() {
+    if (!classic) return;
+    const grid = document.getElementById('classic-grid');
+    grid.innerHTML = '';
+    for (let i = 0; i < 9; i++) {
+        const v = classic.board[i];
+        const win = classic.winLine && classic.winLine.includes(i);
+        const cell = document.createElement('div');
+        cell.className = 'cell' + (win ? ' winning' : '') + (!v && !classic.winner ? '' : ' disabled');
+        if (v) cell.innerHTML = `<span class="symbol-${v.toLowerCase()}">${v === 'X' ? '✕' : '○'}</span>`;
+        if (!v && !classic.winner) cell.onclick = () => classicClick(i);
+        grid.appendChild(cell);
+    }
+    const s = document.getElementById('classic-status');
+    if (classic.winner === 'Draw') s.innerHTML = '<span class="winner-msg">Match nul !</span>';
+    else if (classic.winner) s.innerHTML = `<span class="winner-msg">Joueur <span class="player-${classic.winner.toLowerCase()}">${classic.winner}</span> a gagné !</span>`;
+    else {
+        let txt = `Au tour de <span class="player-${classic.current.toLowerCase()}">${classic.current}</span>`;
+        if (mp.connected) txt += ` <br><span class="turn-indicator ${mp.mySymbol === classic.current ? 'turn-mine' : 'turn-opponent'}">${mp.mySymbol === classic.current ? '→ Votre tour' : '⏳ Tour de l\'adversaire'}</span>`;
+        s.innerHTML = txt;
+    }
+}
+
+// =====================================================================
+// DURATION LOGIC
+// =====================================================================
+
+function durationClick(i) {
+    if (!duration || duration.winner || duration.board[i]) return;
+    if (mp.connected && mp.mySymbol !== duration.current) return;
+    const playerMoves = duration.history.filter(m => m.player === duration.current);
+    if (playerMoves.length >= 3) {
+        const oldest = playerMoves[0];
+        duration.board[oldest.index] = null;
+        duration.history = duration.history.filter(m => m !== oldest);
+    }
+    duration.board[i] = duration.current;
+    duration.history.push({player: duration.current, index: i});
+    const r = checkWinner(duration.board);
+    if (r.winner) { duration.winner = r.winner; duration.winLine = r.line; }
+    else { duration.current = duration.current === 'X' ? 'O' : 'X'; }
+    renderDuration();
+    pushState();
+}
+
+function getFadingIndex() {
+    if (!duration || duration.winner) return null;
+    const moves = duration.history.filter(m => m.player === duration.current);
+    return moves.length >= 3 ? moves[0].index : null;
+}
+
+function renderDuration() {
+    if (!duration) return;
+    const grid = document.getElementById('duration-grid');
+    grid.innerHTML = '';
+    const fading = getFadingIndex();
+    for (let i = 0; i < 9; i++) {
+        const v = duration.board[i];
+        const win = duration.winLine && duration.winLine.includes(i);
+        const fade = fading === i && !duration.winner;
+        const cell = document.createElement('div');
+        cell.className = 'cell' + (win ? ' winning' : '') + (fade ? ' fading' : '') + (!v && !duration.winner ? '' : ' disabled');
+        if (v) cell.innerHTML = `<span class="symbol-${v.toLowerCase()}">${v === 'X' ? '✕' : '○'}</span>`;
+        if (!v && !duration.winner) cell.onclick = () => durationClick(i);
+        grid.appendChild(cell);
+    }
+    const s = document.getElementById('duration-status');
+    if (duration.winner) s.innerHTML = `<span class="winner-msg">Joueur <span class="player-${duration.winner.toLowerCase()}">${duration.winner}</span> a gagné !</span>`;
+    else {
+        let txt = `Au tour de <span class="player-${duration.current.toLowerCase()}">${duration.current}</span>`;
+        if (fading !== null) txt += `<br><small style="color:#9b7cc8; font-size:0.8em">(Le symbole estompé va disparaître)</small>`;
+        if (mp.connected) txt += ` <br><span class="turn-indicator ${mp.mySymbol === duration.current ? 'turn-mine' : 'turn-opponent'}">${mp.mySymbol === duration.current ? '→ Votre tour' : '⏳ Tour de l\'adversaire'}</span>`;
+        s.innerHTML = txt;
+    }
+}
+
+// =====================================================================
+// ULTIMATE LOGIC
+// =====================================================================
+
+function isSubDone(g) {
+    return ultimate.subWinners[g] !== null || ultimate.subDraws[g];
+}
+
+function ultimateClick(g, c) {
+    if (!ultimate || ultimate.winner) return;
+    if (mp.connected && mp.mySymbol !== ultimate.current) return;
+    const canPlay = (ultimate.activeGrid === null || ultimate.activeGrid === g) && !isSubDone(g) && !ultimate.boards[g][c];
+    if (!canPlay) return;
+
+    ultimate.boards[g][c] = ultimate.current;
+    const subR = checkWinner(ultimate.boards[g]);
+    if (subR.winner) {
+        ultimate.subWinners[g] = subR.winner;
+    } else if (!ultimate.boards[g].includes(null)) {
+        ultimate.subDraws[g] = true;
+    }
+
+    if (ultimate.winMode === 'align') {
+        const mainR = checkWinner(ultimate.subWinners);
+        if (mainR.winner) { ultimate.winner = mainR.winner; ultimate.winLine = mainR.line; }
+        else if (Array.from({length:9}, (_,i)=>i).every(i => isSubDone(i))) {
+            ultimate.winner = 'Draw';
+        }
+    } else {
+        if (Array.from({length:9}, (_,i)=>i).every(i => isSubDone(i))) {
+            const xP = ultimate.subWinners.filter(w=>w==='X').length;
+            const oP = ultimate.subWinners.filter(w=>w==='O').length;
+            ultimate.winner = xP > oP ? 'X' : oP > xP ? 'O' : 'Draw';
+        }
+    }
+
+    ultimate.activeGrid = isSubDone(c) ? null : c;
+    if (!ultimate.winner) ultimate.current = ultimate.current === 'X' ? 'O' : 'X';
+    renderUltimate();
+    pushState();
+}
+
+function setUltimateMode(mode) {
+    if (ultimate) ultimate.winMode = mode;
+    else ultimate = freshUltimate(mode);
+    document.getElementById('btn-mode-points').classList.toggle('active', mode === 'points');
+    document.getElementById('btn-mode-align').classList.toggle('active', mode === 'align');
+    document.getElementById('ultimate-scoreboard').style.display = mode === 'points' ? 'flex' : 'none';
+    renderUltimate();
+    pushState();
+}
+
+function renderUltimate() {
+    if (!ultimate) return;
+    const xP = ultimate.subWinners.filter(w=>w==='X').length;
+    const oP = ultimate.subWinners.filter(w=>w==='O').length;
+    document.getElementById('score-x').textContent = xP;
+    document.getElementById('score-o').textContent = oP;
+    document.getElementById('ultimate-scoreboard').style.display = ultimate.winMode === 'points' ? 'flex' : 'none';
+    document.getElementById('btn-mode-points').classList.toggle('active', ultimate.winMode === 'points');
+    document.getElementById('btn-mode-align').classList.toggle('active', ultimate.winMode === 'align');
+
+    const grid = document.getElementById('ultimate-grid');
+    grid.innerHTML = '';
+    for (let g = 0; g < 9; g++) {
+        const sw = ultimate.subWinners[g];
+        const sd = ultimate.subDraws[g];
+        const done = isSubDone(g);
+        const active = (ultimate.activeGrid === null || ultimate.activeGrid === g) && !done && !ultimate.winner;
+        const wl = ultimate.winLine && ultimate.winLine.includes(g);
+        const sb = document.createElement('div');
+        let cls = 'sub-board';
+        if (active) cls += ' active-target';
+        if (sw === 'X') cls += ' won-x';
+        if (sw === 'O') cls += ' won-o';
+        if (sd) cls += ' drawn';
+        if (wl) cls += ' win-line';
+        sb.className = cls;
+        if (sw) {
+            const ov = document.createElement('div');
+            ov.className = 'sub-board-overlay overlay-' + sw.toLowerCase();
+            ov.textContent = sw === 'X' ? '✕' : '○';
+            sb.appendChild(ov);
+        } else if (sd) {
+            const ov = document.createElement('div');
+            ov.className = 'sub-board-overlay overlay-draw';
+            ov.textContent = '=';
+            sb.appendChild(ov);
+        }
+        const mg = document.createElement('div');
+        mg.className = 'mini-grid';
+        for (let c = 0; c < 9; c++) {
+            const v = ultimate.boards[g][c];
+            const canPlay = !v && !done && active && !ultimate.winner;
+            const mc = document.createElement('div');
+            mc.className = 'mini-cell' + (canPlay ? '' : ' disabled');
+            if (v) mc.innerHTML = `<span class="symbol-${v.toLowerCase()}">${v === 'X' ? '✕' : '○'}</span>`;
+            if (canPlay) mc.onclick = () => ultimateClick(g, c);
+            mg.appendChild(mc);
+        }
+        sb.appendChild(mg);
+        grid.appendChild(sb);
+    }
+
+    const s = document.getElementById('ultimate-status');
+    if (ultimate.winner === 'Draw') s.innerHTML = '<span class="winner-msg">Match nul !</span>';
+    else if (ultimate.winner) s.innerHTML = `<span class="winner-msg">Joueur <span class="player-${ultimate.winner.toLowerCase()}">${ultimate.winner}</span> a gagné !</span>`;
+    else {
+        let txt = `Au tour de <span class="player-${ultimate.current.toLowerCase()}">${ultimate.current}</span>`;
+        if (ultimate.activeGrid !== null) txt += ` — Case n°${ultimate.activeGrid + 1}`;
+        else txt += ` — Jouez où vous voulez`;
+        if (mp.connected) txt += ` <br><span class="turn-indicator ${mp.mySymbol === ultimate.current ? 'turn-mine' : 'turn-opponent'}">${mp.mySymbol === ultimate.current ? '→ Votre tour' : '⏳ Tour de l\'adversaire'}</span>`;
+        s.innerHTML = txt;
+    }
+}
+
+function render(mode) {
+    if (mode === 'classic') renderClassic();
+    else if (mode === 'duration') renderDuration();
+    else if (mode === 'ultimate') renderUltimate();
+}
+
+// =====================================================================
+// MULTIPLAYER SYSTEM
+// =====================================================================
+
+const mp = {
+    myCode: '',          // this player's session code
+    partnerCode: '',     // opponent's code
+    connected: false,    // is there a second player?
+    mySymbol: 'X',       // X = host, O = guest
+    isHost: false,
+    pollInterval: null,
+    lastSeen: 0,
+};
+
+// Generate a random 10-char alphanumeric code
+function genCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    return Array.from({length:10}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
+// Storage key for a session
+function sessionKey(code) { return 'morpion_session_' + code; }
+function stateKey(code) { return 'morpion_state_' + code; }
+
+// Initialize this player's code
+function initMP() {
+    mp.myCode = genCode();
+    mp.isHost = true;
+    mp.mySymbol = 'X';
+    document.getElementById('myCode').textContent = mp.myCode;
+
+    // Write our "session alive" heartbeat to localStorage
+    writeSession(mp.myCode, { alive: true, ts: Date.now(), hasPartner: false });
+
+    // Poll for someone joining us
+    mp.pollInterval = setInterval(pollForPartner, 1500);
+}
+
+function writeSession(code, data) {
+    try { localStorage.setItem(sessionKey(code), JSON.stringify(data)); } catch(e) {}
+}
+function readSession(code) {
+    try { const d = localStorage.getItem(sessionKey(code)); return d ? JSON.parse(d) : null; } catch(e) { return null; }
+}
+function writeState(code, state) {
+    try { localStorage.setItem(stateKey(code), JSON.stringify({...state, ts: Date.now()})); } catch(e) {}
+}
+function readState(code) {
+    try { const d = localStorage.getItem(stateKey(code)); return d ? JSON.parse(d) : null; } catch(e) { return null; }
+}
+
+function pollForPartner() {
+    // Check if anyone wrote a "join request" on our session key with their code
+    const sess = readSession(mp.myCode);
+    if (sess && sess.joinerCode && !mp.connected) {
+        // Someone is joining us!
+        mp.partnerCode = sess.joinerCode;
+        mp.connected = true;
+        mp.isHost = true;
+        mp.mySymbol = 'X';
+        // Acknowledge
+        writeSession(mp.myCode, { alive: true, ts: Date.now(), hasPartner: true, joinerCode: mp.partnerCode, ack: true });
+        onConnected();
+        startStatePoll();
+    }
+}
+
+function joinSession(code) {
+    code = code.toUpperCase().trim();
+    if (code.length !== 10) { alert('Le code doit faire 10 caractères.'); return; }
+    if (code === mp.myCode) { alert('Vous ne pouvez pas rejoindre votre propre partie !'); return; }
+
+    // Check if host session exists
+    const sess = readSession(code);
+    if (!sess || !sess.alive) {
+        // Try anyway — host might not be on same device. Attempt join and poll for ack.
+    }
+
+    mp.partnerCode = code;
+    mp.isHost = false;
+    mp.mySymbol = 'O';
+
+    // Write our join request onto the host's session
+    const current = readSession(code) || {};
+    writeSession(code, { ...current, joinerCode: mp.myCode, ts: Date.now() });
+
+    // Write our own session too
+    writeSession(mp.myCode, { alive: true, ts: Date.now(), hasPartner: false });
+
+    // Poll for host ack and then start
+    let tries = 0;
+    const tryJoin = setInterval(() => {
+        tries++;
+        const hostSess = readSession(code);
+        if (hostSess && hostSess.ack) {
+            clearInterval(tryJoin);
+            mp.connected = true;
+            onConnected();
+            startStatePoll();
+        } else if (tries > 20) {
+            // proceed anyway — maybe cross-tab storage is blocked; try BroadcastChannel
+            clearInterval(tryJoin);
+            mp.connected = true;
+            onConnected();
+            startStatePoll();
+        }
+    }, 500);
+}
+
+function onConnected() {
+    clearInterval(mp.pollInterval);
+    updateMPStatus();
+    // If guest, load host state
+    if (!mp.isHost) {
+        const st = readState(mp.partnerCode);
+        if (st) applyRemoteState(st);
+    } else {
+        // Host pushes current state for guest
+        pushState();
+    }
+}
+
+function startStatePoll() {
+    if (mp.pollInterval) clearInterval(mp.pollInterval);
+    mp.pollInterval = setInterval(() => {
+        const targetCode = mp.isHost ? mp.myCode : mp.partnerCode;
+        const remoteCode = mp.isHost ? mp.partnerCode : mp.myCode;
+
+        // Read state from the other player
+        const st = readState(remoteCode);
+        if (st && st.ts > mp.lastSeen) {
+            mp.lastSeen = st.ts;
+            applyRemoteState(st);
+        }
+
+        // Keep our session alive
+        const curr = readSession(mp.myCode) || {};
+        writeSession(mp.myCode, { ...curr, alive: true, ts: Date.now() });
+
+        // Check partner still alive
+        const partnerSess = readSession(mp.isHost ? mp.partnerCode : mp.partnerCode);
+        if (partnerSess && Date.now() - partnerSess.ts > 8000) {
+            // partner seems gone — show offline notice but don't disconnect
+            document.getElementById('offlineNotice').classList.add('show');
+        } else {
+            document.getElementById('offlineNotice').classList.remove('show');
+        }
+    }, 800);
+}
+
+function pushState() {
+    if (!mp.connected) return;
+    const state = {
+        classic, duration, ultimate,
+        currentMode,
+        ts: Date.now(),
+    };
+    writeState(mp.myCode, state);
+}
+
+function applyRemoteState(st) {
+    // Only update what the remote player controls
+    // Guest sees host move (X moves), host sees guest move (O moves)
+    let changed = false;
+    if (st.classic && JSON.stringify(st.classic) !== JSON.stringify(classic)) {
+        classic = st.classic; changed = true;
+    }
+    if (st.duration && JSON.stringify(st.duration) !== JSON.stringify(duration)) {
+        duration = st.duration; changed = true;
+    }
+    if (st.ultimate && JSON.stringify(st.ultimate) !== JSON.stringify(ultimate)) {
+        ultimate = st.ultimate; changed = true;
+    }
+    if (st.currentMode && st.currentMode !== currentMode) {
+        currentMode = st.currentMode;
+        if (currentMode) { showPage(currentMode); }
+        else { showPage('home'); }
+        changed = true;
+    }
+    if (changed && currentMode) render(currentMode);
+}
+
+function leaveSession() {
+    if (mp.pollInterval) clearInterval(mp.pollInterval);
+    try { localStorage.removeItem(sessionKey(mp.myCode)); } catch(e) {}
+    mp.connected = false;
+    mp.partnerCode = '';
+    mp.isHost = true;
+    mp.mySymbol = 'X';
+    document.getElementById('joinInput').value = '';
+    document.getElementById('leaveBtn').style.display = 'none';
+    document.getElementById('offlineNotice').classList.remove('show');
+    // Re-init
+    initMP();
+    updateMPStatus();
+}
+
+function updateMPStatus() {
+    const el = document.getElementById('mpStatus');
+    const lb = document.getElementById('leaveBtn');
+    if (!mp.connected) {
+        el.className = 'mp-status solo';
+        el.textContent = 'Solo';
+        lb.style.display = 'none';
+    } else if (mp.isHost) {
+        el.className = 'mp-status connected';
+        el.textContent = `✓ Connecté — Vous êtes X`;
+        lb.style.display = 'inline-block';
+    } else {
+        el.className = 'mp-status joined';
+        el.textContent = `✓ Connecté — Vous êtes O`;
+        lb.style.display = 'inline-block';
+    }
+}
+
+// Copy code on click
+document.getElementById('myCode').addEventListener('click', () => {
+    const code = document.getElementById('myCode').textContent;
+    navigator.clipboard.writeText(code).catch(() => {});
+    const t = document.getElementById('copyToast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+});
+
+document.getElementById('joinBtn').addEventListener('click', () => {
+    const code = document.getElementById('joinInput').value.trim();
+    if (!code) return;
+    joinSession(code);
+    document.getElementById('joinInput').value = '';
+    // Update status to waiting
+    const el = document.getElementById('mpStatus');
+    el.className = 'mp-status waiting';
+    el.textContent = '⏳ Connexion…';
+});
+
+document.getElementById('joinInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('joinBtn').click();
+});
+
+document.getElementById('leaveBtn').addEventListener('click', leaveSession);
+
+// Auto uppercase join input
+document.getElementById('joinInput').addEventListener('input', function() {
+    this.value = this.value.toUpperCase();
+});
+
+// =====================================================================
+// INIT
+// =====================================================================
+initMP();
+updateMPStatus();
+</script>
+</body>
+</html>
