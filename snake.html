@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snake - Jeu en ligne</title>
+<style>
+:root {
+    --fond: #f7f3ff;
+    --principal: #6c63ff;
+    --secondaire: #ffb703;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, var(--fond), #e6e1ff);
+    height: 100vh;
+    overflow: hidden;
+}
+.top-bar {
+    width: 100%;
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 100;
+    position: relative;
+}
+.back-link {
+    color: var(--principal);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1em;
+    transition: opacity .2s;
+}
+.back-link:hover { opacity: .7; }
+.page-title {
+    color: var(--principal);
+    font-size: 1.4em;
+    font-weight: 700;
+}
+.game-wrapper {
+    width: 100%;
+    height: calc(100vh - 45px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#gameCanvas {
+    border-radius: 12px;
+    cursor: default;
+    max-width: 100%;
+    max-height: 100%;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 8px 32px rgba(0,0,0,.2);
+}
+.falling {
+    position: fixed;
+    top: -10%;
+    animation: fall linear infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+.confetti { width: 12px; height: 12px; opacity: .8; }
+.lama { font-size: 2rem; }
+.c1 { background: var(--principal); }
+.c2 { background: var(--secondaire); }
+.c3 { background: #ff6f91; }
+.c4 { background: #00c9a7; }
+.c5 { background: #845ec2; }
+@keyframes fall {
+    0%   { transform: translateY(0) rotate(0deg); }
+    100% { transform: translateY(120vh) rotate(var(--rotation)); }
+}
+</style>
+</head>
+<body>
+
+<div class="falling confetti c1" style="left:5%;  animation-duration:5s;   --rotation:720deg;"></div>
+<div class="falling lama"        style="left:12%; animation-duration:7s;   --rotation:-1080deg;">🦙</div>
+<div class="falling confetti c2" style="left:18%; animation-duration:6s;   --rotation:540deg;"></div>
+<div class="falling lama"        style="left:25%; animation-duration:8s;   --rotation:900deg;">🦙</div>
+<div class="falling confetti c3" style="left:32%; animation-duration:4.5s; --rotation:-720deg;"></div>
+<div class="falling lama"        style="left:38%; animation-duration:6.5s; --rotation:1260deg;">🦙</div>
+<div class="falling confetti c4" style="left:45%; animation-duration:5.8s; --rotation:360deg;"></div>
+<div class="falling lama"        style="left:52%; animation-duration:7.2s; --rotation:-1440deg;">🦙</div>
+<div class="falling confetti c5" style="left:60%; animation-duration:6.1s; --rotation:900deg;"></div>
+<div class="falling lama"        style="left:67%; animation-duration:8.5s; --rotation:-1080deg;">🦙</div>
+<div class="falling confetti c1" style="left:74%; animation-duration:5.3s; --rotation:720deg;"></div>
+<div class="falling lama"        style="left:82%; animation-duration:7.9s; --rotation:1620deg;">🦙</div>
+<div class="falling confetti c2" style="left:90%; animation-duration:6.7s; --rotation:-900deg;"></div>
+
+<div class="top-bar">
+    <a href="index.html" class="back-link">← Retour à l'accueil</a>
+    <h1 class="page-title">🐍 Snake</h1>
+    <div style="width:160px;"></div>
+</div>
+
+<div class="game-wrapper">
+    <canvas id="gameCanvas"></canvas>
+</div>
+
+<script>
+(function() {
+'use strict';
+
+// ── Canvas setup ──────────────────────────────────────────────────────────────
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+const W = 800, H = 650;
+canvas.width  = W;
+canvas.height = H;
+
+// ── Constantes ────────────────────────────────────────────────────────────────
+const GS   = 20;   // GRID_SIZE
+const COLS = 30;
+const ROWS = 25;
+const OX   = (W - COLS * GS) / 2;
+const OY   = (H - ROWS * GS) / 2 + 20;
+
+const BG_COLOR    = '#0d1b2e';
+const GRID_COLOR  = '#162540';
+const SNAKE_HEAD  = '#50dc78';
+const SNAKE_BODY  = '#32aa5a';
+const SNAKE_DARK  = '#1e6e3c';
+const FOOD_COLOR  = '#ff5050';
+const GOLD        = '#ffd700';
+const RED         = '#dc3232';
+const CYAN        = '#50dcdc';
+const ORANGE      = '#ff8c00';
+const PANEL_BG    = '#141c30';
+const PANEL_BD    = '#3c5a8c';
+const WALL_COLOR  = '#a05a28';
+const WALL_BD     = '#dc8c3c';
+const IM_RED      = '#b41414';
+const IM_GOLD     = '#d4af37';
+
+const SPEEDS = {
+    'Flemme':                      220,
+    'Facile':                      180,
+    'Normal':                      120,
+    'Difficile':                    70,
+    'Ironman (franchement, courage)': 70,
+};
+const DIFF_LIST = Object.keys(SPEEDS);
+
+// ── État global ───────────────────────────────────────────────────────────────
+let state       = 'MENU';  // MENU | PLAYING | PAUSED | GAME_OVER
+let difficulty  = 'Normal';
+let diffIndex   = 2;
+let highScores  = {};
+DIFF_LIST.forEach(d => highScores[d] = 0);
+
+let snake, dir, nextDir, food, score, elapsed, lastMove;
+let particles, foodPulse;
+
+// Flemme boost
+let flemmeBoost     = 0;
+let flemmeLastKey   = 0;
+let flemmeKeyHeld   = false;
+
+// Ironman
+let ironmanSpeed, ironmanFruits, ironmanWallTier, walls;
+
+// Touches maintenues
+const keysHeld = {};
+
+// ── Init / Reset ──────────────────────────────────────────────────────────────
+function reset() {
+    const mc = Math.floor(COLS / 2), mr = Math.floor(ROWS / 2);
+    snake      = [[mc, mr], [mc-1, mr], [mc-2, mr]];
+    dir        = [1, 0];
+    nextDir    = [1, 0];
+    score      = 0;
+    elapsed    = 0;
+    lastMove   = performance.now();
+    particles  = [];
+    foodPulse  = 0;
+
+    flemmeBoost   = 0;
+    flemmeLastKey = performance.now();
+    flemmeKeyHeld = false;
+
+    ironmanSpeed     = SPEEDS['Ironman (franchement, courage)'];
+    ironmanFruits    = 0;
+    ironmanWallTier  = 0;
+    walls            = new Set();
+
+    placeFood();
+}
+
+function cellKey(c, r) { return c + ',' + r; }
+
+function placeFood() {
+    const snakeSet = new Set(snake.map(([c,r]) => cellKey(c,r)));
+    const candidates = [];
+    for (let c = 0; c < COLS; c++)
+        for (let r = 0; r < ROWS; r++)
+            if (!snakeSet.has(cellKey(c,r)) && !walls.has(cellKey(c,r)))
+                candidates.push([c, r]);
+    food = candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+// ── Vitesse effective ─────────────────────────────────────────────────────────
+function effectiveSpeed() {
+    if (difficulty === 'Ironman (franchement, courage)') return ironmanSpeed;
+    if (difficulty === 'Flemme') {
+        const base = SPEEDS['Flemme'];
+        return Math.max(40, base * (1 - flemmeBoost * 0.75));
+    }
+    return SPEEDS[difficulty];
+}
+
+// ── Boost Flemme ──────────────────────────────────────────────────────────────
+function flemmeUpdateBoost(dt) {
+    const now = performance.now();
+    const DIR_KEYS = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',
+                      'z','Z','s','S','q','Q','a','A','d','D','w','W'];
+    const held = DIR_KEYS.some(k => keysHeld[k]);
+
+    if (held) {
+        flemmeKeyHeld = true;
+        flemmeLastKey = now;
+        flemmeBoost = Math.min(1, flemmeBoost + dt * 0.0006);
+    } else {
+        flemmeKeyHeld = false;
+        const idle = now - flemmeLastKey;
+        if (idle > 1500) {
+            flemmeBoost = Math.max(0, flemmeBoost - dt * 0.0008);
+        }
+    }
+}
+
+// ── Mouvement ─────────────────────────────────────────────────────────────────
+function move() {
+    dir = nextDir.slice();
+    let [hc, hr] = snake[0];
+    let nc = hc + dir[0];
+    let nr = hr + dir[1];
+
+    if (difficulty === 'Flemme') {
+        nc = ((nc % COLS) + COLS) % COLS;
+        nr = ((nr % ROWS) + ROWS) % ROWS;
+    } else {
+        if (nc < 0 || nc >= COLS || nr < 0 || nr >= ROWS) { die(); return; }
+        if (difficulty === 'Ironman (franchement, courage)') {
+            if (walls.has(cellKey(nc, nr))) { die(); return; }
+        }
+        if (snake.some(([c,r]) => c === nc && r === nr)) { die(); return; }
+    }
+
+    snake.unshift([nc, nr]);
+
+    if (nc === food[0] && nr === food[1]) {
+        score += 10;
+        if (score > highScores[difficulty]) highScores[difficulty] = score;
+        spawnFoodParticles();
+        if (difficulty === 'Ironman (franchement, courage)') ironmanOnEat();
+        placeFood();
+    } else {
+        snake.pop();
+    }
+}
+
+function ironmanOnEat() {
+    ironmanFruits++;
+    ironmanSpeed = Math.max(10, ironmanSpeed / 2);
+    if (ironmanFruits % 5 === 0) {
+        spawnWallBlock(ironmanWallTier);
+        ironmanWallTier++;
+    }
+}
+
+function spawnWallBlock(tier) {
+    const size = tier + 1;
+    const forbidden = new Set([
+        ...snake.map(([c,r]) => cellKey(c,r)),
+        cellKey(food[0], food[1]),
+        ...walls
+    ]);
+    for (let attempt = 0; attempt < 500; attempt++) {
+        const horiz = Math.random() < 0.5;
+        const maxC  = COLS - (horiz ? size : 1);
+        const maxR  = ROWS - (horiz ? 1 : size);
+        if (maxC < 0 || maxR < 0) continue;
+        const col = Math.floor(Math.random() * maxC);
+        const row = Math.floor(Math.random() * maxR);
+        const cells = [];
+        for (let i = 0; i < size; i++)
+            cells.push(cellKey(col + (horiz ? i : 0), row + (horiz ? 0 : i)));
+        if (cells.every(k => !forbidden.has(k))) {
+            cells.forEach(k => walls.add(k));
+            return;
+        }
+    }
+}
+
+function die() {
+    snake.forEach(([c,r]) => {
+        const px = OX + c * GS + GS/2, py = OY + r * GS + GS/2;
+        for (let i = 0; i < 6; i++) particles.push(new Particle(px, py, SNAKE_HEAD));
+    });
+    state = 'GAME_OVER';
+}
+
+function spawnFoodParticles() {
+    const px = OX + food[0] * GS + GS/2;
+    const py = OY + food[1] * GS + GS/2;
+    for (let i = 0; i < 20; i++) particles.push(new Particle(px, py, FOOD_COLOR));
+}
+
+// ── Particules ────────────────────────────────────────────────────────────────
+class Particle {
+    constructor(x, y, color) {
+        this.x = x; this.y = y; this.color = color;
+        const a = Math.random() * Math.PI * 2;
+        const sp = 1.5 + Math.random() * 3.5;
+        this.vx = Math.cos(a) * sp;
+        this.vy = Math.sin(a) * sp;
+        this.life  = 1;
+        this.decay = 0.03 + Math.random() * 0.04;
+        this.r     = 2 + Math.floor(Math.random() * 4);
+    }
+    update(dt) {
+        this.x  += this.vx;
+        this.y  += this.vy;
+        this.vy += 0.1;
+        this.life -= this.decay;
+    }
+    draw() {
+        if (this.life <= 0) return;
+        const r = Math.max(1, this.r * this.life);
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, r, 0, Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+}
+
+// ── Helpers dessin ────────────────────────────────────────────────────────────
+function roundRect(x, y, w, h, r, fill, stroke, lineW) {
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y,   x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x,   y+h, r);
+    ctx.arcTo(x,   y+h, x,   y,   r);
+    ctx.arcTo(x,   y,   x+w, y,   r);
+    ctx.closePath();
+    if (fill)   { ctx.fillStyle   = fill; ctx.fill(); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lineW||1; ctx.stroke(); }
+}
+
+function glow(x, y, radius, color, alpha) {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, radius);
+    g.addColorStop(0, color.replace(')', `,${alpha})`).replace('rgb','rgba'));
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI*2);
+    ctx.fill();
+}
+
+function hexToRgb(hex) {
+    const r = parseInt(hex.slice(1,3),16);
+    const g = parseInt(hex.slice(3,5),16);
+    const b = parseInt(hex.slice(5,7),16);
+    return [r,g,b];
+}
+function lerpColor(c1, c2, t) {
+    const [r1,g1,b1] = hexToRgb(c1);
+    const [r2,g2,b2] = hexToRgb(c2);
+    return `rgb(${Math.round(r1+(r2-r1)*t)},${Math.round(g1+(g2-g1)*t)},${Math.round(b1+(b2-b1)*t)})`;
+}
+
+// ── Polices ───────────────────────────────────────────────────────────────────
+function font(size, bold) {
+    return (bold ? 'bold ' : '') + size + 'px "Courier New", monospace';
+}
+
+// ── Dessin grille ─────────────────────────────────────────────────────────────
+function drawGrid() {
+    ctx.strokeStyle = GRID_COLOR;
+    ctx.lineWidth = 1;
+    for (let c = 0; c <= COLS; c++) {
+        const x = OX + c * GS;
+        ctx.beginPath(); ctx.moveTo(x, OY); ctx.lineTo(x, OY + ROWS*GS); ctx.stroke();
+    }
+    for (let r = 0; r <= ROWS; r++) {
+        const y = OY + r * GS;
+        ctx.beginPath(); ctx.moveTo(OX, y); ctx.lineTo(OX + COLS*GS, y); ctx.stroke();
+    }
+    const bdCol = difficulty === 'Ironman (franchement, courage)' ? IM_GOLD : PANEL_BD;
+    roundRect(OX-2, OY-2, COLS*GS+4, ROWS*GS+4, 4, null, bdCol, 2);
+}
+
+// ── Dessin jeu ────────────────────────────────────────────────────────────────
+function drawGame() {
+    // Murs Ironman
+    walls.forEach(k => {
+        const [c,r] = k.split(',').map(Number);
+        const px = OX + c*GS, py = OY + r*GS;
+        roundRect(px, py, GS, GS, 3, WALL_COLOR, WALL_BD, 1);
+    });
+
+    // Nourriture
+    const pulse = (Math.sin(foodPulse) + 1) / 2;
+    const glowR = 18 + pulse * 10;
+    const fx = OX + food[0]*GS + GS/2, fy = OY + food[1]*GS + GS/2;
+    const [fr,fg,fb] = hexToRgb(FOOD_COLOR);
+    const grd = ctx.createRadialGradient(fx,fy,0, fx,fy,glowR);
+    grd.addColorStop(0, `rgba(${fr},${fg},${fb},0.5)`);
+    grd.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath(); ctx.arc(fx, fy, glowR, 0, Math.PI*2); ctx.fill();
+    roundRect(OX + food[0]*GS+2, OY + food[1]*GS+2, GS-4, GS-4, 5, FOOD_COLOR, null);
+
+    // Serpent
+    const isIM = difficulty === 'Ironman (franchement, courage)';
+    snake.forEach(([c,r], i) => {
+        const px = OX + c*GS, py = OY + r*GS;
+        let color;
+        if (i === 0) {
+            color = isIM ? IM_RED : SNAKE_HEAD;
+        } else {
+            const t = i / Math.max(snake.length, 1);
+            if (isIM) {
+                color = `rgb(${Math.round(180*(1-t*0.5))},${Math.round(175*t*0.4)},${Math.round(20*(1-t*0.3))})`;
+            } else {
+                color = lerpColor(SNAKE_BODY, SNAKE_DARK, Math.min(1, t * 0.6));
+            }
+        }
+        roundRect(px+1, py+1, GS-2, GS-2, i===0 ? 6 : 4, color, null);
+
+        // Yeux sur la tête
+        if (i === 0) {
+            const [dx, dy] = dir;
+            const cx = px + GS/2, cy = py + GS/2;
+            ctx.fillStyle = '#000';
+            ctx.beginPath(); ctx.arc(cx + dy*4 - dx*2 + dx*4, cy - dx*4 - dy*2 + dy*4, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(cx - dy*4 - dx*2 + dx*4, cy + dx*4 - dy*2 + dy*4, 2, 0, Math.PI*2); ctx.fill();
+        }
+    });
+
+    // Particules
+    particles.forEach(p => p.draw());
+
+    // HUD
+    drawHUD();
+}
+
+function drawHUD() {
+    const hudY = 8;
+
+    // Score
+    ctx.fillStyle = '#ffffff';
+    ctx.font = font(22, true);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('Score : ' + String(score).padStart(4,'0'), OX, hudY);
+
+    ctx.fillStyle = GOLD;
+    ctx.font = font(14, false);
+    ctx.fillText('Meilleur : ' + String(highScores[difficulty]).padStart(4,'0'), OX, hudY+26);
+
+    // Temps
+    const mins = Math.floor(elapsed/60), secs = Math.floor(elapsed%60);
+    ctx.fillStyle = CYAN;
+    ctx.font = font(22, true);
+    ctx.textAlign = 'center';
+    ctx.fillText(String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0'), W/2, hudY);
+
+    // Difficulté
+    ctx.fillStyle = '#8296b4';
+    ctx.font = font(13, false);
+    ctx.textAlign = 'right';
+    ctx.fillText('[' + difficulty + ']  ESPACE=Pause', OX + COLS*GS, hudY+4);
+
+    ctx.fillStyle = SNAKE_HEAD;
+    ctx.fillText('Longueur : ' + snake.length, OX + COLS*GS, hudY+20);
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+
+    // Barre boost Flemme
+    if (difficulty === 'Flemme' && state === 'PLAYING') {
+        const bw = 120, bh = 8;
+        const bx = W/2 - bw/2, by = hudY + 28;
+        roundRect(bx, by, bw, bh, 4, '#28324a', null);
+        if (flemmeBoost > 0) {
+            const filled = bw * flemmeBoost;
+            const col = lerpColor(SNAKE_HEAD, ORANGE, flemmeBoost);
+            roundRect(bx, by, filled, bh, 4, col, null);
+        }
+        ctx.fillStyle = '#a0b0a0';
+        ctx.font = font(13, false);
+        ctx.textAlign = 'left';
+        ctx.fillText('BOOST', bx + bw + 6, by - 1);
+    }
+
+    // Infos Ironman
+    if (difficulty === 'Ironman (franchement, courage)' && state === 'PLAYING') {
+        const speedX = Math.max(1, Math.round(SPEEDS['Ironman (franchement, courage)'] / ironmanSpeed));
+        const nextWall = ironmanFruits % 5 !== 0 ? 5 - (ironmanFruits % 5) : 5;
+        const nextSize = ironmanWallTier + 1;
+        ctx.fillStyle = IM_GOLD;
+        ctx.font = font(13, false);
+        ctx.textAlign = 'center';
+        ctx.fillText(`x${speedX} vitesse  |  prochain mur dans ${nextWall} fruit(s)  [taille ${nextSize}]`, W/2, hudY+28);
+        ctx.textAlign = 'left';
+    }
+}
+
+// ── Écrans ────────────────────────────────────────────────────────────────────
+function drawMenu() {
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(0, 0, W, H);
+
+    const selDiff = DIFF_LIST[diffIndex];
+    const isIM    = selDiff === 'Ironman (franchement, courage)';
+    const titleC  = isIM ? IM_RED : SNAKE_HEAD;
+
+    // Titre + glow
+    ctx.font = font(46, true);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = SNAKE_BODY.replace('#','rgba(').replace(/(..)(..)(..)/, (m,r,g,b) =>
+        `rgba(${parseInt(r,16)},${parseInt(g,16)},${parseInt(b,16)}`)+',0.3)';
+    for (const off of [6,4,2]) {
+        ctx.fillStyle = `rgba(50,170,90,${0.08*off})`;
+        for (const [dx,dy] of [[-1,0],[1,0],[0,-1],[0,1]])
+            ctx.fillText('S  N  A  K  E', W/2 + dx*off, 110 + dy*off);
+    }
+    ctx.fillStyle = titleC;
+    ctx.fillText('S  N  A  K  E', W/2, 110);
+
+    // Sous-titre
+    const subs = {
+        'Flemme':   ['Les murs sont des portails, ton corps est indestructible !', '#c8dc8c'],
+        'Facile':   ["Mange les pommes, évite les murs et toi-même !", '#a0b4c8'],
+        'Normal':   ["Mange les pommes, évite les murs et toi-même !", '#a0b4c8'],
+        'Difficile':["Mange les pommes, évite les murs et toi-même !", '#a0b4c8'],
+        'Ironman (franchement, courage)': ["La vitesse double à chaque fruit. Des murs grandissants apparaissent.", IM_GOLD],
+    };
+    const [subTxt, subCol] = subs[selDiff];
+    ctx.fillStyle = subCol;
+    ctx.font = font(14, false);
+    ctx.fillText(subTxt, W/2, 163);
+
+    // Label difficulté
+    ctx.fillStyle = '#ffffff';
+    ctx.font = font(20, true);
+    ctx.fillText('Difficulté :', W/2, 218);
+
+    // Liste
+    DIFF_LIST.forEach((d, i) => {
+        const sel   = i === diffIndex;
+        const im    = d === 'Ironman (franchement, courage)';
+        const color = sel ? (im ? IM_GOLD : GOLD) : (im ? '#b43c3c' : '#647896');
+        const by    = 262 + i * 44;
+
+        if (sel) {
+            const bgCol = im ? 'rgba(90,20,20,0.7)' : 'rgba(30,50,70,0.7)';
+            const bdCol = im ? IM_GOLD : GOLD;
+            ctx.font = font(28, true);
+            const tw = ctx.measureText('▶ ' + d).width;
+            roundRect(W/2 - tw/2 - 12, by - 20, tw + 24, 40, 6, bgCol, bdCol, 1);
+        }
+        ctx.fillStyle = color;
+        ctx.font = font(28, true);
+        ctx.fillText((sel ? '▶ ' : '  ') + d, W/2, by);
+    });
+
+    // Séparateur + high scores (2 lignes de 3 + 2 pour éviter toute superposition)
+    const scY = 494;
+    ctx.strokeStyle = PANEL_BD;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(W/2 - 240, scY-10); ctx.lineTo(W/2 + 240, scY-10); ctx.stroke();
+
+    // Ligne 1 : Flemme | Facile | Normal   Ligne 2 : Difficile | Ironman
+    const ROW1 = [0, 1, 2];
+    const ROW2 = [3, 4];
+
+    function drawScoreRow(indices, rowY) {
+        // Mesure chaque label avec sa vraie police
+        const items = indices.map(i => {
+            const d   = DIFF_LIST[i];
+            const sel = (i === diffIndex);
+            const lbl = (d === 'Ironman (franchement, courage)' ? 'Ironman' : d)
+                        + ': ' + String(highScores[d]).padStart(4,'0');
+            ctx.font = font(12, sel);
+            return { d, sel, lbl, w: ctx.measureText(lbl).width, idx: i };
+        });
+        const GAP     = 24;
+        const totalW  = items.reduce((s, it) => s + it.w, 0) + GAP * (items.length - 1);
+        let x = W/2 - totalW/2;
+        items.forEach(it => {
+            const isIronman = it.d === 'Ironman (franchement, courage)';
+            ctx.fillStyle = it.sel ? GOLD : (isIronman ? IM_GOLD : '#a0b4a0');
+            ctx.font = font(12, it.sel);
+            ctx.textAlign = 'left';
+            ctx.fillText(it.lbl, x, rowY);
+            x += it.w + GAP;
+        });
+    }
+
+    drawScoreRow(ROW1, scY);
+    drawScoreRow(ROW2, scY + 18);
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#8cca8c';
+    ctx.font = font(20, true);
+    ctx.fillText('← → pour choisir   ENTRÉE pour jouer', W/2, 558);
+
+    ctx.fillStyle = '#647896';
+    ctx.font = font(13, false);
+    ctx.fillText('Flèches / ZQSD pour diriger   ESPACE = Pause   ESC = Menu', W/2, 588);
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+}
+
+function drawOverlay(title, subtitle, color) {
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(0, 0, W, H);
+    const pw = 460, ph = 160;
+    const px = W/2 - pw/2, py = H/2 - ph/2;
+    roundRect(px, py, pw, ph, 12, PANEL_BG, color, 2);
+    ctx.fillStyle = color;
+    ctx.font = font(30, true);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(title, W/2, py + 45);
+    ctx.fillStyle = '#b4b4b4';
+    ctx.font = font(14, false);
+    ctx.fillText(subtitle, W/2, py + 105);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+}
+
+function drawGameOver() {
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    ctx.fillRect(0, 0, W, H);
+    const isIM = difficulty === 'Ironman (franchement, courage)';
+    const bdCol = isIM ? IM_GOLD : RED;
+    const pw = 520, ph = 300;
+    const px = W/2 - pw/2, py = H/2 - ph/2;
+    roundRect(px, py, pw, ph, 14, PANEL_BG, bdCol, 2);
+
+    ctx.fillStyle = isIM ? IM_GOLD : RED;
+    ctx.font = font(30, true);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('PARTIE TERMINÉE', W/2, py + 42);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = font(28, true);
+    ctx.fillText('Score  :  ' + score, W/2, py + 97);
+
+    ctx.fillStyle = GOLD;
+    ctx.font = font(20, true);
+    const shortDiff = difficulty === 'Ironman (franchement, courage)' ? 'Ironman' : difficulty;
+    ctx.fillText('Meilleur (' + shortDiff + ')  :  ' + highScores[difficulty], W/2, py + 145);
+
+    if (isIM) {
+        const sx = Math.max(1, Math.round(SPEEDS['Ironman (franchement, courage)'] / ironmanSpeed));
+        ctx.fillStyle = IM_GOLD;
+        ctx.font = font(18, true);
+        ctx.fillText('Fruits : ' + ironmanFruits + '   |   Vitesse finale : x' + sx, W/2, py + 180);
+    }
+
+    if (score > 0 && score === highScores[difficulty]) {
+        ctx.fillStyle = GOLD;
+        ctx.font = font(18, true);
+        ctx.fillText('✦  Nouveau record !  ✦', W/2, py + (isIM ? 215 : 185));
+    }
+
+    ctx.fillStyle = '#a0b0b4';
+    ctx.font = font(14, false);
+    ctx.fillText('ENTRÉE / R  →  Rejouer     ESC  →  Menu', W/2, py + 258);
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+
+    particles.forEach(p => p.draw());
+}
+
+// ── Boucle principale ─────────────────────────────────────────────────────────
+let lastTime = performance.now();
+
+function loop(now) {
+    const dt = now - lastTime;
+    lastTime = now;
+
+    // Update
+    foodPulse += dt * 0.004;
+    particles = particles.filter(p => p.life > 0);
+    particles.forEach(p => p.update(dt));
+
+    if (state === 'PLAYING') {
+        elapsed += dt / 1000;
+        if (difficulty === 'Flemme') flemmeUpdateBoost(dt);
+        if (now - lastMove >= effectiveSpeed()) {
+            move();
+            lastMove = now;
+        }
+    }
+
+    // Draw
+    ctx.fillStyle = BG_COLOR;
+    ctx.fillRect(0, 0, W, H);
+    drawGrid();
+
+    if (state === 'PLAYING' || state === 'PAUSED' || state === 'GAME_OVER') drawGame();
+
+    if      (state === 'MENU')      drawMenu();
+    else if (state === 'PAUSED')    drawOverlay('PAUSE', 'Appuyez sur ESPACE pour continuer', CYAN);
+    else if (state === 'GAME_OVER') drawGameOver();
+
+    requestAnimationFrame(loop);
+}
+
+// ── Input ─────────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', function(e) {
+    keysHeld[e.key] = true;
+
+    if (state === 'MENU') {
+        if (e.key === 'ArrowLeft')  { diffIndex = (diffIndex - 1 + DIFF_LIST.length) % DIFF_LIST.length; }
+        if (e.key === 'ArrowRight') { diffIndex = (diffIndex + 1) % DIFF_LIST.length; }
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            difficulty = DIFF_LIST[diffIndex];
+            reset();
+            state = 'PLAYING';
+        }
+        return;
+    }
+
+    if (state === 'PLAYING') {
+        const [dx, dy] = dir;
+        let moved = false;
+        if ((e.key === 'ArrowUp'    || e.key === 'z' || e.key === 'Z' || e.key === 'w' || e.key === 'W') && dy === 0) { nextDir = [0,-1]; moved = true; }
+        if ((e.key === 'ArrowDown'  || e.key === 's' || e.key === 'S') && dy === 0) { nextDir = [0, 1]; moved = true; }
+        if ((e.key === 'ArrowLeft'  || e.key === 'q' || e.key === 'Q' || e.key === 'a' || e.key === 'A') && dx === 0) { nextDir = [-1,0]; moved = true; }
+        if ((e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') && dx === 0) { nextDir = [1, 0]; moved = true; }
+
+        if (moved && difficulty === 'Flemme') {
+            flemmeLastKey = performance.now();
+            flemmeBoost = Math.min(1, flemmeBoost + 0.15);
+        }
+        if (e.key === ' ') { e.preventDefault(); state = 'PAUSED'; }
+        if (e.key === 'Escape') state = 'MENU';
+        if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
+        return;
+    }
+
+    if (state === 'PAUSED') {
+        if (e.key === ' ' || e.key === 'Enter' || e.key === 'p') {
+            e.preventDefault();
+            state = 'PLAYING';
+            lastMove = performance.now();
+            flemmeLastKey = performance.now();
+        }
+        if (e.key === 'Escape') state = 'MENU';
+        return;
+    }
+
+    if (state === 'GAME_OVER') {
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'r' || e.key === 'R') {
+            e.preventDefault();
+            reset(); state = 'PLAYING';
+        }
+        if (e.key === 'Escape') state = 'MENU';
+        return;
+    }
+});
+
+document.addEventListener('keyup', function(e) {
+    delete keysHeld[e.key];
+});
+
+// ── Démarrage ─────────────────────────────────────────────────────────────────
+reset();
+requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>
