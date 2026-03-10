@@ -345,7 +345,7 @@ function loop(ts) {
             let rtxt, rcol;
             if      (result==='player')   { rtxt=`Tu gagnes avec les ${PLURIELS[playerChoice]} !`; rcol=WIN_COL; }
             else if (result==='computer') { rtxt=`L'ordi gagne avec les ${PLURIELS[computerChoice]}...`; rcol=LOSE_COL; }
-            else                          { rtxt='Egalite ! Deux pattes identiques'; rcol=DRAW_COL; }
+            else                          { rtxt='Pat !'; rcol=DRAW_COL; }
             const alpha = Math.min((revealTimer-25)/25, 1);
             ctx.globalAlpha = alpha;
             ctx.fillStyle = rcol;
