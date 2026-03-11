@@ -32,11 +32,23 @@ async function ensureTablesExist(db) {
   const scoresTable = await db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='game_scores'").first();
   if (scoresTable && scoresTable.sql.includes('SERIAL')) {
     await db.batch([
-      db.prepare("CREATE TABLE game_scores_new (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, player_name TEXT NOT NULL, game TEXT NOT NULL DEFAULT 'solitaire', time_seconds INTEGER NOT NULL, timer_mode TEXT NOT NULL DEFAULT 'CHRONO', hint_mode INTEGER NOT NULL DEFAULT 0, konami INTEGER NOT NULL DEFAULT 0, anonymous INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')))"),
+      db.prepare("CREATE TABLE game_scores_new (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, player_name TEXT NOT NULL, game TEXT NOT NULL DEFAULT 'solitaire', time_seconds INTEGER NOT NULL DEFAULT 0, timer_mode TEXT NOT NULL DEFAULT 'CHRONO', hint_mode INTEGER NOT NULL DEFAULT 0, konami INTEGER NOT NULL DEFAULT 0, anonymous INTEGER NOT NULL DEFAULT 0, score INTEGER NOT NULL DEFAULT 0, difficulty TEXT NOT NULL DEFAULT '', rounds INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')))"),
       db.prepare("INSERT INTO game_scores_new (user_id, player_name, game, time_seconds, timer_mode, hint_mode, konami, anonymous, created_at) SELECT user_id, player_name, game, time_seconds, timer_mode, CASE WHEN hint_mode THEN 1 ELSE 0 END, CASE WHEN konami THEN 1 ELSE 0 END, CASE WHEN anonymous THEN 1 ELSE 0 END, created_at FROM game_scores"),
       db.prepare("DROP TABLE game_scores"),
       db.prepare("ALTER TABLE game_scores_new RENAME TO game_scores"),
     ]);
+  }
+
+  if (scoresTable && !scoresTable.sql.includes('SERIAL') && !scoresTable.sql.includes('score ')) {
+    try {
+      await db.prepare("ALTER TABLE game_scores ADD COLUMN score INTEGER NOT NULL DEFAULT 0").run();
+    } catch(e) {}
+    try {
+      await db.prepare("ALTER TABLE game_scores ADD COLUMN difficulty TEXT NOT NULL DEFAULT ''").run();
+    } catch(e) {}
+    try {
+      await db.prepare("ALTER TABLE game_scores ADD COLUMN rounds INTEGER NOT NULL DEFAULT 0").run();
+    } catch(e) {}
   }
 
   await db.batch([
@@ -44,7 +56,7 @@ async function ensureTablesExist(db) {
     db.prepare("CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, user_id INTEGER NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')), expires_at TEXT NOT NULL)"),
     db.prepare("CREATE TABLE IF NOT EXISTS groups (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, code TEXT NOT NULL UNIQUE, created_by INTEGER NOT NULL)"),
     db.prepare("CREATE TABLE IF NOT EXISTS group_members (id INTEGER PRIMARY KEY AUTOINCREMENT, group_id INTEGER NOT NULL, user_id INTEGER NOT NULL)"),
-    db.prepare("CREATE TABLE IF NOT EXISTS game_scores (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, player_name TEXT NOT NULL, game TEXT NOT NULL DEFAULT 'solitaire', time_seconds INTEGER NOT NULL, timer_mode TEXT NOT NULL DEFAULT 'CHRONO', hint_mode INTEGER NOT NULL DEFAULT 0, konami INTEGER NOT NULL DEFAULT 0, anonymous INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')))"),
+    db.prepare("CREATE TABLE IF NOT EXISTS game_scores (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, player_name TEXT NOT NULL, game TEXT NOT NULL DEFAULT 'solitaire', time_seconds INTEGER NOT NULL DEFAULT 0, timer_mode TEXT NOT NULL DEFAULT 'CHRONO', hint_mode INTEGER NOT NULL DEFAULT 0, konami INTEGER NOT NULL DEFAULT 0, anonymous INTEGER NOT NULL DEFAULT 0, score INTEGER NOT NULL DEFAULT 0, difficulty TEXT NOT NULL DEFAULT '', rounds INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')))"),
   ]);
 }
 
@@ -115,16 +127,41 @@ async function getSessionUser(request, db) {
   return user;
 }
 
-function bestPerPlayer(scores) {
+function bestPerPlayer(scores, game) {
   const best = {};
   for (const s of scores) {
-    if (!best[s.player_name] || s.time_seconds < best[s.player_name].time_seconds) {
-      best[s.player_name] = s;
+    const key = s.player_name;
+    if (!best[key]) {
+      best[key] = s;
+    } else if (game === 'solitaire') {
+      if (s.time_seconds < best[key].time_seconds) best[key] = s;
+    } else {
+      if ((s.score || 0) > (best[key].score || 0)) best[key] = s;
     }
   }
   const result = Object.values(best);
-  result.sort((a, b) => a.time_seconds - b.time_seconds);
+  if (game === 'solitaire') {
+    result.sort((a, b) => a.time_seconds - b.time_seconds);
+  } else {
+    result.sort((a, b) => (b.score || 0) - (a.score || 0));
+  }
   return result;
+}
+
+function formatScore(s) {
+  return {
+    player: s.player_name,
+    time: s.time_seconds,
+    timerMode: s.timer_mode,
+    hintMode: !!s.hint_mode,
+    konami: !!s.konami,
+    anonymous: !!s.anonymous,
+    date: s.created_at,
+    game: s.game || 'solitaire',
+    score: s.score || 0,
+    difficulty: s.difficulty || '',
+    rounds: s.rounds || 0
+  };
 }
 
 export async function onRequest(context) {
@@ -267,8 +304,14 @@ export async function onRequest(context) {
 
     if (path === '/api/scores' && method === 'POST') {
       const body = await request.json();
-      const { timeSeconds, timerMode, hintMode, konami } = body;
-      if (typeof timeSeconds !== 'number' || !timerMode) return jsonResponse({ message: 'Donnees invalides' }, 400);
+      const game = body.game || 'solitaire';
+      const timeSeconds = body.timeSeconds || 0;
+      const timerMode = body.timerMode || '';
+      const hintMode = body.hintMode || false;
+      const konami = body.konami || false;
+      const score = body.score || 0;
+      const difficulty = body.difficulty || '';
+      const rounds = body.rounds || 0;
 
       const user = await getSessionUser(request, db);
       let userId = null;
@@ -286,14 +329,15 @@ export async function onRequest(context) {
       }
 
       await db.prepare(
-        'INSERT INTO game_scores (user_id, player_name, game, time_seconds, timer_mode, hint_mode, konami, anonymous) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-      ).bind(userId, playerName, 'solitaire', timeSeconds, timerMode, hintMode ? 1 : 0, konami ? 1 : 0, anonymous).run();
+        'INSERT INTO game_scores (user_id, player_name, game, time_seconds, timer_mode, hint_mode, konami, anonymous, score, difficulty, rounds) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(userId, playerName, game, timeSeconds, timerMode, hintMode ? 1 : 0, konami ? 1 : 0, anonymous, score, difficulty, rounds).run();
 
       return jsonResponse({ ok: true });
     }
 
     if (path === '/api/scores/general' && method === 'GET') {
-      const allScores = await db.prepare('SELECT * FROM game_scores ORDER BY time_seconds ASC').all();
+      const gameFilter = url.searchParams.get('game') || 'solitaire';
+      const allScores = await db.prepare('SELECT * FROM game_scores WHERE game = ?').bind(gameFilter).all();
 
       const allGroups = await db.prepare('SELECT * FROM groups').all();
       const groupsWithMembers = [];
@@ -305,42 +349,36 @@ export async function onRequest(context) {
       }
 
       const anonScores = allScores.results.filter(s => s.anonymous);
-      const anonBest = bestPerPlayer(anonScores);
+      const anonBest = bestPerPlayer(anonScores, gameFilter);
 
       const addedPlayers = {};
       for (const group of groupsWithMembers) {
         const memberScores = allScores.results.filter(s => !s.anonymous && group.members.includes(s.player_name));
         if (memberScores.length === 0) continue;
-        const best = bestPerPlayer(memberScores);
+        const best = bestPerPlayer(memberScores, gameFilter);
         if (best.length > 0) {
           const leader = best[0];
-          if (!addedPlayers[leader.player_name] || leader.time_seconds < addedPlayers[leader.player_name].time) {
-            addedPlayers[leader.player_name] = {
-              player: leader.player_name,
-              time: leader.time_seconds,
-              timerMode: leader.timer_mode,
-              hintMode: !!leader.hint_mode,
-              konami: !!leader.konami,
-              anonymous: false,
-              date: leader.created_at,
-              groupName: group.name
-            };
+          const formatted = formatScore(leader);
+          formatted.groupName = group.name;
+          formatted.anonymous = false;
+          if (!addedPlayers[leader.player_name]) {
+            addedPlayers[leader.player_name] = formatted;
+          } else if (gameFilter === 'solitaire') {
+            if (leader.time_seconds < addedPlayers[leader.player_name].time) addedPlayers[leader.player_name] = formatted;
+          } else {
+            if ((leader.score || 0) > (addedPlayers[leader.player_name].score || 0)) addedPlayers[leader.player_name] = formatted;
           }
         }
       }
 
-      const anonFormatted = anonBest.map(s => ({
-        player: s.player_name,
-        time: s.time_seconds,
-        timerMode: s.timer_mode,
-        hintMode: !!s.hint_mode,
-        konami: !!s.konami,
-        anonymous: true,
-        date: s.created_at
-      }));
+      const anonFormatted = anonBest.map(s => formatScore(s));
 
       const combined = [...anonFormatted, ...Object.values(addedPlayers)];
-      combined.sort((a, b) => a.time - b.time);
+      if (gameFilter === 'solitaire') {
+        combined.sort((a, b) => a.time - b.time);
+      } else {
+        combined.sort((a, b) => (b.score || 0) - (a.score || 0));
+      }
 
       return jsonResponse(combined);
     }
@@ -348,43 +386,30 @@ export async function onRequest(context) {
     if (path === '/api/scores/personal' && method === 'GET') {
       const user = await getSessionUser(request, db);
       if (!user) return jsonResponse({ message: 'Non connecte' }, 401);
+      const gameFilter = url.searchParams.get('game') || 'solitaire';
 
-      const scores = await db.prepare('SELECT * FROM game_scores WHERE user_id = ? ORDER BY time_seconds ASC').bind(user.id).all();
-      const formatted = scores.results.map(s => ({
-        player: s.player_name,
-        time: s.time_seconds,
-        timerMode: s.timer_mode,
-        hintMode: !!s.hint_mode,
-        konami: !!s.konami,
-        anonymous: !!s.anonymous,
-        date: s.created_at
-      }));
+      const orderBy = gameFilter === 'solitaire' ? 'time_seconds ASC' : 'score DESC';
+      const scores = await db.prepare('SELECT * FROM game_scores WHERE user_id = ? AND game = ? ORDER BY ' + orderBy).bind(user.id, gameFilter).all();
+      const formatted = scores.results.map(s => formatScore(s));
       return jsonResponse(formatted);
     }
 
     const groupScoreMatch = path.match(/^\/api\/scores\/group\/(\d+)$/);
     if (groupScoreMatch && method === 'GET') {
       const groupId = parseInt(groupScoreMatch[1]);
+      const gameFilter = url.searchParams.get('game') || 'solitaire';
       const members = await db.prepare('SELECT user_id FROM group_members WHERE group_id = ?').bind(groupId).all();
       if (members.results.length === 0) return jsonResponse([]);
 
       const userIds = members.results.map(m => m.user_id);
       const allScores = [];
       for (const uid of userIds) {
-        const scores = await db.prepare('SELECT * FROM game_scores WHERE user_id = ?').bind(uid).all();
+        const scores = await db.prepare('SELECT * FROM game_scores WHERE user_id = ? AND game = ?').bind(uid, gameFilter).all();
         allScores.push(...scores.results);
       }
 
-      const best = bestPerPlayer(allScores);
-      const formatted = best.map(s => ({
-        player: s.player_name,
-        time: s.time_seconds,
-        timerMode: s.timer_mode,
-        hintMode: !!s.hint_mode,
-        konami: !!s.konami,
-        anonymous: !!s.anonymous,
-        date: s.created_at
-      }));
+      const best = bestPerPlayer(allScores, gameFilter);
+      const formatted = best.map(s => formatScore(s));
       return jsonResponse(formatted);
     }
 
