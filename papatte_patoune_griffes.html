@@ -98,7 +98,7 @@ body {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-    " onmouseover="this.style.background='#ffe082'" onmouseout="this.style.background='#fff3c4'">← Retour à l'accueil</a>
+    " onmouseover="this.style.background='#ffe082'" onmouseout="this.style.background='#fff3c4'" onclick="savePPGScore()">← Retour à l'accueil</a>
     <div style="width:160px;"></div>
 </div>
 
@@ -206,6 +206,18 @@ function spawn(x, y, col, n=60) {
 
 // ── Etat ─────────────────────────────────────────────────────────────────────
 let scoreP=0, scoreC=0, total=0;
+let scoreSaved = false;
+function savePPGScore() {
+    if (scoreSaved || total === 0) return;
+    scoreSaved = true;
+    fetch("/api/scores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ game: "ppg", score: scoreP, rounds: total })
+    }).catch(function() {});
+}
+window.addEventListener("beforeunload", savePPGScore);
 let playerChoice=null, computerChoice=null, result=null;
 let phase='choose'; // 'choose' | 'reveal'
 let revealTimer=0;
