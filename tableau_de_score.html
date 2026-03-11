@@ -58,6 +58,35 @@ body {
     z-index: 2;
 }
 
+.game-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.game-tab {
+    padding: 10px 20px;
+    border: 2px solid var(--secondaire);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--secondaire);
+    font-weight: 600;
+    font-family: "Segoe UI", sans-serif;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.game-tab.active {
+    background: var(--secondaire);
+    color: white;
+}
+
+.game-tab:not(.active):hover {
+    background: rgba(255,183,3,0.1);
+}
+
 .view-tabs {
     display: flex;
     gap: 8px;
@@ -195,6 +224,11 @@ tbody td {
     color: #f57f17;
 }
 
+.badge-difficulty {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
 .konami-time {
     background: linear-gradient(135deg, #f3e5f5, #ede7f6);
     padding: 4px 8px;
@@ -297,6 +331,7 @@ tbody td {
 </div>
 
 <div class="container">
+    <div class="game-tabs" id="game-tabs" data-testid="game-tabs"></div>
     <div class="view-tabs" id="view-tabs" data-testid="view-tabs"></div>
 
     <div class="score-card">
@@ -310,8 +345,15 @@ tbody td {
 <script>
 (function() {
     var currentView = 'general';
+    var currentGame = 'solitaire';
     var currentUser = '';
     var userGroups = [];
+
+    var GAMES = {
+        solitaire: { label: '🃏 Solitaire', link: 'solitaire.html', emoji: '🃏' },
+        snake:     { label: '🐍 Snake',     link: 'snake.html',     emoji: '🐍' },
+        ppg:       { label: '🐾 Papatte Patoune Griffes', link: 'papatte_patoune_griffes.html', emoji: '🐾' }
+    };
 
     function formatTime(seconds) {
         var mins = Math.floor(seconds / 60);
@@ -336,12 +378,24 @@ tbody td {
         return rank;
     }
 
+    function renderGameTabs() {
+        var el = document.getElementById('game-tabs');
+        var html = '';
+        var keys = Object.keys(GAMES);
+        for (var i = 0; i < keys.length; i++) {
+            var g = keys[i];
+            var isActive = currentGame === g;
+            html += '<button class="game-tab' + (isActive ? ' active' : '') + '" data-testid="game-tab-' + g + '" onclick="switchGame(\'' + g + '\')">' + GAMES[g].label + '</button>';
+        }
+        el.innerHTML = html;
+    }
+
     function renderTabs() {
         var tabsEl = document.getElementById('view-tabs');
         var html = '<button class="view-tab' + (currentView === 'general' ? ' active' : '') + '" data-testid="tab-general" onclick="switchView(\'general\')">\uD83C\uDF0D G\u00e9n\u00e9ral</button>';
 
         if (currentUser) {
-            html += '<button class="view-tab' + (currentView === 'personal' ? ' active' : '') + '" data-testid="tab-personal" onclick="switchView(\'personal\')">\uD83D\uDC64 Mes Temps</button>';
+            html += '<button class="view-tab' + (currentView === 'personal' ? ' active' : '') + '" data-testid="tab-personal" onclick="switchView(\'personal\')">\uD83D\uDC64 Mes Scores</button>';
 
             for (var i = 0; i < userGroups.length; i++) {
                 var g = userGroups[i];
@@ -353,7 +407,7 @@ tbody td {
         tabsEl.innerHTML = html;
     }
 
-    function renderTable(scores, showGroup) {
+    function renderSolitaireTable(scores, showGroup) {
         var statsRow = document.getElementById('stats-row');
         var content = document.getElementById('scores-content');
         var actionsRow = document.getElementById('actions-row');
@@ -421,6 +475,126 @@ tbody td {
             '<a href="solitaire.html" class="btn-play" data-testid="link-play-again">\uD83C\uDCCF Jouer</a>';
     }
 
+    function renderSnakeTable(scores, showGroup) {
+        var statsRow = document.getElementById('stats-row');
+        var content = document.getElementById('scores-content');
+        var actionsRow = document.getElementById('actions-row');
+
+        if (scores.length === 0) {
+            statsRow.innerHTML = '';
+            content.innerHTML = '<div class="empty-state">' +
+                '<div class="emoji">\uD83D\uDC0D</div>' +
+                '<p>Aucun score enregistr\u00e9 pour le moment !</p>' +
+                '<a href="snake.html" class="btn-play" data-testid="link-play-snake">\uD83D\uDC0D Jouer au Snake</a>' +
+                '</div>';
+            actionsRow.innerHTML = '';
+            return;
+        }
+
+        var bestScore = scores[0].score;
+        var totalEntries = scores.length;
+        var avgScore = Math.round(scores.reduce(function(sum, s) { return sum + (s.score || 0); }, 0) / totalEntries);
+
+        statsRow.innerHTML =
+            '<div class="stat-box"><div class="stat-value" data-testid="text-total">' + totalEntries + '</div><div class="stat-label">' + (currentView === 'personal' ? 'Parties' : 'Joueurs') + '</div></div>' +
+            '<div class="stat-box"><div class="stat-value" data-testid="text-best-score">' + bestScore + '</div><div class="stat-label">Meilleur score</div></div>' +
+            '<div class="stat-box"><div class="stat-value" data-testid="text-avg-score">' + avgScore + '</div><div class="stat-label">Score moyen</div></div>';
+
+        var html = '<table data-testid="table-scores"><thead><tr>' +
+            '<th>#</th><th>Joueur</th><th>Score</th><th>Difficult\u00e9</th><th>Date</th>' +
+            '</tr></thead><tbody>';
+
+        for (var i = 0; i < scores.length; i++) {
+            var s = scores[i];
+            var rankClass = '';
+            if (i === 0) rankClass = ' rank-1';
+            else if (i === 1) rankClass = ' rank-2';
+            else if (i === 2) rankClass = ' rank-3';
+
+            var playerDisplay = s.player;
+            if (showGroup && s.groupName) {
+                playerDisplay += ' <span class="group-label">(' + s.groupName + ')</span>';
+            }
+
+            var diffBadge = s.difficulty ? '<span class="badge badge-difficulty">' + s.difficulty + '</span>' : '-';
+
+            html += '<tr data-testid="row-score-' + i + '">' +
+                '<td class="rank-cell' + rankClass + '">' + getRankIcon(i + 1) + '</td>' +
+                '<td>' + playerDisplay + '</td>' +
+                '<td><strong>' + (s.score || 0) + '</strong></td>' +
+                '<td>' + diffBadge + '</td>' +
+                '<td>' + formatDate(s.date) + '</td>' +
+                '</tr>';
+        }
+
+        html += '</tbody></table>';
+        content.innerHTML = html;
+
+        actionsRow.innerHTML =
+            '<a href="snake.html" class="btn-play" data-testid="link-play-again">\uD83D\uDC0D Jouer</a>';
+    }
+
+    function renderPPGTable(scores, showGroup) {
+        var statsRow = document.getElementById('stats-row');
+        var content = document.getElementById('scores-content');
+        var actionsRow = document.getElementById('actions-row');
+
+        if (scores.length === 0) {
+            statsRow.innerHTML = '';
+            content.innerHTML = '<div class="empty-state">' +
+                '<div class="emoji">\uD83D\uDC3E</div>' +
+                '<p>Aucun score enregistr\u00e9 pour le moment !</p>' +
+                '<a href="papatte_patoune_griffes.html" class="btn-play" data-testid="link-play-ppg">\uD83D\uDC3E Jouer \u00e0 PPG</a>' +
+                '</div>';
+            actionsRow.innerHTML = '';
+            return;
+        }
+
+        var bestScore = scores[0].score;
+        var totalEntries = scores.length;
+
+        statsRow.innerHTML =
+            '<div class="stat-box"><div class="stat-value" data-testid="text-total">' + totalEntries + '</div><div class="stat-label">' + (currentView === 'personal' ? 'Parties' : 'Joueurs') + '</div></div>' +
+            '<div class="stat-box"><div class="stat-value" data-testid="text-best-score">' + bestScore + '</div><div class="stat-label">Plus de victoires</div></div>';
+
+        var html = '<table data-testid="table-scores"><thead><tr>' +
+            '<th>#</th><th>Joueur</th><th>Victoires</th><th>Manches</th><th>Date</th>' +
+            '</tr></thead><tbody>';
+
+        for (var i = 0; i < scores.length; i++) {
+            var s = scores[i];
+            var rankClass = '';
+            if (i === 0) rankClass = ' rank-1';
+            else if (i === 1) rankClass = ' rank-2';
+            else if (i === 2) rankClass = ' rank-3';
+
+            var playerDisplay = s.player;
+            if (showGroup && s.groupName) {
+                playerDisplay += ' <span class="group-label">(' + s.groupName + ')</span>';
+            }
+
+            html += '<tr data-testid="row-score-' + i + '">' +
+                '<td class="rank-cell' + rankClass + '">' + getRankIcon(i + 1) + '</td>' +
+                '<td>' + playerDisplay + '</td>' +
+                '<td><strong>' + (s.score || 0) + '</strong></td>' +
+                '<td>' + (s.rounds || 0) + '</td>' +
+                '<td>' + formatDate(s.date) + '</td>' +
+                '</tr>';
+        }
+
+        html += '</tbody></table>';
+        content.innerHTML = html;
+
+        actionsRow.innerHTML =
+            '<a href="papatte_patoune_griffes.html" class="btn-play" data-testid="link-play-again">\uD83D\uDC3E Jouer</a>';
+    }
+
+    function renderTable(scores, showGroup) {
+        if (currentGame === 'snake') return renderSnakeTable(scores, showGroup);
+        if (currentGame === 'ppg') return renderPPGTable(scores, showGroup);
+        return renderSolitaireTable(scores, showGroup);
+    }
+
     function showLoading() {
         document.getElementById('scores-content').innerHTML = '<div style="text-align:center;padding:40px;color:#888;">Chargement...</div>';
         document.getElementById('stats-row').innerHTML = '';
@@ -428,20 +602,23 @@ tbody td {
     }
 
     function fetchAndRender() {
+        renderGameTabs();
         renderTabs();
         var titleEl = document.getElementById('view-title');
+        var gameLabel = GAMES[currentGame].label;
+        var gameParam = '?game=' + currentGame;
 
         if (currentView === 'general') {
-            titleEl.textContent = '\uD83C\uDCCF Classement G\u00e9n\u00e9ral';
+            titleEl.textContent = gameLabel + ' \u2014 Classement G\u00e9n\u00e9ral';
             showLoading();
-            fetch('/api/scores/general')
+            fetch('/api/scores/general' + gameParam)
                 .then(function(r) { return r.ok ? r.json() : []; })
                 .then(function(scores) { renderTable(scores, true); })
                 .catch(function() { renderTable([], true); });
         } else if (currentView === 'personal') {
-            titleEl.textContent = '\uD83D\uDC64 Mes Temps \u2014 ' + currentUser;
+            titleEl.textContent = gameLabel + ' \u2014 Mes Scores \u2014 ' + currentUser;
             showLoading();
-            fetch('/api/scores/personal', { credentials: 'include' })
+            fetch('/api/scores/personal' + gameParam, { credentials: 'include' })
                 .then(function(r) { return r.ok ? r.json() : []; })
                 .then(function(scores) { renderTable(scores, false); })
                 .catch(function() { renderTable([], false); });
@@ -451,9 +628,9 @@ tbody td {
             for (var i = 0; i < userGroups.length; i++) {
                 if (String(userGroups[i].id) === groupId) { groupName = userGroups[i].name; break; }
             }
-            titleEl.textContent = '\uD83D\uDC65 ' + groupName;
+            titleEl.textContent = gameLabel + ' \u2014 ' + groupName;
             showLoading();
-            fetch('/api/scores/group/' + groupId, { credentials: 'include' })
+            fetch('/api/scores/group/' + groupId + gameParam, { credentials: 'include' })
                 .then(function(r) { return r.ok ? r.json() : []; })
                 .then(function(scores) { renderTable(scores, false); })
                 .catch(function() { renderTable([], false); });
@@ -462,6 +639,12 @@ tbody td {
 
     window.switchView = function(view) {
         currentView = view;
+        fetchAndRender();
+    };
+
+    window.switchGame = function(game) {
+        currentGame = game;
+        currentView = 'general';
         fetchAndRender();
     };
 
