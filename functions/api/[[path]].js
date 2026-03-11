@@ -116,13 +116,31 @@ export async function onRequest(context) {
       const sessionId = generateId();
       const expires = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString();
 
-      await db.batch([
-        db.prepare('INSERT INTO users (username, password) VALUES (?, ?)').bind(username, hashed),
-        db.prepare('INSERT INTO sessions (id, user_id, expires_at) VALUES (?, (SELECT id FROM users WHERE username = ?), ?)').bind(sessionId, username, expires),
-      ]);
+      try {
+        await db.prepare('INSERT INTO users (username, password) VALUES (?, ?)').bind(username, hashed).run();
+      } catch(insertErr) {
+        return jsonResponse({ message: 'Erreur insert user: ' + insertErr.message }, 500);
+      }
 
-      const newUser = await db.prepare('SELECT id FROM users WHERE username = ?').bind(username).first();
-      return jsonResponse({ id: newUser.id, username }, 200, { 'Set-Cookie': setSessionCookie(sessionId) });
+      let userId;
+      try {
+        const userRow = await db.prepare('SELECT id FROM users WHERE username = ?').bind(username).first();
+        userId = userRow ? userRow.id : null;
+      } catch(selectErr) {
+        return jsonResponse({ message: 'Erreur select user: ' + selectErr.message }, 500);
+      }
+
+      if (!userId) {
+        return jsonResponse({ message: 'Debug: userId est null apres insert+select pour username=' + username }, 500);
+      }
+
+      try {
+        await db.prepare('INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)').bind(sessionId, userId, expires).run();
+      } catch(sessErr) {
+        return jsonResponse({ message: 'Erreur insert session: userId=' + userId + ' type=' + typeof userId + ' err=' + sessErr.message }, 500);
+      }
+
+      return jsonResponse({ id: userId, username }, 200, { 'Set-Cookie': setSessionCookie(sessionId) });
     }
 
     if (path === '/api/auth/login' && method === 'POST') {
