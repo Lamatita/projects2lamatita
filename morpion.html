@@ -566,7 +566,7 @@ body {
 <!-- TOP BAR -->
 <div class="top-bar">
     <a href="index.html" class="back-link">← Retour à l'accueil</a>
-    <span class="page-title">Morpion TEST</span>
+    <span class="page-title">Morpion</span>
     <div style="width:180px"></div>
 </div>
 
@@ -966,23 +966,23 @@ function render(mode) {
 }
 
 // =====================================================================
-// MULTIPLAYER SYSTEM — shared state via localStorage + BroadcastChannel
+// MULTIPLAYER SYSTEM — online via API + D1 database
 // =====================================================================
-// Principe : les deux joueurs partagent UNE seule clé localStorage
-// identifiée par le code de partie (celui du joueur X / hôte).
-// Chaque coup écrit l'état complet dans cette clé.
-// L'autre joueur le lit via BroadcastChannel (même navigateur, instantané)
-// ou via un polling léger toutes les 600ms (onglets différents).
+// Principe : l'hôte (X) crée une room sur le serveur avec son code.
+// Le joueur O rejoint en entrant le code. Chaque coup envoie l'état
+// complet au serveur. Les deux joueurs pollent le serveur (~1s)
+// pour récupérer les mises à jour de l'adversaire.
 // =====================================================================
 
 const mp = {
-    myCode:    '',      // code affiché à l'écran (généré à l'ouverture)
-    roomCode:  '',      // clé partagée = code de l'hôte (X)
+    myCode:    '',
+    roomCode:  '',
     connected: false,
     mySymbol:  'X',
-    channel:   null,    // BroadcastChannel
     pollTimer: null,
     lastTs:    0,
+    hosting:   false,
+    opponentName: '',
 };
 
 const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -990,28 +990,12 @@ function genCode() {
     return Array.from({length:10}, () => CHARS[Math.floor(Math.random() * CHARS.length)]).join('');
 }
 
-// Clé unique dans localStorage pour la room
-function roomKey(code) { return 'morpion_room_' + code; }
-
-// ── Lire / écrire l'état partagé ──────────────────────────────────────
-function saveSharedState() {
-    if (!mp.roomCode) return;
-    const payload = JSON.stringify({ classic, duration, ultimate, currentMode, ts: Date.now() });
-    try { localStorage.setItem(roomKey(mp.roomCode), payload); } catch(e) {}
-    // Notifier via BroadcastChannel si disponible
-    if (mp.channel) try { mp.channel.postMessage(payload); } catch(e) {}
-}
-
-function loadSharedState() {
-    if (!mp.roomCode) return;
-    try {
-        const raw = localStorage.getItem(roomKey(mp.roomCode));
-        if (raw) applyState(JSON.parse(raw));
-    } catch(e) {}
+function buildStatePayload() {
+    return { classic, duration, ultimate, currentMode, ts: Date.now() };
 }
 
 function applyState(st) {
-    if (!st || st.ts <= mp.lastTs) return;
+    if (!st || !st.ts || st.ts <= mp.lastTs) return;
     mp.lastTs = st.ts;
     let changed = false;
     if (st.classic   && JSON.stringify(st.classic)   !== JSON.stringify(classic))   { classic   = st.classic;   changed = true; }
@@ -1025,78 +1009,121 @@ function applyState(st) {
     if (changed && currentMode) render(currentMode);
 }
 
-// ── Démarrage ─────────────────────────────────────────────────────────
+function saveToServer() {
+    if (!mp.roomCode || !mp.connected) return;
+    const state = buildStatePayload();
+    mp.lastTs = state.ts;
+    fetch('/api/morpion/move', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: mp.roomCode, state })
+    }).catch(function() {
+        document.getElementById('offlineNotice').classList.add('show');
+        setTimeout(() => document.getElementById('offlineNotice').classList.remove('show'), 3000);
+    });
+}
+
+function pollServer() {
+    if (!mp.roomCode || !mp.connected) return;
+    fetch('/api/morpion/state/' + mp.roomCode + '?since=' + mp.lastTs)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+            if (!data) return;
+            if (data.changed && data.state) {
+                applyState(data.state);
+                if (data.playerO && !mp.opponentName && mp.hosting) {
+                    mp.opponentName = data.playerO;
+                    updateMPStatus();
+                }
+                if (data.playerX && !mp.opponentName && !mp.hosting) {
+                    mp.opponentName = data.playerX;
+                }
+            }
+        })
+        .catch(function() {});
+}
+
+function startPoll() {
+    clearInterval(mp.pollTimer);
+    mp.pollTimer = setInterval(pollServer, 1000);
+}
+
 function initMP() {
     mp.myCode = genCode();
     document.getElementById('myCode').textContent = mp.myCode;
 }
 
-// ── Rejoindre une room (le joueur O entre le code du joueur X) ────────
-function joinSession(code) {
-    code = code.toUpperCase().trim();
-    if (code.length !== 10)    { alert('Le code doit faire 10 caractères.'); return; }
-    if (code === mp.myCode)    { alert('Vous ne pouvez pas rejoindre votre propre partie !'); return; }
-
-    mp.roomCode  = code;          // la room = le code de l'hôte
-    mp.mySymbol  = 'O';
-    mp.connected = true;
-    mp.lastTs    = 0;
-
-    openChannel();
-    loadSharedState();            // charger l'état existant de l'hôte
-    startPoll();
-    updateMPStatus();
-}
-
-// Appelé quand le joueur X (hôte) fait son premier coup ou démarre une partie
-// Sa room = son propre code
 function ensureHost() {
-    if (mp.roomCode) return;      // déjà initialisé
+    if (mp.roomCode) return;
     mp.roomCode  = mp.myCode;
     mp.mySymbol  = 'X';
-    mp.connected = true;          // prêt à recevoir un invité
-    openChannel();
-    startPoll();
-    updateMPStatus();
+    mp.connected = true;
+    mp.hosting   = true;
+    fetch('/api/morpion/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: mp.myCode, playerName: 'Joueur X' })
+    }).then(() => {
+        startPoll();
+        updateMPStatus();
+    }).catch(function() {
+        document.getElementById('offlineNotice').classList.add('show');
+        setTimeout(() => document.getElementById('offlineNotice').classList.remove('show'), 3000);
+    });
 }
 
-// ── BroadcastChannel (même navigateur, réactif) ───────────────────────
-function openChannel() {
-    if (!window.BroadcastChannel) return;
-    if (mp.channel) mp.channel.close();
-    mp.channel = new BroadcastChannel(roomKey(mp.roomCode));
-    mp.channel.onmessage = (e) => {
-        try { applyState(JSON.parse(e.data)); } catch(err) {}
-    };
+function joinSession(code) {
+    code = code.toUpperCase().trim();
+    if (code.length < 6)       { alert('Le code est trop court.'); return; }
+    if (code === mp.myCode)    { alert('Vous ne pouvez pas rejoindre votre propre partie !'); return; }
+
+    document.getElementById('joinBtn').disabled = true;
+    document.getElementById('joinBtn').textContent = '...';
+
+    fetch('/api/morpion/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, playerName: 'Joueur O' })
+    })
+    .then(r => {
+        if (!r.ok) return r.json().then(d => { throw new Error(d.message || 'Erreur'); });
+        return r.json();
+    })
+    .then(data => {
+        mp.roomCode  = code;
+        mp.mySymbol  = 'O';
+        mp.connected = true;
+        mp.hosting   = false;
+        mp.lastTs    = 0;
+        mp.opponentName = data.playerX || '';
+
+        if (data.state && data.state.ts) applyState(data.state);
+        startPoll();
+        updateMPStatus();
+    })
+    .catch(err => {
+        alert(err.message || 'Partie introuvable. Vérifiez le code.');
+    })
+    .finally(() => {
+        document.getElementById('joinBtn').disabled = false;
+        document.getElementById('joinBtn').textContent = 'Rejoindre';
+    });
 }
 
-// ── Polling léger (fallback multi-appareils / onglets) ────────────────
-function startPoll() {
-    clearInterval(mp.pollTimer);
-    mp.pollTimer = setInterval(() => {
-        try {
-            const raw = localStorage.getItem(roomKey(mp.roomCode));
-            if (raw) applyState(JSON.parse(raw));
-        } catch(e) {}
-    }, 600);
-}
-
-// ── pushState : alias public utilisé après chaque coup ───────────────
 function pushState() {
-    if (mp.mySymbol === 'X') ensureHost();   // l'hôte initialise la room au 1er coup
+    if (mp.mySymbol === 'X') ensureHost();
     if (!mp.connected) return;
-    saveSharedState();
+    saveToServer();
 }
 
-// ── Quitter ───────────────────────────────────────────────────────────
 function leaveSession() {
     clearInterval(mp.pollTimer);
-    if (mp.channel) { mp.channel.close(); mp.channel = null; }
-    try { if (mp.roomCode) localStorage.removeItem(roomKey(mp.roomCode)); } catch(e) {}
     mp.connected = false;
     mp.roomCode  = '';
     mp.mySymbol  = 'X';
     mp.lastTs    = 0;
+    mp.hosting   = false;
+    mp.opponentName = '';
     document.getElementById('joinInput').value = '';
     document.getElementById('leaveBtn').style.display = 'none';
     document.getElementById('offlineNotice').classList.remove('show');
@@ -1111,14 +1138,17 @@ function updateMPStatus() {
         el.className = 'mp-status solo';
         el.textContent = 'Solo';
         lb.style.display = 'none';
+    } else if (mp.hosting && !mp.opponentName) {
+        el.className = 'mp-status waiting';
+        el.textContent = 'En attente d\'un adversaire...';
+        lb.style.display = 'inline-block';
     } else {
         el.className = mp.mySymbol === 'X' ? 'mp-status connected' : 'mp-status joined';
-        el.textContent = `✓ Connecté — Vous êtes ${mp.mySymbol}`;
+        el.textContent = `✓ En ligne — Vous êtes ${mp.mySymbol}`;
         lb.style.display = 'inline-block';
     }
 }
 
-// Copy code on click
 document.getElementById('myCode').addEventListener('click', () => {
     const code = document.getElementById('myCode').textContent;
     navigator.clipboard.writeText(code).catch(() => {});
@@ -1140,7 +1170,6 @@ document.getElementById('joinInput').addEventListener('keydown', (e) => {
 
 document.getElementById('leaveBtn').addEventListener('click', leaveSession);
 
-// Auto uppercase join input
 document.getElementById('joinInput').addEventListener('input', function() {
     this.value = this.value.toUpperCase();
 });
