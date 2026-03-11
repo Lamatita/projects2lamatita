@@ -286,7 +286,7 @@ body {
 
 .sort-controls {
     position: fixed;
-    bottom: 24px;
+    bottom: 68px;
     left: 24px;
     z-index: 50;
     display: flex;
@@ -374,20 +374,28 @@ body {
 }
 
 .lang-switcher {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    z-index: 51;
     display: flex;
-    gap: 4px;
+    gap: 3px;
     align-items: center;
+    background: var(--blanc);
+    padding: 5px 8px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 .lang-btn {
     background: none;
     border: 2px solid transparent;
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 1.35em;
-    padding: 3px 5px;
+    font-size: 1.15em;
+    padding: 2px 4px;
     transition: all 0.2s ease;
     line-height: 1;
-    opacity: 0.6;
+    opacity: 0.5;
 }
 .lang-btn:hover {
     opacity: 1;
@@ -629,15 +637,6 @@ body {
     <div class="top-bar-left">
         <button class="top-btn" id="btn-groups" data-testid="button-groups" onclick="openGroupModal()" style="display:none;" data-i18n="groupMgmt">Gestion des Groupes</button>
     </div>
-    <div class="lang-switcher" id="lang-switcher" data-testid="lang-switcher">
-        <button class="lang-btn active" data-lang="fr" data-testid="lang-fr" onclick="setLang('fr')">🇫🇷</button>
-        <button class="lang-btn" data-lang="en" data-testid="lang-en" onclick="setLang('en')">🇬🇧</button>
-        <button class="lang-btn" data-lang="es" data-testid="lang-es" onclick="setLang('es')">🇪🇸</button>
-        <button class="lang-btn" data-lang="pt" data-testid="lang-pt" onclick="setLang('pt')">🇵🇹</button>
-        <button class="lang-btn" data-lang="de" data-testid="lang-de" onclick="setLang('de')">🇩🇪</button>
-        <button class="lang-btn" data-lang="ka" data-testid="lang-ka" onclick="setLang('ka')">🇬🇪</button>
-        <button class="lang-btn" data-lang="ru" data-testid="lang-ru" onclick="setLang('ru')">🇷🇺</button>
-    </div>
     <div class="top-bar-left">
         <span class="username-label" id="username-label" data-testid="text-username" style="display:none;"></span>
         <button class="top-btn" id="btn-profile" data-testid="button-profile" onclick="openProfileModal()" style="display:none;" data-i18n="myProfile">Mon Profil</button>
@@ -659,6 +658,16 @@ body {
             Je suis fière de moi (sans faire ma dIVa) 
         </div>
     </div>
+</div>
+
+<div class="lang-switcher" id="lang-switcher" data-testid="lang-switcher">
+    <button class="lang-btn active" data-lang="fr" data-testid="lang-fr" onclick="setLang('fr')">🇫🇷</button>
+    <button class="lang-btn" data-lang="en" data-testid="lang-en" onclick="setLang('en')">🇬🇧</button>
+    <button class="lang-btn" data-lang="es" data-testid="lang-es" onclick="setLang('es')">🇪🇸</button>
+    <button class="lang-btn" data-lang="pt" data-testid="lang-pt" onclick="setLang('pt')">🇵🇹</button>
+    <button class="lang-btn" data-lang="de" data-testid="lang-de" onclick="setLang('de')">🇩🇪</button>
+    <button class="lang-btn" data-lang="ka" data-testid="lang-ka" onclick="setLang('ka')">🇬🇪</button>
+    <button class="lang-btn" data-lang="ru" data-testid="lang-ru" onclick="setLang('ru')">🇷🇺</button>
 </div>
 
 <div class="sort-controls">
