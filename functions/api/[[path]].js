@@ -116,15 +116,13 @@ export async function onRequest(context) {
       const sessionId = generateId();
       const expires = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString();
 
-      const batchResults = await db.batch([
+      await db.batch([
         db.prepare('INSERT INTO users (username, password) VALUES (?, ?)').bind(username, hashed),
-        db.prepare('SELECT last_insert_rowid() as id'),
+        db.prepare('INSERT INTO sessions (id, user_id, expires_at) VALUES (?, (SELECT id FROM users WHERE username = ?), ?)').bind(sessionId, username, expires),
       ]);
-      const userId = batchResults[1].results[0].id;
 
-      await db.prepare('INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)').bind(sessionId, userId, expires).run();
-
-      return jsonResponse({ id: userId, username }, 200, { 'Set-Cookie': setSessionCookie(sessionId) });
+      const newUser = await db.prepare('SELECT id FROM users WHERE username = ?').bind(username).first();
+      return jsonResponse({ id: newUser.id, username }, 200, { 'Set-Cookie': setSessionCookie(sessionId) });
     }
 
     if (path === '/api/auth/login' && method === 'POST') {
