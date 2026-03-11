@@ -509,6 +509,231 @@ body {
 }
 .offline-notice.show { opacity: 1; }
 
+/* INVITE PANEL */
+.invite-panel-toggle {
+    padding: 5px 14px;
+    background: rgba(108,99,255,0.12);
+    border: 1px solid rgba(108,99,255,0.4);
+    border-radius: 8px;
+    color: #4a3fbf;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.85em;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    position: relative;
+}
+.invite-panel-toggle:hover {
+    background: rgba(108,99,255,0.22);
+    border-color: var(--principal-page);
+    box-shadow: 0 0 10px rgba(108,99,255,0.2);
+}
+.invite-panel {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(108,99,255,0.15);
+    padding: 24px;
+    z-index: 10000;
+    width: 360px;
+    max-width: 92vw;
+    max-height: 80vh;
+    overflow-y: auto;
+    animation: scaleIn 0.2s ease-out;
+}
+.invite-panel.open { display: block; }
+.invite-panel-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 9999;
+}
+.invite-panel-overlay.open { display: block; }
+.invite-panel h3 {
+    color: #6c63ff;
+    font-size: 1.1em;
+    margin-bottom: 16px;
+    text-align: center;
+}
+.invite-panel .close-panel {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    background: none;
+    border: none;
+    font-size: 1.3em;
+    color: #999;
+    cursor: pointer;
+    transition: color 0.2s;
+    line-height: 1;
+}
+.invite-panel .close-panel:hover { color: #333; }
+.member-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    transition: background 0.2s;
+    margin-bottom: 4px;
+}
+.member-item:hover { background: rgba(108,99,255,0.06); }
+.member-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6c63ff, #a855f7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9em;
+    flex-shrink: 0;
+    position: relative;
+}
+.online-dot {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #22c55e;
+    border: 2px solid #fff;
+    display: none;
+}
+.online-dot.show { display: block; }
+.offline-dot {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ccc;
+    border: 2px solid #fff;
+}
+.member-info {
+    flex: 1;
+    min-width: 0;
+}
+.member-name {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.95em;
+}
+.member-groups {
+    font-size: 0.75em;
+    color: #999;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.invite-btn {
+    padding: 5px 12px;
+    background: #6c63ff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.8em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    font-family: 'Outfit', sans-serif;
+}
+.invite-btn:hover {
+    background: #5548e0;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(108,99,255,0.3);
+}
+.invite-btn:disabled {
+    background: #ccc;
+    cursor: default;
+    transform: none;
+    box-shadow: none;
+}
+.invite-btn.sent {
+    background: #22c55e;
+}
+.no-members {
+    text-align: center;
+    color: #999;
+    padding: 20px;
+    font-size: 0.9em;
+}
+
+/* NOTIFICATION POPUP */
+.invite-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2), 0 0 0 1px rgba(108,99,255,0.2);
+    padding: 16px 20px;
+    z-index: 10001;
+    width: 320px;
+    max-width: 90vw;
+    animation: slideInRight 0.3s ease-out;
+    display: none;
+}
+.invite-notification.show { display: block; }
+@keyframes slideInRight {
+    from { transform: translateX(100px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+.invite-notification .notif-title {
+    font-weight: 700;
+    color: #6c63ff;
+    font-size: 0.95em;
+    margin-bottom: 6px;
+}
+.invite-notification .notif-text {
+    color: #555;
+    font-size: 0.88em;
+    margin-bottom: 12px;
+}
+.invite-notification .notif-actions {
+    display: flex;
+    gap: 8px;
+}
+.notif-accept {
+    flex: 1;
+    padding: 7px 14px;
+    background: #6c63ff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-family: 'Outfit', sans-serif;
+}
+.notif-accept:hover { background: #5548e0; }
+.notif-decline {
+    flex: 1;
+    padding: 7px 14px;
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.3);
+    color: #dc2626;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Outfit', sans-serif;
+}
+.notif-decline:hover { background: rgba(239,68,68,0.15); }
+
 /* FLOATING CONFETTI like solitaire */
 .falling {
     position: fixed;
@@ -587,7 +812,26 @@ body {
         <span class="mp-status solo" id="mpStatus">Solo</span>
         <button class="mp-btn danger" id="leaveBtn" style="display:none">Quitter</button>
     </div>
+    <div class="mp-section" id="inviteSection" style="display:none">
+        <button class="invite-panel-toggle" id="invitePanelBtn">👥 Inviter un ami</button>
+    </div>
     <div class="offline-notice" id="offlineNotice">⚠ Synchronisation impossible</div>
+</div>
+
+<div class="invite-panel-overlay" id="invitePanelOverlay"></div>
+<div class="invite-panel" id="invitePanel">
+    <button class="close-panel" id="closeInvitePanel">✕</button>
+    <h3>👥 Inviter un ami</h3>
+    <div id="membersList"></div>
+</div>
+
+<div class="invite-notification" id="inviteNotification">
+    <div class="notif-title" id="notifTitle">🎮 Invitation au Morpion</div>
+    <div class="notif-text" id="notifText"></div>
+    <div class="notif-actions">
+        <button class="notif-accept" id="notifAccept">✓ Jouer</button>
+        <button class="notif-decline" id="notifDecline">✕ Refuser</button>
+    </div>
 </div>
 
 <!-- GAME WRAPPER -->
@@ -1062,7 +1306,8 @@ function ensureHost() {
     fetch('/api/morpion/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: mp.myCode, playerName: 'Joueur X' })
+        credentials: 'include',
+        body: JSON.stringify({ code: mp.myCode, playerName: currentUsername || 'Joueur X' })
     }).then(() => {
         startPoll();
         updateMPStatus();
@@ -1083,7 +1328,8 @@ function joinSession(code) {
     fetch('/api/morpion/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, playerName: 'Joueur O' })
+        credentials: 'include',
+        body: JSON.stringify({ code, playerName: currentUsername || 'Joueur O' })
     })
     .then(r => {
         if (!r.ok) return r.json().then(d => { throw new Error(d.message || 'Erreur'); });
@@ -1175,10 +1421,185 @@ document.getElementById('joinInput').addEventListener('input', function() {
 });
 
 // =====================================================================
+// PRESENCE + INVITATIONS
+// =====================================================================
+
+let currentUserId = null;
+let currentUsername = '';
+let groupMembers = [];
+let onlineUserIds = [];
+let pendingInviteId = null;
+let invitePollTimer = null;
+let presencePingTimer = null;
+
+function pingPresence() {
+    fetch('/api/presence/ping', { method: 'POST', credentials: 'include' }).catch(function(){});
+}
+
+function fetchOnlineUsers() {
+    return fetch('/api/presence/online', { credentials: 'include' })
+        .then(r => r.ok ? r.json() : [])
+        .catch(() => []);
+}
+
+function fetchGroupMembers() {
+    return fetch('/api/groups/members', { credentials: 'include' })
+        .then(r => r.ok ? r.json() : [])
+        .catch(() => []);
+}
+
+function renderMembersList() {
+    const el = document.getElementById('membersList');
+    if (groupMembers.length === 0) {
+        el.innerHTML = '<div class="no-members">Aucun membre dans vos groupes.<br>Rejoignez un groupe depuis le tableau de score !</div>';
+        return;
+    }
+    let html = '';
+    for (const m of groupMembers) {
+        const isOnline = onlineUserIds.includes(m.id);
+        const initial = m.username.charAt(0).toUpperCase();
+        const groupStr = m.groups.map(g => g.name).join(', ');
+        html += '<div class="member-item" data-member-id="' + m.id + '">' +
+            '<div class="member-avatar">' + initial +
+            '<span class="' + (isOnline ? 'online-dot show' : 'offline-dot') + '"></span>' +
+            '</div>' +
+            '<div class="member-info">' +
+            '<div class="member-name">' + m.username + (isOnline ? ' <span style="color:#22c55e;font-size:0.75em">en ligne</span>' : '') + '</div>' +
+            '<div class="member-groups">' + groupStr + '</div>' +
+            '</div>' +
+            '<button class="invite-btn" data-uid="' + m.id + '" data-uname="' + m.username + '" onclick="sendInvite(' + m.id + ', \'' + m.username.replace(/'/g, "\\'") + '\', this)">Inviter</button>' +
+            '</div>';
+    }
+    el.innerHTML = html;
+}
+
+function sendInvite(userId, username, btnEl) {
+    ensureHost();
+    btnEl.disabled = true;
+    btnEl.textContent = '...';
+    fetch('/api/morpion/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ toUserId: userId, roomCode: mp.roomCode })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok) {
+            btnEl.textContent = '✓ Envoyée';
+            btnEl.classList.add('sent');
+            setTimeout(() => {
+                btnEl.textContent = 'Inviter';
+                btnEl.classList.remove('sent');
+                btnEl.disabled = false;
+            }, 4000);
+        } else {
+            btnEl.textContent = 'Erreur';
+            btnEl.disabled = false;
+            setTimeout(() => { btnEl.textContent = 'Inviter'; }, 2000);
+        }
+    })
+    .catch(() => {
+        btnEl.textContent = 'Erreur';
+        btnEl.disabled = false;
+        setTimeout(() => { btnEl.textContent = 'Inviter'; }, 2000);
+    });
+}
+
+function pollInvitations() {
+    if (!currentUserId) return;
+    fetch('/api/morpion/invitations', { credentials: 'include' })
+        .then(r => r.ok ? r.json() : [])
+        .then(invites => {
+            if (invites.length > 0 && !pendingInviteId) {
+                const inv = invites[0];
+                pendingInviteId = inv.id;
+                showInviteNotification(inv);
+            }
+        })
+        .catch(() => {});
+}
+
+function showInviteNotification(inv) {
+    const el = document.getElementById('inviteNotification');
+    document.getElementById('notifText').textContent = inv.fromUsername + ' vous invite à jouer au Morpion !';
+    el.classList.add('show');
+
+    document.getElementById('notifAccept').onclick = function() {
+        el.classList.remove('show');
+        fetch('/api/morpion/invite/' + inv.id + '/accept', { method: 'POST', credentials: 'include' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.ok && data.roomCode) {
+                    joinSession(data.roomCode);
+                }
+                pendingInviteId = null;
+            })
+            .catch(() => { pendingInviteId = null; });
+    };
+
+    document.getElementById('notifDecline').onclick = function() {
+        el.classList.remove('show');
+        fetch('/api/morpion/invite/' + inv.id + '/decline', { method: 'POST', credentials: 'include' }).catch(()=>{});
+        pendingInviteId = null;
+    };
+}
+
+function openInvitePanel() {
+    fetchOnlineUsers().then(ids => {
+        onlineUserIds = ids;
+        renderMembersList();
+    });
+    document.getElementById('invitePanel').classList.add('open');
+    document.getElementById('invitePanelOverlay').classList.add('open');
+}
+
+function closeInvitePanelFn() {
+    document.getElementById('invitePanel').classList.remove('open');
+    document.getElementById('invitePanelOverlay').classList.remove('open');
+}
+
+document.getElementById('invitePanelBtn').addEventListener('click', openInvitePanel);
+document.getElementById('closeInvitePanel').addEventListener('click', closeInvitePanelFn);
+document.getElementById('invitePanelOverlay').addEventListener('click', closeInvitePanelFn);
+
+function initAuth() {
+    fetch('/api/auth/me', { credentials: 'include' })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+            if (data && data.id) {
+                currentUserId = data.id;
+                currentUsername = data.username;
+                document.getElementById('inviteSection').style.display = 'flex';
+
+                pingPresence();
+                presencePingTimer = setInterval(pingPresence, 30000);
+
+                fetchGroupMembers().then(members => {
+                    groupMembers = members;
+                    fetchOnlineUsers().then(ids => {
+                        onlineUserIds = ids;
+                    });
+                });
+
+                invitePollTimer = setInterval(pollInvitations, 2500);
+
+                setInterval(() => {
+                    fetchOnlineUsers().then(ids => {
+                        onlineUserIds = ids;
+                    });
+                }, 15000);
+            }
+        })
+        .catch(() => {});
+}
+
+// =====================================================================
 // INIT
 // =====================================================================
 initMP();
 updateMPStatus();
+initAuth();
 </script>
 </body>
 </html>
