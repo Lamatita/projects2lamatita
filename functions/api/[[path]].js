@@ -351,6 +351,12 @@ export async function onRequest(context) {
       return jsonResponse(members.results);
     }
 
+    if (path === '/api/debug/tables' && method === 'GET') {
+      const tables = await db.prepare("SELECT name, sql FROM sqlite_master WHERE type='table'").all();
+      const users = await db.prepare('SELECT id, username FROM users LIMIT 10').all();
+      return jsonResponse({ tables: tables.results, users: users.results });
+    }
+
     return jsonResponse({ message: 'Not found' }, 404);
   } catch (err) {
     return jsonResponse({ message: 'Erreur serveur: ' + err.message }, 500);
