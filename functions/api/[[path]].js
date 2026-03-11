@@ -113,9 +113,8 @@ export async function onRequest(context) {
       if (existing) return jsonResponse({ message: "Ce nom d'utilisateur est deja pris" }, 409);
 
       const hashed = await hashPassword(password);
-      await db.prepare('INSERT INTO users (username, password) VALUES (?, ?)').bind(username, hashed).run();
-      const newUser = await db.prepare('SELECT id FROM users WHERE username = ?').bind(username).first();
-      const userId = newUser.id;
+      const insertResult = await db.prepare('INSERT INTO users (username, password) VALUES (?, ?) RETURNING id').bind(username, hashed).first();
+      const userId = insertResult.id;
 
       const sessionId = generateId();
       const expires = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString();
@@ -188,9 +187,8 @@ export async function onRequest(context) {
         existing = await db.prepare('SELECT id FROM groups WHERE code = ?').bind(code).first();
       } while (existing);
 
-      await db.prepare('INSERT INTO groups (name, code, created_by) VALUES (?, ?, ?)').bind(body.name, code, user.id).run();
-      const newGroup = await db.prepare('SELECT id FROM groups WHERE code = ?').bind(code).first();
-      const groupId = newGroup.id;
+      const groupResult = await db.prepare('INSERT INTO groups (name, code, created_by) VALUES (?, ?, ?) RETURNING id').bind(body.name, code, user.id).first();
+      const groupId = groupResult.id;
       await db.prepare('INSERT INTO group_members (group_id, user_id) VALUES (?, ?)').bind(groupId, user.id).run();
 
       return jsonResponse({ id: groupId, name: body.name, code });
