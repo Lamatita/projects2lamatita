@@ -57,7 +57,12 @@ async function ensureTablesExist(db) {
     db.prepare("CREATE TABLE IF NOT EXISTS groups (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, code TEXT NOT NULL UNIQUE, created_by INTEGER NOT NULL)"),
     db.prepare("CREATE TABLE IF NOT EXISTS group_members (id INTEGER PRIMARY KEY AUTOINCREMENT, group_id INTEGER NOT NULL, user_id INTEGER NOT NULL)"),
     db.prepare("CREATE TABLE IF NOT EXISTS game_scores (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, player_name TEXT NOT NULL, game TEXT NOT NULL DEFAULT 'solitaire', time_seconds INTEGER NOT NULL DEFAULT 0, timer_mode TEXT NOT NULL DEFAULT 'CHRONO', hint_mode INTEGER NOT NULL DEFAULT 0, konami INTEGER NOT NULL DEFAULT 0, anonymous INTEGER NOT NULL DEFAULT 0, score INTEGER NOT NULL DEFAULT 0, difficulty TEXT NOT NULL DEFAULT '', rounds INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')))"),
+    db.prepare("CREATE TABLE IF NOT EXISTS morpion_rooms (code TEXT PRIMARY KEY, state TEXT NOT NULL DEFAULT '{}', player_x TEXT, player_o TEXT, updated_at TEXT NOT NULL DEFAULT (datetime('now')), created_at TEXT NOT NULL DEFAULT (datetime('now')))"),
   ]);
+
+  try {
+    await db.prepare("DELETE FROM morpion_rooms WHERE created_at < datetime('now', '-24 hours')").run();
+  } catch(e) {}
 }
 
 function jsonResponse(data, status = 200, headers = {}) {
@@ -420,6 +425,60 @@ export async function onRequest(context) {
         'SELECT u.username FROM group_members gm JOIN users u ON gm.user_id = u.id WHERE gm.group_id = ?'
       ).bind(groupId).all();
       return jsonResponse(members.results);
+    }
+
+    if (path === '/api/morpion/create' && method === 'POST') {
+      const body = await request.json();
+      const code = body.code;
+      if (!code || code.length < 6) return jsonResponse({ message: 'Code invalide' }, 400);
+
+      const existing = await db.prepare('SELECT code FROM morpion_rooms WHERE code = ?').bind(code).first();
+      if (existing) {
+        await db.prepare("UPDATE morpion_rooms SET state = '{}', player_o = NULL, updated_at = datetime('now') WHERE code = ?").bind(code).run();
+      } else {
+        await db.prepare("INSERT INTO morpion_rooms (code, state, player_x) VALUES (?, '{}', ?)").bind(code, body.playerName || 'Joueur X').run();
+      }
+      return jsonResponse({ ok: true, code });
+    }
+
+    if (path === '/api/morpion/join' && method === 'POST') {
+      const body = await request.json();
+      const code = (body.code || '').toUpperCase().trim();
+      if (!code) return jsonResponse({ message: 'Code requis' }, 400);
+
+      const room = await db.prepare('SELECT * FROM morpion_rooms WHERE code = ?').bind(code).first();
+      if (!room) return jsonResponse({ message: 'Partie introuvable' }, 404);
+
+      await db.prepare("UPDATE morpion_rooms SET player_o = ?, updated_at = datetime('now') WHERE code = ?").bind(body.playerName || 'Joueur O', code).run();
+      const state = room.state ? JSON.parse(room.state) : {};
+      return jsonResponse({ ok: true, code, state, playerX: room.player_x, playerO: body.playerName || 'Joueur O' });
+    }
+
+    const morpionStateMatch = path.match(/^\/api\/morpion\/state\/([A-Za-z0-9]+)$/);
+    if (morpionStateMatch && method === 'GET') {
+      const code = morpionStateMatch[1].toUpperCase();
+      const since = url.searchParams.get('since') || '0';
+      const room = await db.prepare('SELECT * FROM morpion_rooms WHERE code = ?').bind(code).first();
+      if (!room) return jsonResponse({ message: 'Partie introuvable' }, 404);
+
+      const state = room.state ? JSON.parse(room.state) : {};
+      if (state.ts && String(state.ts) === since) {
+        return jsonResponse({ changed: false });
+      }
+      return jsonResponse({ changed: true, state, playerX: room.player_x, playerO: room.player_o, updatedAt: room.updated_at });
+    }
+
+    if (path === '/api/morpion/move' && method === 'POST') {
+      const body = await request.json();
+      const code = (body.code || '').toUpperCase().trim();
+      if (!code) return jsonResponse({ message: 'Code requis' }, 400);
+
+      const room = await db.prepare('SELECT code FROM morpion_rooms WHERE code = ?').bind(code).first();
+      if (!room) return jsonResponse({ message: 'Partie introuvable' }, 404);
+
+      const stateJson = JSON.stringify(body.state || {});
+      await db.prepare("UPDATE morpion_rooms SET state = ?, updated_at = datetime('now') WHERE code = ?").bind(stateJson, code).run();
+      return jsonResponse({ ok: true });
     }
 
     return jsonResponse({ message: 'Not found' }, 404);
