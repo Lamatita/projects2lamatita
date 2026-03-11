@@ -1039,6 +1039,7 @@ function freshUltimate(winMode = 'points') {
 }
 
 function resetGame(mode) {
+    mp.matchSaved = false;
     if (mode === 'classic') { classic = freshClassic(); renderClassic(); }
     else if (mode === 'duration') { duration = freshDuration(); renderDuration(); }
     else if (mode === 'ultimate') {
@@ -1082,8 +1083,8 @@ function classicClick(i) {
     if (mp.connected && mp.mySymbol !== classic.current) return; // not your turn in MP
     classic.board[i] = classic.current;
     const r = checkWinner(classic.board);
-    if (r.winner) { classic.winner = r.winner; classic.winLine = r.line; }
-    else if (!classic.board.includes(null)) { classic.winner = 'Draw'; }
+    if (r.winner) { classic.winner = r.winner; classic.winLine = r.line; if (mp.hosting) saveMatchResult(r.winner, 'classic'); }
+    else if (!classic.board.includes(null)) { classic.winner = 'Draw'; if (mp.hosting) saveMatchResult('Draw', 'classic'); }
     else { classic.current = classic.current === 'X' ? 'O' : 'X'; }
     renderClassic();
     pushState();
@@ -1128,7 +1129,7 @@ function durationClick(i) {
     duration.board[i] = duration.current;
     duration.history.push({player: duration.current, index: i});
     const r = checkWinner(duration.board);
-    if (r.winner) { duration.winner = r.winner; duration.winLine = r.line; }
+    if (r.winner) { duration.winner = r.winner; duration.winLine = r.line; if (mp.hosting) saveMatchResult(r.winner, 'duration'); }
     else { duration.current = duration.current === 'X' ? 'O' : 'X'; }
     renderDuration();
     pushState();
@@ -1200,6 +1201,8 @@ function ultimateClick(g, c) {
             ultimate.winner = xP > oP ? 'X' : oP > xP ? 'O' : 'Draw';
         }
     }
+
+    if (ultimate.winner && mp.hosting) saveMatchResult(ultimate.winner, 'ultimate');
 
     ultimate.activeGrid = isSubDone(c) ? null : c;
     if (!ultimate.winner) ultimate.current = ultimate.current === 'X' ? 'O' : 'X';
@@ -1305,6 +1308,8 @@ const mp = {
     lastTs:    0,
     hosting:   false,
     opponentName: '',
+    opponentId: null,
+    matchSaved: false,
 };
 
 const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -1355,10 +1360,12 @@ function pollServer() {
                 applyState(data.state);
                 if (data.playerO && !mp.opponentName && mp.hosting) {
                     mp.opponentName = data.playerO;
+                    mp.opponentId = data.playerOId || null;
                     updateMPStatus();
                 }
                 if (data.playerX && !mp.opponentName && !mp.hosting) {
                     mp.opponentName = data.playerX;
+                    mp.opponentId = data.playerXId || null;
                 }
             }
         })
@@ -1373,6 +1380,19 @@ function startPoll() {
 function initMP() {
     mp.myCode = genCode();
     document.getElementById('myCode').textContent = mp.myCode;
+    createRoom(mp.myCode);
+}
+
+function createRoom(code) {
+    fetch('/api/morpion/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ code: code, playerName: currentUsername || 'Joueur X' })
+    }).catch(function() {
+        document.getElementById('offlineNotice').classList.add('show');
+        setTimeout(() => document.getElementById('offlineNotice').classList.remove('show'), 3000);
+    });
 }
 
 function ensureHost() {
@@ -1381,18 +1401,9 @@ function ensureHost() {
     mp.mySymbol  = 'X';
     mp.connected = true;
     mp.hosting   = true;
-    fetch('/api/morpion/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ code: mp.myCode, playerName: currentUsername || 'Joueur X' })
-    }).then(() => {
-        startPoll();
-        updateMPStatus();
-    }).catch(function() {
-        document.getElementById('offlineNotice').classList.add('show');
-        setTimeout(() => document.getElementById('offlineNotice').classList.remove('show'), 3000);
-    });
+    createRoom(mp.myCode);
+    startPoll();
+    updateMPStatus();
 }
 
 function joinSession(code) {
@@ -1440,6 +1451,32 @@ function pushState() {
     saveToServer();
 }
 
+function saveMatchResult(winner, mode) {
+    if (!mp.connected || mp.matchSaved) return;
+    if (!mp.opponentName) return;
+    mp.matchSaved = true;
+
+    var playerXName = mp.hosting ? (currentUsername || 'Joueur X') : mp.opponentName;
+    var playerOName = mp.hosting ? mp.opponentName : (currentUsername || 'Joueur O');
+    var playerXId = mp.hosting ? currentUserId : mp.opponentId;
+    var playerOId = mp.hosting ? mp.opponentId : currentUserId;
+
+    fetch('/api/morpion/match', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+            playerXName: playerXName,
+            playerOName: playerOName,
+            playerXId: playerXId,
+            playerOId: playerOId,
+            winner: winner,
+            mode: mode || currentMode || 'classic',
+            roomCode: mp.roomCode
+        })
+    }).catch(function(){});
+}
+
 function leaveSession() {
     clearInterval(mp.pollTimer);
     mp.connected = false;
@@ -1447,6 +1484,7 @@ function leaveSession() {
     mp.mySymbol  = 'X';
     mp.lastTs    = 0;
     mp.hosting   = false;
+    mp.matchSaved = false;
     mp.opponentName = '';
     document.getElementById('joinInput').value = '';
     document.getElementById('leaveBtn').style.display = 'none';
