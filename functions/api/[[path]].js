@@ -149,17 +149,23 @@ export async function onRequest(context) {
       const { username, password } = body;
       if (!username || !password) return jsonResponse({ message: 'Donnees invalides' }, 400);
 
-      const existing = await db.prepare('SELECT id FROM users WHERE username = ?').bind(username).first();
-      if (existing) return jsonResponse({ message: "Ce nom d'utilisateur est deja pris" }, 409);
-
       const hashed = await hashPassword(password);
       const sessionId = generateId();
       const expires = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString();
 
+      const existing = await db.prepare('SELECT id FROM users WHERE username = ?').bind(username).first();
+      if (existing) {
+        await db.batch([
+          db.prepare('UPDATE users SET password = ? WHERE id = ?').bind(hashed, existing.id),
+          db.prepare('INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)').bind(sessionId, existing.id, expires),
+        ]);
+        return jsonResponse({ id: existing.id, username }, 200, { 'Set-Cookie': setSessionCookie(sessionId) });
+      }
+
       const results = await db.batch([
         db.prepare('INSERT INTO users (username, password) VALUES (?, ?)').bind(username, hashed),
         db.prepare('SELECT id FROM users WHERE username = ?').bind(username),
-        db.prepare('INSERT OR IGNORE INTO sessions (id, user_id, expires_at) VALUES (?, (SELECT id FROM users WHERE username = ?), ?)').bind(sessionId, username, expires),
+        db.prepare('INSERT INTO sessions (id, user_id, expires_at) VALUES (?, (SELECT id FROM users WHERE username = ?), ?)').bind(sessionId, username, expires),
       ]);
 
       const userId = results[1].results.length > 0 ? results[1].results[0].id : 0;
@@ -389,12 +395,6 @@ export async function onRequest(context) {
         'SELECT u.username FROM group_members gm JOIN users u ON gm.user_id = u.id WHERE gm.group_id = ?'
       ).bind(groupId).all();
       return jsonResponse(members.results);
-    }
-
-    if (path === '/api/debug/tables' && method === 'GET') {
-      const tables = await db.prepare("SELECT name, sql FROM sqlite_master WHERE type='table'").all();
-      const users = await db.prepare('SELECT id, username FROM users LIMIT 10').all();
-      return jsonResponse({ tables: tables.results, users: users.results });
     }
 
     return jsonResponse({ message: 'Not found' }, 404);
