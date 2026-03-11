@@ -352,7 +352,8 @@ tbody td {
     var GAMES = {
         solitaire: { label: '🃏 Solitaire', link: 'solitaire.html', emoji: '🃏' },
         snake:     { label: '🐍 Snake',     link: 'snake.html',     emoji: '🐍' },
-        ppg:       { label: '🐾 Papatte Patoune Griffes', link: 'papatte_patoune_griffes.html', emoji: '🐾' }
+        ppg:       { label: '🐾 Papatte Patoune Griffes', link: 'papatte_patoune_griffes.html', emoji: '🐾' },
+        morpion:   { label: '❌⭕ Morpion', link: 'morpion.html', emoji: '❌' }
     };
 
     function formatTime(seconds) {
@@ -589,6 +590,74 @@ tbody td {
             '<a href="papatte_patoune_griffes.html" class="btn-play" data-testid="link-play-again">\uD83D\uDC3E Jouer</a>';
     }
 
+    function renderMorpionTable(matches) {
+        var statsRow = document.getElementById('stats-row');
+        var content = document.getElementById('scores-content');
+        var actionsRow = document.getElementById('actions-row');
+
+        if (matches.length === 0) {
+            statsRow.innerHTML = '';
+            content.innerHTML = '<div class="empty-state">' +
+                '<div class="emoji">\u274C\u2B55</div>' +
+                '<p>Aucune partie de morpion enregistr\u00e9e !</p>' +
+                '<a href="morpion.html" class="btn-play" data-testid="link-play-morpion">\u274C\u2B55 Jouer au Morpion</a>' +
+                '</div>';
+            actionsRow.innerHTML = '';
+            return;
+        }
+
+        var totalMatches = matches.length;
+        var modeLabels = { classic: 'Classique', duration: 'Dur\u00e9e', ultimate: 'Ultime' };
+        var wins = {};
+        for (var i = 0; i < matches.length; i++) {
+            var m = matches[i];
+            var winnerName = null;
+            if (m.winner === 'X') winnerName = m.playerX;
+            else if (m.winner === 'O') winnerName = m.playerO;
+            if (winnerName) wins[winnerName] = (wins[winnerName] || 0) + 1;
+        }
+        var topWinner = '';
+        var topWins = 0;
+        for (var name in wins) {
+            if (wins[name] > topWins) { topWins = wins[name]; topWinner = name; }
+        }
+
+        statsRow.innerHTML =
+            '<div class="stat-box"><div class="stat-value" data-testid="text-total">' + totalMatches + '</div><div class="stat-label">Parties</div></div>' +
+            (topWinner ? '<div class="stat-box"><div class="stat-value" data-testid="text-top-winner">' + topWinner + '</div><div class="stat-label">' + topWins + ' victoire' + (topWins > 1 ? 's' : '') + '</div></div>' : '');
+
+        var html = '<table data-testid="table-scores"><thead><tr>' +
+            '<th>#</th><th>Joueur X</th><th>VS</th><th>Joueur O</th><th>R\u00e9sultat</th><th>Mode</th><th>Date</th>' +
+            '</tr></thead><tbody>';
+
+        for (var i = 0; i < matches.length; i++) {
+            var m = matches[i];
+            var resultText = '';
+            if (m.winner === 'X') resultText = '<span style="color:#c084fc;font-weight:700">' + m.playerX + ' \uD83C\uDFC6</span>';
+            else if (m.winner === 'O') resultText = '<span style="color:#f472b6;font-weight:700">' + m.playerO + ' \uD83C\uDFC6</span>';
+            else if (m.winner === 'Draw') resultText = '<span style="color:#999;font-weight:600">\uD83E\uDD1D Nul</span>';
+            else resultText = '-';
+
+            var modeText = modeLabels[m.mode] || m.mode || '-';
+
+            html += '<tr data-testid="row-match-' + i + '">' +
+                '<td>' + (i + 1) + '</td>' +
+                '<td><span style="color:#c084fc;font-weight:600">\u274C ' + m.playerX + '</span></td>' +
+                '<td style="text-align:center;font-weight:700;color:#6c63ff">VS</td>' +
+                '<td><span style="color:#f472b6;font-weight:600">\u2B55 ' + m.playerO + '</span></td>' +
+                '<td>' + resultText + '</td>' +
+                '<td><span class="badge badge-chrono">' + modeText + '</span></td>' +
+                '<td>' + formatDate(m.date) + '</td>' +
+                '</tr>';
+        }
+
+        html += '</tbody></table>';
+        content.innerHTML = html;
+
+        actionsRow.innerHTML =
+            '<a href="morpion.html" class="btn-play" data-testid="link-play-morpion">\u274C\u2B55 Jouer</a>';
+    }
+
     function renderTable(scores, showGroup) {
         if (currentGame === 'snake') return renderSnakeTable(scores, showGroup);
         if (currentGame === 'ppg') return renderPPGTable(scores, showGroup);
@@ -607,6 +676,37 @@ tbody td {
         var titleEl = document.getElementById('view-title');
         var gameLabel = GAMES[currentGame].label;
         var gameParam = '?game=' + currentGame;
+
+        if (currentGame === 'morpion') {
+            if (currentView === 'personal') {
+                titleEl.textContent = gameLabel + ' \u2014 Mes Parties \u2014 ' + currentUser;
+                showLoading();
+                fetch('/api/morpion/matches', { credentials: 'include' })
+                    .then(function(r) { return r.ok ? r.json() : []; })
+                    .then(function(matches) { renderMorpionTable(matches); })
+                    .catch(function() { renderMorpionTable([]); });
+            } else if (currentView.indexOf('group_') === 0) {
+                var groupId = currentView.substring(6);
+                var groupName = '';
+                for (var i = 0; i < userGroups.length; i++) {
+                    if (String(userGroups[i].id) === groupId) { groupName = userGroups[i].name; break; }
+                }
+                titleEl.textContent = gameLabel + ' \u2014 ' + groupName;
+                showLoading();
+                fetch('/api/morpion/matches?group=' + groupId, { credentials: 'include' })
+                    .then(function(r) { return r.ok ? r.json() : []; })
+                    .then(function(matches) { renderMorpionTable(matches); })
+                    .catch(function() { renderMorpionTable([]); });
+            } else {
+                titleEl.textContent = gameLabel + ' \u2014 Classement G\u00e9n\u00e9ral';
+                showLoading();
+                fetch('/api/morpion/matches', { credentials: 'include' })
+                    .then(function(r) { return r.ok ? r.json() : []; })
+                    .then(function(matches) { renderMorpionTable(matches); })
+                    .catch(function() { renderMorpionTable([]); });
+            }
+            return;
+        }
 
         if (currentView === 'general') {
             titleEl.textContent = gameLabel + ' \u2014 Classement G\u00e9n\u00e9ral';
@@ -644,7 +744,11 @@ tbody td {
 
     window.switchGame = function(game) {
         currentGame = game;
-        currentView = 'general';
+        if (game === 'morpion' && currentUser) {
+            currentView = 'personal';
+        } else {
+            currentView = 'general';
+        }
         fetchAndRender();
     };
 
