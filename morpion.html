@@ -670,69 +670,142 @@ body {
     font-size: 0.9em;
 }
 
-/* NOTIFICATION POPUP */
+/* SIDE PANEL NOTIFICATION */
+.invite-notification-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 10000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+}
+.invite-notification-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+}
 .invite-notification {
     position: fixed;
-    top: 20px;
-    right: 20px;
-    background: #fff;
-    border-radius: 14px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.2), 0 0 0 1px rgba(108,99,255,0.2);
-    padding: 16px 20px;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: 340px;
+    max-width: 85vw;
+    background: linear-gradient(180deg, #f8f7ff 0%, #fff 40%);
+    box-shadow: -8px 0 40px rgba(108,99,255,0.18), -2px 0 0 rgba(108,99,255,0.12);
     z-index: 10001;
-    width: 320px;
-    max-width: 90vw;
-    animation: slideInRight 0.3s ease-out;
-    display: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 28px;
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.22, 0.68, 0, 1.0);
 }
-.invite-notification.show { display: block; }
-@keyframes slideInRight {
-    from { transform: translateX(100px); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
+.invite-notification.show {
+    transform: translateX(0);
+}
+.notif-llama {
+    font-size: 3.5em;
+    margin-bottom: 10px;
+    animation: llamaBounce 1.2s ease infinite;
+}
+@keyframes llamaBounce {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    30% { transform: translateY(-12px) rotate(-5deg); }
+    60% { transform: translateY(-4px) rotate(3deg); }
+}
+.notif-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #6c63ff, #a855f7);
+    color: #fff;
+    font-size: 0.7em;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 4px 14px;
+    border-radius: 20px;
+    margin-bottom: 18px;
 }
 .invite-notification .notif-title {
-    font-weight: 700;
-    color: #6c63ff;
-    font-size: 0.95em;
-    margin-bottom: 6px;
+    font-weight: 800;
+    color: #333;
+    font-size: 1.2em;
+    margin-bottom: 8px;
+    text-align: center;
+    line-height: 1.3;
 }
 .invite-notification .notif-text {
-    color: #555;
-    font-size: 0.88em;
-    margin-bottom: 12px;
+    color: #6c63ff;
+    font-size: 1em;
+    font-weight: 700;
+    margin-bottom: 6px;
+    text-align: center;
+}
+.notif-sub {
+    color: #999;
+    font-size: 0.82em;
+    margin-bottom: 30px;
+    text-align: center;
 }
 .invite-notification .notif-actions {
     display: flex;
-    gap: 8px;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 260px;
 }
 .notif-accept {
-    flex: 1;
-    padding: 7px 14px;
-    background: #6c63ff;
+    width: 100%;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #6c63ff, #7c5cfc);
     color: #fff;
     border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.85em;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 1em;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
     font-family: 'Outfit', sans-serif;
+    box-shadow: 0 6px 20px rgba(108,99,255,0.35);
+    letter-spacing: 0.02em;
 }
-.notif-accept:hover { background: #5548e0; }
+.notif-accept:hover {
+    background: linear-gradient(135deg, #5548e0, #6c63ff);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(108,99,255,0.45);
+}
 .notif-decline {
-    flex: 1;
-    padding: 7px 14px;
-    background: rgba(239,68,68,0.08);
-    border: 1px solid rgba(239,68,68,0.3);
+    width: 100%;
+    padding: 12px 20px;
+    background: transparent;
+    border: 2px solid rgba(239,68,68,0.25);
     color: #dc2626;
-    border-radius: 8px;
+    border-radius: 14px;
     font-weight: 600;
-    font-size: 0.85em;
+    font-size: 0.9em;
     cursor: pointer;
     transition: all 0.2s;
     font-family: 'Outfit', sans-serif;
 }
-.notif-decline:hover { background: rgba(239,68,68,0.15); }
+.notif-decline:hover {
+    background: rgba(239,68,68,0.06);
+    border-color: rgba(239,68,68,0.5);
+}
+.notif-pulse {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #22c55e;
+    animation: pulse 1.5s ease infinite;
+}
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
+    50% { box-shadow: 0 0 0 8px rgba(34,197,94,0); }
+}
 
 /* FLOATING CONFETTI like solitaire */
 .falling {
@@ -825,12 +898,17 @@ body {
     <div id="membersList"></div>
 </div>
 
+<div class="invite-notification-overlay" id="inviteNotifOverlay"></div>
 <div class="invite-notification" id="inviteNotification">
-    <div class="notif-title" id="notifTitle">🎮 Invitation au Morpion</div>
+    <div class="notif-pulse"></div>
+    <div class="notif-llama">🦙</div>
+    <div class="notif-badge">Invitation</div>
+    <div class="notif-title" id="notifTitle">Partie de Morpion !</div>
     <div class="notif-text" id="notifText"></div>
+    <div class="notif-sub">La partie est prête, rejoignez maintenant !</div>
     <div class="notif-actions">
-        <button class="notif-accept" id="notifAccept">✓ Jouer</button>
-        <button class="notif-decline" id="notifDecline">✕ Refuser</button>
+        <button class="notif-accept" id="notifAccept">🎮 Rejoindre la partie</button>
+        <button class="notif-decline" id="notifDecline">Non merci</button>
     </div>
 </div>
 
@@ -1522,11 +1600,18 @@ function pollInvitations() {
 
 function showInviteNotification(inv) {
     const el = document.getElementById('inviteNotification');
-    document.getElementById('notifText').textContent = inv.fromUsername + ' vous invite à jouer au Morpion !';
+    const overlay = document.getElementById('inviteNotifOverlay');
+    document.getElementById('notifText').textContent = inv.fromUsername + ' vous invite à jouer !';
     el.classList.add('show');
+    overlay.classList.add('show');
+
+    function hideNotif() {
+        el.classList.remove('show');
+        overlay.classList.remove('show');
+    }
 
     document.getElementById('notifAccept').onclick = function() {
-        el.classList.remove('show');
+        hideNotif();
         fetch('/api/morpion/invite/' + inv.id + '/accept', { method: 'POST', credentials: 'include' })
             .then(r => r.json())
             .then(data => {
@@ -1539,7 +1624,13 @@ function showInviteNotification(inv) {
     };
 
     document.getElementById('notifDecline').onclick = function() {
-        el.classList.remove('show');
+        hideNotif();
+        fetch('/api/morpion/invite/' + inv.id + '/decline', { method: 'POST', credentials: 'include' }).catch(()=>{});
+        pendingInviteId = null;
+    };
+
+    overlay.onclick = function() {
+        hideNotif();
         fetch('/api/morpion/invite/' + inv.id + '/decline', { method: 'POST', credentials: 'include' }).catch(()=>{});
         pendingInviteId = null;
     };
