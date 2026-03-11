@@ -260,6 +260,119 @@ body {
     border-color: var(--principal);
 }
 
+.password-wrapper {
+    position: relative;
+}
+.password-wrapper input {
+    padding-right: 44px;
+}
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.15em;
+    color: #888;
+    padding: 4px;
+    line-height: 1;
+    transition: color 0.2s;
+}
+.toggle-password:hover {
+    color: var(--principal);
+}
+
+.sort-controls {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}
+.sort-btn {
+    background: var(--blanc);
+    padding: 10px 18px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 2px solid transparent;
+    color: var(--principal);
+    font-weight: 700;
+    font-family: "Segoe UI", sans-serif;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.sort-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(108,99,255,0.2);
+    border-color: var(--principal);
+}
+.sort-dropdown {
+    display: none;
+    background: var(--blanc);
+    border-radius: 14px;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.15);
+    overflow: hidden;
+    min-width: 200px;
+    animation: scaleUp 0.2s ease-out;
+}
+.sort-dropdown.open { display: block; }
+@keyframes scaleUp {
+    from { opacity: 0; transform: translateY(8px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.sort-option {
+    display: block;
+    width: 100%;
+    padding: 11px 16px;
+    background: none;
+    border: none;
+    text-align: left;
+    font-family: "Segoe UI", sans-serif;
+    font-size: 0.88em;
+    font-weight: 600;
+    color: var(--texte);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.sort-option:hover {
+    background: rgba(108,99,255,0.08);
+    color: var(--principal);
+}
+.sort-option.active {
+    background: rgba(108,99,255,0.12);
+    color: var(--principal);
+}
+.score-corner-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 50;
+    background: var(--blanc);
+    padding: 12px 22px;
+    border-radius: 14px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    border: 2px solid transparent;
+    color: var(--principal);
+    font-weight: 700;
+    font-family: "Segoe UI", sans-serif;
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+.score-corner-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(108,99,255,0.25);
+    border-color: var(--principal);
+}
+
 .btn-primary {
     width: 100%;
     padding: 14px;
@@ -513,19 +626,30 @@ body {
     </div>
 </div>
 
-<div class="bottom-section">
-    <a href="tableau_de_score.html" class="wheel-link" data-testid="link-scores">Tableau des Scores</a>
-    <a href="solitaire.html" class="wheel-link hidden-link" id="solitaire-link" data-testid="link-solitaire">Solitaire</a>
-    <a href="roue.html" class="wheel-link" data-testid="link-roue">Roue de la Fortune</a>
-    <a href="cesar.html" class="wheel-link" data-testid="link-cesar">Code de César</a>
-    <a href="qrcode.html" class="wheel-link" data-testid="link-qrcode">Générateur de QRCode</a>
-    <a href="morpion.html" class="wheel-link" data-testid="link-morpion">Morpion</a>
-    <a href="calculatrice.html" class="wheel-link" data-testid="link-calculatrice">Calculatrice (Pas la forme finale)</a>
-    <a href="arbre_genealogique.html" class="wheel-link" data-testid="link-arbre_genealogique">Générateur d'Arbre Généalogique</a>
-    <a href="snake.html" class="wheel-link" data-testid="link-snake">SSSSnake</a>
-    <a href="papatte_patoune_griffes.html" class="wheel-link" data-testid="link-papatte_patoune_griffes">Papatte, Patoune, Griffes</a>
-    <a href="conv_Sys2Num.html" class="wheel-link" data-testid="link-conv_Sys2Num">Convertiseur de Système de Numérisation</a>
-    
+<div class="sort-controls">
+    <button class="sort-btn" id="sort-toggle-btn" data-testid="button-sort" onclick="toggleSortDropdown()">🔀 Trier</button>
+    <div class="sort-dropdown" id="sort-dropdown">
+        <button class="sort-option" data-testid="sort-az" onclick="applySortFilter('az')">🔤 A → Z</button>
+        <button class="sort-option" data-testid="sort-za" onclick="applySortFilter('za')">🔤 Z → A</button>
+        <button class="sort-option" data-testid="sort-games" onclick="applySortFilter('games')">🎮 Jeux</button>
+        <button class="sort-option" data-testid="sort-other" onclick="applySortFilter('other')">📁 Autres</button>
+        <button class="sort-option" data-testid="sort-reset" onclick="applySortFilter('default')">↩️ Par défaut</button>
+    </div>
+</div>
+
+<a href="tableau_de_score.html" class="score-corner-btn" data-testid="link-scores">🏆 Tableau des Scores</a>
+
+<div class="bottom-section" id="bottom-section">
+    <a href="solitaire.html" class="wheel-link hidden-link" id="solitaire-link" data-testid="link-solitaire" data-category="game">Solitaire</a>
+    <a href="roue.html" class="wheel-link" data-testid="link-roue" data-category="other">Roue de la Fortune</a>
+    <a href="cesar.html" class="wheel-link" data-testid="link-cesar" data-category="other">Code de César</a>
+    <a href="qrcode.html" class="wheel-link" data-testid="link-qrcode" data-category="other">Générateur de QRCode</a>
+    <a href="morpion.html" class="wheel-link" data-testid="link-morpion" data-category="game">Morpion</a>
+    <a href="calculatrice.html" class="wheel-link" data-testid="link-calculatrice" data-category="other">Calculatrice (Pas la forme finale)</a>
+    <a href="arbre_genealogique.html" class="wheel-link" data-testid="link-arbre_genealogique" data-category="other">Générateur d'Arbre Généalogique</a>
+    <a href="snake.html" class="wheel-link" data-testid="link-snake" data-category="game">SSSSnake</a>
+    <a href="papatte_patoune_griffes.html" class="wheel-link" data-testid="link-papatte_patoune_griffes" data-category="game">Papatte, Patoune, Griffes</a>
+    <a href="conv_Sys2Num.html" class="wheel-link" data-testid="link-conv_Sys2Num" data-category="other">Convertiseur de Système de Numérisation</a>
 </div>
 
 <div class="modal-overlay" id="auth-overlay">
@@ -546,7 +670,10 @@ body {
             </div>
             <div class="form-group">
                 <label>Mot de passe</label>
-                <input type="password" id="auth-password" data-testid="input-password" required>
+                <div class="password-wrapper">
+                    <input type="password" id="auth-password" data-testid="input-password" required>
+                    <button type="button" class="toggle-password" id="toggle-password" data-testid="button-toggle-password" onclick="togglePasswordVisibility()">👁️‍🗨️</button>
+                </div>
             </div>
             <button type="submit" class="btn-primary" id="auth-submit" data-testid="button-submit-auth">Se Connecter</button>
         </form>
@@ -922,6 +1049,77 @@ window.addEventListener("scroll", function() {
         solitaireLink.classList.add("hidden-link");
     }
 });
+
+function togglePasswordVisibility() {
+    var inp = document.getElementById("auth-password");
+    var btn = document.getElementById("toggle-password");
+    if (inp.type === "password") {
+        inp.type = "text";
+        btn.textContent = "🙈";
+    } else {
+        inp.type = "password";
+        btn.textContent = "\uD83D\uDC41\uFE0F\u200D\uD83D\uDDE8\uFE0F";
+    }
+}
+
+var currentSortFilter = "default";
+
+function toggleSortDropdown() {
+    var dd = document.getElementById("sort-dropdown");
+    dd.classList.toggle("open");
+}
+
+document.addEventListener("click", function(e) {
+    var sc = document.querySelector(".sort-controls");
+    if (sc && !sc.contains(e.target)) {
+        document.getElementById("sort-dropdown").classList.remove("open");
+    }
+});
+
+function applySortFilter(mode) {
+    currentSortFilter = mode;
+    var dd = document.getElementById("sort-dropdown");
+    dd.classList.remove("open");
+
+    var options = dd.querySelectorAll(".sort-option");
+    for (var i = 0; i < options.length; i++) {
+        options[i].classList.remove("active");
+    }
+    var sel = dd.querySelector('[data-testid="sort-' + mode + '"]');
+    if (sel) sel.classList.add("active");
+
+    var container = document.getElementById("bottom-section");
+    var links = Array.from(container.querySelectorAll(".wheel-link"));
+
+    links.forEach(function(l) {
+        l.style.display = "";
+        l.style.order = "";
+    });
+
+    if (mode === "az") {
+        links.sort(function(a, b) {
+            return a.textContent.trim().localeCompare(b.textContent.trim(), "fr");
+        });
+        links.forEach(function(l, i) { l.style.order = i; });
+    } else if (mode === "za") {
+        links.sort(function(a, b) {
+            return b.textContent.trim().localeCompare(a.textContent.trim(), "fr");
+        });
+        links.forEach(function(l, i) { l.style.order = i; });
+    } else if (mode === "games") {
+        links.forEach(function(l) {
+            if (l.getAttribute("data-category") !== "game") {
+                l.style.display = "none";
+            }
+        });
+    } else if (mode === "other") {
+        links.forEach(function(l) {
+            if (l.getAttribute("data-category") !== "other") {
+                l.style.display = "none";
+            }
+        });
+    }
+}
 
 checkAuth();
 </script>
