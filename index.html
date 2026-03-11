@@ -373,6 +373,32 @@ body {
     border-color: var(--principal);
 }
 
+.lang-switcher {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+.lang-btn {
+    background: none;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.35em;
+    padding: 3px 5px;
+    transition: all 0.2s ease;
+    line-height: 1;
+    opacity: 0.6;
+}
+.lang-btn:hover {
+    opacity: 1;
+    transform: scale(1.15);
+}
+.lang-btn.active {
+    opacity: 1;
+    border-color: var(--principal);
+    background: rgba(108,99,255,0.08);
+}
+
 .btn-primary {
     width: 100%;
     padding: 14px;
@@ -601,43 +627,52 @@ body {
 
 <div class="top-bar">
     <div class="top-bar-left">
-        <button class="top-btn" id="btn-groups" data-testid="button-groups" onclick="openGroupModal()" style="display:none;">Gestion des Groupes</button>
+        <button class="top-btn" id="btn-groups" data-testid="button-groups" onclick="openGroupModal()" style="display:none;" data-i18n="groupMgmt">Gestion des Groupes</button>
+    </div>
+    <div class="lang-switcher" id="lang-switcher" data-testid="lang-switcher">
+        <button class="lang-btn active" data-lang="fr" data-testid="lang-fr" onclick="setLang('fr')">🇫🇷</button>
+        <button class="lang-btn" data-lang="en" data-testid="lang-en" onclick="setLang('en')">🇬🇧</button>
+        <button class="lang-btn" data-lang="es" data-testid="lang-es" onclick="setLang('es')">🇪🇸</button>
+        <button class="lang-btn" data-lang="pt" data-testid="lang-pt" onclick="setLang('pt')">🇵🇹</button>
+        <button class="lang-btn" data-lang="de" data-testid="lang-de" onclick="setLang('de')">🇩🇪</button>
+        <button class="lang-btn" data-lang="ka" data-testid="lang-ka" onclick="setLang('ka')">🇬🇪</button>
+        <button class="lang-btn" data-lang="ru" data-testid="lang-ru" onclick="setLang('ru')">🇷🇺</button>
     </div>
     <div class="top-bar-left">
         <span class="username-label" id="username-label" data-testid="text-username" style="display:none;"></span>
-        <button class="top-btn" id="btn-profile" data-testid="button-profile" onclick="openProfileModal()" style="display:none;">Mon Profil</button>
-        <button class="top-btn" id="btn-logout" data-testid="button-logout" onclick="doLogout()" style="display:none;">Se déconnecter</button>
-        <button class="top-btn" id="btn-auth" data-testid="button-login" onclick="openAuthModal()">Se Connecter</button>
+        <button class="top-btn" id="btn-profile" data-testid="button-profile" onclick="openProfileModal()" style="display:none;" data-i18n="myProfile">Mon Profil</button>
+        <button class="top-btn" id="btn-logout" data-testid="button-logout" onclick="doLogout()" style="display:none;" data-i18n="logout">Se déconnecter</button>
+        <button class="top-btn" id="btn-auth" data-testid="button-login" onclick="openAuthModal()" data-i18n="login">Se Connecter</button>
     </div>
 </div>
 
 <div class="hero">
     <div class="card">
-        <h1 data-testid="text-hero-title">✨ Coucou ✨</h1>
+        <h1 data-testid="text-hero-title" data-i18n="heroTitle">✨ Coucou ✨</h1>
         <p>
-            Voici mon tout premier site internet !<br>
+            <span data-i18n="heroText">Voici mon tout premier site internet !<br>
             En parcourant les onglets ci-dessous, vous pourrez utiliser des projets que j'ai eu l'occasion de faire dans un cadre scolaire ou personnel. Je n'ai pas pris la peine de préciser où et quand je les ai fait, car comme vous le remarquerez, je les ai réadapté à mon site. Je vous prie d'être indulgent.e.s, il reste encore quelques bugs par-ci, par-là.<br>
-            <strong>Je vous souhaite de passer un bon moment !</strong> <br>
-            <h7>(Oui, j'aime les lamas 🦙)</h7>
+            <strong>Je vous souhaite de passer un bon moment !</strong></span> <br>
+            <h7 data-i18n="heroLlama">(Oui, j'aime les lamas 🦙)</h7>
         </p>
-        <div class="emoji">
+        <div class="emoji" data-i18n="heroPride">
             Je suis fière de moi (sans faire ma dIVa) 
         </div>
     </div>
 </div>
 
 <div class="sort-controls">
-    <button class="sort-btn" id="sort-toggle-btn" data-testid="button-sort" onclick="toggleSortDropdown()">🔀 Trier</button>
+    <button class="sort-btn" id="sort-toggle-btn" data-testid="button-sort" onclick="toggleSortDropdown()" data-i18n="sortBtn">🔀 Trier</button>
     <div class="sort-dropdown" id="sort-dropdown">
         <button class="sort-option" data-testid="sort-az" onclick="applySortFilter('az')">🔤 A → Z</button>
         <button class="sort-option" data-testid="sort-za" onclick="applySortFilter('za')">🔤 Z → A</button>
-        <button class="sort-option" data-testid="sort-games" onclick="applySortFilter('games')">🎮 Jeux</button>
-        <button class="sort-option" data-testid="sort-other" onclick="applySortFilter('other')">📁 Autres</button>
-        <button class="sort-option" data-testid="sort-reset" onclick="applySortFilter('default')">↩️ Par défaut</button>
+        <button class="sort-option" data-testid="sort-games" onclick="applySortFilter('games')" data-i18n="sortGames">🎮 Jeux</button>
+        <button class="sort-option" data-testid="sort-other" onclick="applySortFilter('other')" data-i18n="sortOther">📁 Autres</button>
+        <button class="sort-option" data-testid="sort-reset" onclick="applySortFilter('default')" data-i18n="sortDefault">↩️ Par défaut</button>
     </div>
 </div>
 
-<a href="tableau_de_score.html" class="score-corner-btn" data-testid="link-scores">🏆 Tableau des Scores</a>
+<a href="tableau_de_score.html" class="score-corner-btn" data-testid="link-scores" data-i18n="scoreboard">🏆 Tableau des Scores</a>
 
 <div class="bottom-section" id="bottom-section">
     <a href="solitaire.html" class="wheel-link hidden-link" id="solitaire-link" data-testid="link-solitaire" data-category="game">Solitaire</a>
@@ -657,25 +692,25 @@ body {
         <button class="modal-close" onclick="closeAuthModal()">&times;</button>
         <div class="modal-header">
             <div class="icon">🦙</div>
-            <h2 id="auth-title">Connexion</h2>
+            <h2 id="auth-title" data-i18n="loginTitle">Connexion</h2>
         </div>
         <div class="modal-tabs">
-            <button class="modal-tab active" id="tab-login" data-testid="tab-login" onclick="switchAuthTab('login')">Connexion</button>
-            <button class="modal-tab" id="tab-register" data-testid="tab-register" onclick="switchAuthTab('register')">Inscription</button>
+            <button class="modal-tab active" id="tab-login" data-testid="tab-login" onclick="switchAuthTab('login')" data-i18n="loginTab">Connexion</button>
+            <button class="modal-tab" id="tab-register" data-testid="tab-register" onclick="switchAuthTab('register')" data-i18n="registerTab">Inscription</button>
         </div>
         <form onsubmit="handleAuth(event)">
             <div class="form-group">
-                <label>Nom d'utilisateur</label>
+                <label data-i18n="username">Nom d'utilisateur</label>
                 <input type="text" id="auth-username" data-testid="input-username" required>
             </div>
             <div class="form-group">
-                <label>Mot de passe</label>
+                <label data-i18n="password">Mot de passe</label>
                 <div class="password-wrapper">
                     <input type="password" id="auth-password" data-testid="input-password" required>
                     <button type="button" class="toggle-password" id="toggle-password" data-testid="button-toggle-password" onclick="togglePasswordVisibility()">👁️‍🗨️</button>
                 </div>
             </div>
-            <button type="submit" class="btn-primary" id="auth-submit" data-testid="button-submit-auth">Se Connecter</button>
+            <button type="submit" class="btn-primary" id="auth-submit" data-testid="button-submit-auth" data-i18n="login">Se Connecter</button>
         </form>
     </div>
 </div>
@@ -685,31 +720,31 @@ body {
         <button class="modal-close" onclick="closeGroupModal()">&times;</button>
         <div class="modal-header">
             <div class="icon">👥</div>
-            <h2>Groupes</h2>
+            <h2 data-i18n="groups">Groupes</h2>
         </div>
         <div class="group-tabs">
-            <button class="group-tab active" id="gtab-list" data-testid="tab-group-list" onclick="switchGroupTab('list')">Mes Groupes</button>
-            <button class="group-tab" id="gtab-create" data-testid="tab-group-create" onclick="switchGroupTab('create')">Créer</button>
-            <button class="group-tab" id="gtab-join" data-testid="tab-group-join" onclick="switchGroupTab('join')">Rejoindre</button>
+            <button class="group-tab active" id="gtab-list" data-testid="tab-group-list" onclick="switchGroupTab('list')" data-i18n="myGroups">Mes Groupes</button>
+            <button class="group-tab" id="gtab-create" data-testid="tab-group-create" onclick="switchGroupTab('create')" data-i18n="create">Créer</button>
+            <button class="group-tab" id="gtab-join" data-testid="tab-group-join" onclick="switchGroupTab('join')" data-i18n="join">Rejoindre</button>
         </div>
         <div id="group-content">
             <div id="group-list" data-testid="group-list"></div>
             <div id="group-create-form" style="display:none;">
                 <form onsubmit="handleCreateGroup(event)">
                     <div class="form-group">
-                        <label>Nom du groupe</label>
+                        <label data-i18n="groupName">Nom du groupe</label>
                         <input type="text" id="group-name-input" data-testid="input-group-name" required>
                     </div>
-                    <button type="submit" class="btn-primary" data-testid="button-create-group-submit">Créer le Groupe</button>
+                    <button type="submit" class="btn-primary" data-testid="button-create-group-submit" data-i18n="createGroup">Créer le Groupe</button>
                 </form>
             </div>
             <div id="group-join-form" style="display:none;">
                 <form onsubmit="handleJoinGroup(event)">
                     <div class="form-group">
-                        <label>Code du groupe</label>
+                        <label data-i18n="groupCode">Code du groupe</label>
                         <input type="text" id="group-code-input" data-testid="input-group-code" class="code-input" maxlength="8" required>
                     </div>
-                    <button type="submit" class="btn-primary" data-testid="button-join-group-submit">Rejoindre</button>
+                    <button type="submit" class="btn-primary" data-testid="button-join-group-submit" data-i18n="join">Rejoindre</button>
                 </form>
             </div>
         </div>
@@ -721,7 +756,7 @@ body {
         <button class="modal-close" onclick="closeProfileModal()">&times;</button>
         <div class="modal-header">
             <div class="icon">👤</div>
-            <h2>Mon Profil</h2>
+            <h2 data-i18n="myProfile">Mon Profil</h2>
         </div>
         <div id="profile-content" data-testid="profile-content"></div>
     </div>
@@ -736,6 +771,415 @@ body {
 var currentUser = null;
 var currentGroups = [];
 var authMode = "login";
+var currentLang = localStorage.getItem("lamatita_lang") || "fr";
+
+var I18N = {
+    fr: {
+        heroTitle: "✨ Coucou ✨",
+        heroText: 'Voici mon tout premier site internet !<br>En parcourant les onglets ci-dessous, vous pourrez utiliser des projets que j\'ai eu l\'occasion de faire dans un cadre scolaire ou personnel. Je n\'ai pas pris la peine de préciser où et quand je les ai fait, car comme vous le remarquerez, je les ai réadapté à mon site. Je vous prie d\'être indulgent.e.s, il reste encore quelques bugs par-ci, par-là.<br><strong>Je vous souhaite de passer un bon moment !</strong>',
+        heroLlama: "(Oui, j'aime les lamas 🦙)",
+        heroPride: "Je suis fière de moi (sans faire ma dIVa)",
+        login: "Se Connecter",
+        logout: "Se déconnecter",
+        myProfile: "Mon Profil",
+        groupMgmt: "Gestion des Groupes",
+        loginTitle: "Connexion",
+        loginTab: "Connexion",
+        registerTab: "Inscription",
+        registerTitle: "Inscription",
+        register: "S'inscrire",
+        username: "Nom d'utilisateur",
+        password: "Mot de passe",
+        groups: "Groupes",
+        myGroups: "Mes Groupes",
+        create: "Créer",
+        join: "Rejoindre",
+        groupName: "Nom du groupe",
+        createGroup: "Créer le Groupe",
+        groupCode: "Code du groupe",
+        scoreboard: "🏆 Tableau des Scores",
+        sortBtn: "🔀 Trier",
+        sortGames: "🎮 Jeux",
+        sortOther: "📁 Autres",
+        sortDefault: "↩️ Par défaut",
+        wins: "Victoires",
+        bestTime: "Meilleur temps",
+        loading: "Chargement...",
+        noGroups: "Aucun groupe pour le moment",
+        loadError: "Erreur de chargement",
+        members: "Membres",
+        copy: "📋 Copier",
+        code: "Code",
+        copied: "Copié !",
+        welcome: "Bienvenue !",
+        accountCreated: "Compte créé avec succès",
+        welcomeBack: "Content de vous revoir !",
+        connectedAs: "Connecté en tant que ",
+        goodbye: "À bientôt !",
+        disconnected: "Vous êtes déconnecté",
+        error: "Erreur",
+        loginFirst: "Connectez-vous d'abord",
+        serverError: "Problème de connexion au serveur",
+        groupCreated: "Groupe créé !",
+        cantCreate: "Impossible de créer le groupe",
+        groupJoined: "Groupe rejoint !",
+        youJoined: 'Vous avez rejoint "',
+        alreadyIn: "Vous êtes déjà dans ce groupe",
+        cantJoin: "Impossible de rejoindre le groupe",
+        info: "Info"
+    },
+    en: {
+        heroTitle: "✨ Hello ✨",
+        heroText: 'This is my very first website!<br>By browsing the tabs below, you can use projects I had the opportunity to make in a school or personal context. I didn\'t bother specifying where and when I made them, because as you\'ll notice, I adapted them to my site. Please be kind, there are still a few bugs here and there.<br><strong>I hope you have a great time!</strong>',
+        heroLlama: "(Yes, I love llamas 🦙)",
+        heroPride: "I'm proud of myself (without being a dIVa)",
+        login: "Log In",
+        logout: "Log Out",
+        myProfile: "My Profile",
+        groupMgmt: "Group Management",
+        loginTitle: "Log In",
+        loginTab: "Log In",
+        registerTab: "Sign Up",
+        registerTitle: "Sign Up",
+        register: "Sign Up",
+        username: "Username",
+        password: "Password",
+        groups: "Groups",
+        myGroups: "My Groups",
+        create: "Create",
+        join: "Join",
+        groupName: "Group name",
+        createGroup: "Create Group",
+        groupCode: "Group code",
+        scoreboard: "🏆 Scoreboard",
+        sortBtn: "🔀 Sort",
+        sortGames: "🎮 Games",
+        sortOther: "📁 Others",
+        sortDefault: "↩️ Default",
+        wins: "Wins",
+        bestTime: "Best time",
+        loading: "Loading...",
+        noGroups: "No groups yet",
+        loadError: "Loading error",
+        members: "Members",
+        copy: "📋 Copy",
+        code: "Code",
+        copied: "Copied!",
+        welcome: "Welcome!",
+        accountCreated: "Account created successfully",
+        welcomeBack: "Welcome back!",
+        connectedAs: "Logged in as ",
+        goodbye: "See you soon!",
+        disconnected: "You are logged out",
+        error: "Error",
+        loginFirst: "Please log in first",
+        serverError: "Server connection problem",
+        groupCreated: "Group created!",
+        cantCreate: "Unable to create group",
+        groupJoined: "Group joined!",
+        youJoined: 'You joined "',
+        alreadyIn: "You are already in this group",
+        cantJoin: "Unable to join group",
+        info: "Info"
+    },
+    es: {
+        heroTitle: "✨ Hola ✨",
+        heroText: '¡Este es mi primer sitio web!<br>Navegando por las pestañas de abajo, podrás usar proyectos que tuve la oportunidad de hacer en un contexto escolar o personal. No me tomé la molestia de precisar dónde y cuándo los hice, porque como notarás, los adapté a mi sitio. Les pido que sean indulgentes, todavía quedan algunos bugs por aquí y por allá.<br><strong>¡Les deseo que pasen un buen rato!</strong>',
+        heroLlama: "(Sí, me encantan las llamas 🦙)",
+        heroPride: "Estoy orgullosa de mí misma (sin ser una dIVa)",
+        login: "Iniciar sesión",
+        logout: "Cerrar sesión",
+        myProfile: "Mi Perfil",
+        groupMgmt: "Gestión de Grupos",
+        loginTitle: "Iniciar sesión",
+        loginTab: "Iniciar sesión",
+        registerTab: "Registrarse",
+        registerTitle: "Registrarse",
+        register: "Registrarse",
+        username: "Nombre de usuario",
+        password: "Contraseña",
+        groups: "Grupos",
+        myGroups: "Mis Grupos",
+        create: "Crear",
+        join: "Unirse",
+        groupName: "Nombre del grupo",
+        createGroup: "Crear Grupo",
+        groupCode: "Código del grupo",
+        scoreboard: "🏆 Tabla de Puntuaciones",
+        sortBtn: "🔀 Ordenar",
+        sortGames: "🎮 Juegos",
+        sortOther: "📁 Otros",
+        sortDefault: "↩️ Por defecto",
+        wins: "Victorias",
+        bestTime: "Mejor tiempo",
+        loading: "Cargando...",
+        noGroups: "Ningún grupo por el momento",
+        loadError: "Error de carga",
+        members: "Miembros",
+        copy: "📋 Copiar",
+        code: "Código",
+        copied: "¡Copiado!",
+        welcome: "¡Bienvenido/a!",
+        accountCreated: "Cuenta creada con éxito",
+        welcomeBack: "¡Qué bueno verte de nuevo!",
+        connectedAs: "Conectado como ",
+        goodbye: "¡Hasta pronto!",
+        disconnected: "Has cerrado sesión",
+        error: "Error",
+        loginFirst: "Inicia sesión primero",
+        serverError: "Problema de conexión al servidor",
+        groupCreated: "¡Grupo creado!",
+        cantCreate: "No se pudo crear el grupo",
+        groupJoined: "¡Te uniste al grupo!",
+        youJoined: 'Te uniste a "',
+        alreadyIn: "Ya estás en este grupo",
+        cantJoin: "No se pudo unir al grupo",
+        info: "Info"
+    },
+    pt: {
+        heroTitle: "✨ Olá ✨",
+        heroText: 'Este é o meu primeiro site!<br>Navegando pelas abas abaixo, você poderá usar projetos que tive a oportunidade de fazer em contexto escolar ou pessoal. Não me preocupei em especificar onde e quando os fiz, porque como você perceberá, eu os adaptei ao meu site. Peço que sejam compreensivos, ainda há alguns bugs aqui e ali.<br><strong>Desejo que se divirtam!</strong>',
+        heroLlama: "(Sim, eu amo lhamas 🦙)",
+        heroPride: "Estou orgulhosa de mim mesma (sem ser uma dIVa)",
+        login: "Entrar",
+        logout: "Sair",
+        myProfile: "Meu Perfil",
+        groupMgmt: "Gestão de Grupos",
+        loginTitle: "Entrar",
+        loginTab: "Entrar",
+        registerTab: "Cadastrar",
+        registerTitle: "Cadastrar",
+        register: "Cadastrar",
+        username: "Nome de usuário",
+        password: "Senha",
+        groups: "Grupos",
+        myGroups: "Meus Grupos",
+        create: "Criar",
+        join: "Entrar",
+        groupName: "Nome do grupo",
+        createGroup: "Criar Grupo",
+        groupCode: "Código do grupo",
+        scoreboard: "🏆 Placar",
+        sortBtn: "🔀 Ordenar",
+        sortGames: "🎮 Jogos",
+        sortOther: "📁 Outros",
+        sortDefault: "↩️ Padrão",
+        wins: "Vitórias",
+        bestTime: "Melhor tempo",
+        loading: "Carregando...",
+        noGroups: "Nenhum grupo no momento",
+        loadError: "Erro ao carregar",
+        members: "Membros",
+        copy: "📋 Copiar",
+        code: "Código",
+        copied: "Copiado!",
+        welcome: "Bem-vindo/a!",
+        accountCreated: "Conta criada com sucesso",
+        welcomeBack: "Que bom te ver de novo!",
+        connectedAs: "Conectado como ",
+        goodbye: "Até logo!",
+        disconnected: "Você saiu",
+        error: "Erro",
+        loginFirst: "Entre primeiro",
+        serverError: "Problema de conexão com o servidor",
+        groupCreated: "Grupo criado!",
+        cantCreate: "Não foi possível criar o grupo",
+        groupJoined: "Entrou no grupo!",
+        youJoined: 'Você entrou em "',
+        alreadyIn: "Você já está neste grupo",
+        cantJoin: "Não foi possível entrar no grupo",
+        info: "Info"
+    },
+    de: {
+        heroTitle: "✨ Hallo ✨",
+        heroText: 'Das ist meine allererste Website!<br>Wenn du die Tabs unten durchstöberst, kannst du Projekte nutzen, die ich im schulischen oder persönlichen Rahmen erstellt habe. Ich habe nicht angegeben, wo und wann ich sie gemacht habe, denn wie du bemerken wirst, habe ich sie an meine Seite angepasst. Bitte seid nachsichtig, es gibt noch ein paar Bugs hier und da.<br><strong>Ich wünsche euch viel Spaß!</strong>',
+        heroLlama: "(Ja, ich liebe Lamas 🦙)",
+        heroPride: "Ich bin stolz auf mich (ohne eine dIVa zu sein)",
+        login: "Anmelden",
+        logout: "Abmelden",
+        myProfile: "Mein Profil",
+        groupMgmt: "Gruppenverwaltung",
+        loginTitle: "Anmeldung",
+        loginTab: "Anmeldung",
+        registerTab: "Registrierung",
+        registerTitle: "Registrierung",
+        register: "Registrieren",
+        username: "Benutzername",
+        password: "Passwort",
+        groups: "Gruppen",
+        myGroups: "Meine Gruppen",
+        create: "Erstellen",
+        join: "Beitreten",
+        groupName: "Gruppenname",
+        createGroup: "Gruppe erstellen",
+        groupCode: "Gruppencode",
+        scoreboard: "🏆 Punktetafel",
+        sortBtn: "🔀 Sortieren",
+        sortGames: "🎮 Spiele",
+        sortOther: "📁 Andere",
+        sortDefault: "↩️ Standard",
+        wins: "Siege",
+        bestTime: "Bestzeit",
+        loading: "Wird geladen...",
+        noGroups: "Noch keine Gruppen",
+        loadError: "Ladefehler",
+        members: "Mitglieder",
+        copy: "📋 Kopieren",
+        code: "Code",
+        copied: "Kopiert!",
+        welcome: "Willkommen!",
+        accountCreated: "Konto erfolgreich erstellt",
+        welcomeBack: "Schön, dich wiederzusehen!",
+        connectedAs: "Angemeldet als ",
+        goodbye: "Bis bald!",
+        disconnected: "Du bist abgemeldet",
+        error: "Fehler",
+        loginFirst: "Bitte melde dich zuerst an",
+        serverError: "Verbindungsproblem zum Server",
+        groupCreated: "Gruppe erstellt!",
+        cantCreate: "Gruppe konnte nicht erstellt werden",
+        groupJoined: "Gruppe beigetreten!",
+        youJoined: 'Du bist "',
+        alreadyIn: "Du bist bereits in dieser Gruppe",
+        cantJoin: "Konnte der Gruppe nicht beitreten",
+        info: "Info"
+    },
+    ka: {
+        heroTitle: "✨ გამარჯობა ✨",
+        heroText: 'ეს ჩემი პირველი ვებ-გვერდია!<br>ქვემოთ მოცემულ ჩანართებზე დაკლიკებით შეგიძლიათ გამოიყენოთ პროექტები, რომლებიც სასკოლო ან პირადი მიზნებისთვის შევქმენი. არ დავაკონკრეტე სად და როდის გავაკეთე, რადგან როგორც შეამჩნევთ, ჩემს საიტს მოვარგე. გთხოვთ, შემწყნარებლები იყოთ, ჯერ კიდევ არის ბაგები აქა-იქ.<br><strong>ვისურვებ კარგად გაატაროთ დრო!</strong>',
+        heroLlama: "(დიახ, ლამები მიყვარს 🦙)",
+        heroPride: "ჩემით ვამაყობ (დივას გარეშე)",
+        login: "შესვლა",
+        logout: "გასვლა",
+        myProfile: "ჩემი პროფილი",
+        groupMgmt: "ჯგუფების მართვა",
+        loginTitle: "შესვლა",
+        loginTab: "შესვლა",
+        registerTab: "რეგისტრაცია",
+        registerTitle: "რეგისტრაცია",
+        register: "რეგისტრაცია",
+        username: "მომხმარებლის სახელი",
+        password: "პაროლი",
+        groups: "ჯგუფები",
+        myGroups: "ჩემი ჯგუფები",
+        create: "შექმნა",
+        join: "შეერთება",
+        groupName: "ჯგუფის სახელი",
+        createGroup: "ჯგუფის შექმნა",
+        groupCode: "ჯგუფის კოდი",
+        scoreboard: "🏆 ქულების ცხრილი",
+        sortBtn: "🔀 დალაგება",
+        sortGames: "🎮 თამაშები",
+        sortOther: "📁 სხვა",
+        sortDefault: "↩️ ნაგულისხმევი",
+        wins: "გამარჯვებები",
+        bestTime: "საუკეთესო დრო",
+        loading: "იტვირთება...",
+        noGroups: "ჯერ არ არის ჯგუფები",
+        loadError: "ჩატვირთვის შეცდომა",
+        members: "წევრები",
+        copy: "📋 კოპირება",
+        code: "კოდი",
+        copied: "კოპირებულია!",
+        welcome: "კეთილი იყოს!",
+        accountCreated: "ანგარიში შეიქმნა",
+        welcomeBack: "მოხარული ვარ კვლავ გხედავ!",
+        connectedAs: "შესული ხარ როგორც ",
+        goodbye: "ნახვამდის!",
+        disconnected: "გამოხვედი",
+        error: "შეცდომა",
+        loginFirst: "ჯერ შედი",
+        serverError: "სერვერთან კავშირის პრობლემა",
+        groupCreated: "ჯგუფი შეიქმნა!",
+        cantCreate: "ჯგუფის შექმნა ვერ მოხერხდა",
+        groupJoined: "ჯგუფს შეუერთდი!",
+        youJoined: 'შეუერთდი "',
+        alreadyIn: "უკვე ხარ ამ ჯგუფში",
+        cantJoin: "ჯგუფში შეერთება ვერ მოხერხდა",
+        info: "ინფო"
+    },
+    ru: {
+        heroTitle: "✨ Привет ✨",
+        heroText: 'Это мой самый первый сайт!<br>Просматривая вкладки ниже, вы сможете воспользоваться проектами, которые я делала в рамках учёбы или для себя. Я не стала уточнять, где и когда я их делала, потому что, как вы заметите, я адаптировала их под свой сайт. Прошу быть снисходительными — ещё остались кое-какие баги тут и там.<br><strong>Желаю вам хорошо провести время!</strong>',
+        heroLlama: "(Да, я люблю лам 🦙)",
+        heroPride: "Я горжусь собой (без звёздности)",
+        login: "Войти",
+        logout: "Выйти",
+        myProfile: "Мой Профиль",
+        groupMgmt: "Управление группами",
+        loginTitle: "Вход",
+        loginTab: "Вход",
+        registerTab: "Регистрация",
+        registerTitle: "Регистрация",
+        register: "Зарегистрироваться",
+        username: "Имя пользователя",
+        password: "Пароль",
+        groups: "Группы",
+        myGroups: "Мои Группы",
+        create: "Создать",
+        join: "Вступить",
+        groupName: "Название группы",
+        createGroup: "Создать группу",
+        groupCode: "Код группы",
+        scoreboard: "🏆 Таблица результатов",
+        sortBtn: "🔀 Сортировка",
+        sortGames: "🎮 Игры",
+        sortOther: "📁 Другое",
+        sortDefault: "↩️ По умолчанию",
+        wins: "Победы",
+        bestTime: "Лучшее время",
+        loading: "Загрузка...",
+        noGroups: "Пока нет групп",
+        loadError: "Ошибка загрузки",
+        members: "Участники",
+        copy: "📋 Копировать",
+        code: "Код",
+        copied: "Скопировано!",
+        welcome: "Добро пожаловать!",
+        accountCreated: "Аккаунт успешно создан",
+        welcomeBack: "Рады вас видеть снова!",
+        connectedAs: "Вы вошли как ",
+        goodbye: "До скорого!",
+        disconnected: "Вы вышли из системы",
+        error: "Ошибка",
+        loginFirst: "Сначала войдите",
+        serverError: "Проблема с подключением к серверу",
+        groupCreated: "Группа создана!",
+        cantCreate: "Не удалось создать группу",
+        groupJoined: "Вы вступили в группу!",
+        youJoined: 'Вы вступили в "',
+        alreadyIn: "Вы уже в этой группе",
+        cantJoin: "Не удалось вступить в группу",
+        info: "Инфо"
+    }
+};
+
+function t(key) {
+    return (I18N[currentLang] && I18N[currentLang][key]) || I18N.fr[key] || key;
+}
+
+function applyLang() {
+    document.querySelectorAll("[data-i18n]").forEach(function(el) {
+        var key = el.getAttribute("data-i18n");
+        var val = t(key);
+        if (val) el.innerHTML = val;
+    });
+    var btns = document.querySelectorAll(".lang-btn");
+    for (var i = 0; i < btns.length; i++) {
+        btns[i].classList.toggle("active", btns[i].getAttribute("data-lang") === currentLang);
+    }
+}
+
+function setLang(lang) {
+    currentLang = lang;
+    localStorage.setItem("lamatita_lang", lang);
+    applyLang();
+    if (authMode === "login") {
+        switchAuthTab("login");
+    } else {
+        switchAuthTab("register");
+    }
+}
 
 function showToast(title, desc, isError) {
     var t = document.getElementById("toast");
@@ -784,8 +1228,8 @@ function switchAuthTab(mode) {
     authMode = mode;
     document.getElementById("tab-login").className = "modal-tab" + (mode === "login" ? " active" : "");
     document.getElementById("tab-register").className = "modal-tab" + (mode === "register" ? " active" : "");
-    document.getElementById("auth-title").textContent = mode === "login" ? "Connexion" : "Inscription";
-    document.getElementById("auth-submit").textContent = mode === "login" ? "Se Connecter" : "S'inscrire";
+    document.getElementById("auth-title").textContent = mode === "login" ? t("loginTitle") : t("registerTitle");
+    document.getElementById("auth-submit").textContent = mode === "login" ? t("login") : t("register");
 }
 
 function handleAuth(e) {
@@ -805,20 +1249,20 @@ function handleAuth(e) {
     .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
     .then(function(result) {
         if (!result.ok) {
-            showToast("Erreur", result.data.message, true);
+            showToast(t("error"), result.data.message, true);
             return;
         }
         currentUser = result.data.username;
         closeAuthModal();
         updateUI();
         if (authMode === "register") {
-            showToast("Bienvenue !", "Compte cr\u00e9\u00e9 avec succ\u00e8s");
+            showToast(t("welcome"), t("accountCreated"));
         } else {
-            showToast("Content de vous revoir !", "Connect\u00e9 en tant que " + currentUser);
+            showToast(t("welcomeBack"), t("connectedAs") + currentUser);
         }
     })
     .catch(function() {
-        showToast("Erreur", "Probl\u00e8me de connexion au serveur", true);
+        showToast(t("error"), t("serverError"), true);
     });
 }
 
@@ -828,7 +1272,7 @@ function doLogout() {
             currentUser = null;
             currentGroups = [];
             updateUI();
-            showToast("\u00C0 bient\u00F4t !", "Vous \u00EAtes d\u00E9connect\u00E9");
+            showToast(t("goodbye"), t("disconnected"));
         })
         .catch(function() {
             currentUser = null;
@@ -838,7 +1282,7 @@ function doLogout() {
 
 function openGroupModal() {
     if (!currentUser) {
-        showToast("Erreur", "Connectez-vous d'abord", true);
+        showToast(t("error"), t("loginFirst"), true);
         return;
     }
     document.getElementById("group-overlay").classList.add("active");
@@ -861,14 +1305,14 @@ function switchGroupTab(tab) {
 
 function loadGroups() {
     var container = document.getElementById("group-list");
-    container.innerHTML = '<div style="text-align:center;padding:20px;color:#888;">Chargement...</div>';
+    container.innerHTML = '<div style="text-align:center;padding:20px;color:#888;">' + t("loading") + '</div>';
 
     fetch("/api/groups", { credentials: "include" })
         .then(function(r) { return r.ok ? r.json() : []; })
         .then(function(groups) {
             currentGroups = groups;
             if (groups.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="icon">\uD83D\uDC65</div><p>Aucun groupe pour le moment</p></div>';
+                container.innerHTML = '<div class="empty-state"><div class="icon">\uD83D\uDC65</div><p>' + t("noGroups") + '</p></div>';
                 return;
             }
 
@@ -879,13 +1323,13 @@ function loadGroups() {
                 html += '<div class="group-item" data-testid="group-item-' + g.id + '">';
                 html += '<div class="group-item-header" onclick="toggleGroupMembers(\'' + g.id + '\')">';
                 html += '<div><div class="group-item-name">' + g.name + '</div>';
-                html += '<div class="group-item-code">Code : ' + g.code + '</div></div>';
+                html += '<div class="group-item-code">' + t("code") + ' : ' + g.code + '</div></div>';
                 html += '<div class="group-item-actions">';
-                html += '<button class="group-copy-btn" onclick="event.stopPropagation(); copyCode(\'' + g.code + '\')">📋 Copier</button>';
+                html += '<button class="group-copy-btn" onclick="event.stopPropagation(); copyCode(\'' + g.code + '\')">' + t("copy") + '</button>';
                 html += '<span class="group-expand-arrow" id="arrow-' + g.id + '">\u25B6</span>';
                 html += '</div></div>';
                 html += '<div class="group-members" id="members-' + g.id + '">';
-                html += '<div class="group-members-title">\uD83D\uDC65 Membres (' + membersList.length + ')</div>';
+                html += '<div class="group-members-title">\uD83D\uDC65 ' + t("members") + ' (' + membersList.length + ')</div>';
                 for (var j = 0; j < membersList.length; j++) {
                     var m = membersList[j].username || membersList[j];
                     var initials = m.substring(0, 2).toUpperCase();
@@ -897,7 +1341,7 @@ function loadGroups() {
             container.innerHTML = html;
         })
         .catch(function() {
-            container.innerHTML = '<div class="empty-state"><p>Erreur de chargement</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>' + t("loadError") + '</p></div>';
         });
 }
 
@@ -917,7 +1361,7 @@ function copyCode(code) {
     if (navigator.clipboard) {
         navigator.clipboard.writeText(code);
     }
-    showToast("Copi\u00e9 !", "Code : " + code);
+    showToast(t("copied"), t("code") + " : " + code);
 }
 
 function handleCreateGroup(e) {
@@ -934,16 +1378,16 @@ function handleCreateGroup(e) {
     .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
     .then(function(result) {
         if (!result.ok) {
-            showToast("Erreur", result.data.message, true);
+            showToast(t("error"), result.data.message, true);
             return;
         }
         document.getElementById("group-name-input").value = "";
-        showToast("Groupe cr\u00e9\u00e9 !", "Code : " + result.data.code);
+        showToast(t("groupCreated"), t("code") + " : " + result.data.code);
         switchGroupTab("list");
         loadGroups();
     })
     .catch(function() {
-        showToast("Erreur", "Impossible de cr\u00e9er le groupe", true);
+        showToast(t("error"), t("cantCreate"), true);
     });
 }
 
@@ -962,26 +1406,26 @@ function handleJoinGroup(e) {
     .then(function(result) {
         if (!result.ok) {
             if (result.status === 409) {
-                showToast("Info", "Vous \u00EAtes d\u00e9j\u00e0 dans ce groupe");
+                showToast(t("info"), t("alreadyIn"));
             } else {
-                showToast("Erreur", result.data.message, true);
+                showToast(t("error"), result.data.message, true);
             }
         } else {
-            showToast("Groupe rejoint !", 'Vous avez rejoint "' + result.data.name + '"');
+            showToast(t("groupJoined"), t("youJoined") + result.data.name + '"');
         }
         document.getElementById("group-code-input").value = "";
         switchGroupTab("list");
         loadGroups();
     })
     .catch(function() {
-        showToast("Erreur", "Impossible de rejoindre le groupe", true);
+        showToast(t("error"), t("cantJoin"), true);
     });
 }
 
 function openProfileModal() {
     if (!currentUser) return;
     document.getElementById("profile-overlay").classList.add("active");
-    document.getElementById("profile-content").innerHTML = '<div style="text-align:center;padding:20px;color:#888;">Chargement...</div>';
+    document.getElementById("profile-content").innerHTML = '<div style="text-align:center;padding:20px;color:#888;">' + t("loading") + '</div>';
 
     Promise.all([
         fetch("/api/scores/personal", { credentials: "include" }).then(function(r) { return r.ok ? r.json() : []; }),
@@ -1006,18 +1450,18 @@ function openProfileModal() {
         html += '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;">';
         html += '<div style="background:var(--fond);border-radius:12px;padding:12px 20px;text-align:center;min-width:80px;">';
         html += '<div style="font-size:1.5em;font-weight:700;color:var(--principal);">' + totalGames + '</div>';
-        html += '<div style="font-size:0.8em;color:#888;">Victoires</div></div>';
+        html += '<div style="font-size:0.8em;color:#888;">' + t("wins") + '</div></div>';
         html += '<div style="background:var(--fond);border-radius:12px;padding:12px 20px;text-align:center;min-width:80px;">';
         html += '<div style="font-size:1.5em;font-weight:700;color:var(--principal);">' + (totalGames > 0 ? fmtTime(bestTime) : '--:--') + '</div>';
-        html += '<div style="font-size:0.8em;color:#888;">Meilleur temps</div></div>';
+        html += '<div style="font-size:0.8em;color:#888;">' + t("bestTime") + '</div></div>';
         html += '<div style="background:var(--fond);border-radius:12px;padding:12px 20px;text-align:center;min-width:80px;">';
         html += '<div style="font-size:1.5em;font-weight:700;color:var(--principal);">' + myGroups.length + '</div>';
-        html += '<div style="font-size:0.8em;color:#888;">Groupes</div></div>';
+        html += '<div style="font-size:0.8em;color:#888;">' + t("groups") + '</div></div>';
         html += '</div>';
 
         document.getElementById("profile-content").innerHTML = html;
     }).catch(function() {
-        document.getElementById("profile-content").innerHTML = '<div style="text-align:center;padding:20px;color:#888;">Erreur de chargement</div>';
+        document.getElementById("profile-content").innerHTML = '<div style="text-align:center;padding:20px;color:#888;">' + t("loadError") + '</div>';
     });
 }
 
@@ -1121,6 +1565,7 @@ function applySortFilter(mode) {
     }
 }
 
+applyLang();
 checkAuth();
 </script>
 
