@@ -302,6 +302,14 @@ function die() {
         for (let i = 0; i < 6; i++) particles.push(new Particle(px, py, SNAKE_HEAD));
     });
     state = 'GAME_OVER';
+    if (score > 0) {
+        fetch('/api/scores', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ game: 'snake', score: score, difficulty: difficulty })
+        }).catch(function() {});
+    }
 }
 
 function spawnFoodParticles() {
