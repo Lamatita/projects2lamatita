@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Convertisseur de Système de Numérisation</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: "Segoe UI", sans-serif;
+  background: linear-gradient(135deg, #f7f3ff, #e6e1ff);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-10vh) rotate(0deg); opacity: 0.9; }
+  100% { transform: translateY(115vh) rotate(var(--rot)); opacity: 0.5; }
+}
+.confetti-piece {
+  position: fixed;
+  top: -30px;
+  animation: confetti-fall var(--dur) linear infinite;
+  animation-delay: var(--delay);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Back button ── */
+.back-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 10;
+  height: 42px;
+  padding: 0 18px 0 12px;
+  border: none;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #6c63ff;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: "Segoe UI", sans-serif;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 7px;
+  box-shadow: 0 4px 16px rgba(108,99,255,0.2);
+  transition: all 0.2s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.back-btn:hover {
+  background: #6c63ff;
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(108,99,255,0.4);
+  transform: translateY(-1px);
+}
+.back-btn svg {
+  width: 16px; height: 16px;
+  stroke: currentColor; fill: none; stroke-width: 2.5;
+  flex-shrink: 0;
+}
+
+.page-wrapper {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 860px;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+.page-title {
+  text-align: center;
+}
+.page-title h1 {
+  font-size: 2em;
+  font-weight: 800;
+  color: #6c63ff;
+  letter-spacing: -0.5px;
+}
+.page-title p {
+  color: #9992bb;
+  font-size: 0.95em;
+  margin-top: 6px;
+}
+
+/* ── Card ── */
+.card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 32px 36px;
+  box-shadow: 0 15px 45px rgba(0,0,0,0.12);
+  width: 100%;
+}
+
+/* ── Table ── */
+.converter-table {
+  width: 100%;
+  border: 2px solid #e0dce8;
+  border-radius: 16px;
+  overflow: hidden;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/* Header row */
+.converter-table thead tr th {
+  padding: 14px 18px;
+  background: #f7f3ff;
+  font-size: 0.78em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #9992bb;
+  border-bottom: 2px solid #e0dce8;
+  text-align: left;
+}
+.converter-table thead tr th:not(:last-child) {
+  border-right: 2px solid #e0dce8;
+}
+
+.col-dot-inline {
+  display: inline-block;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  margin-right: 7px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+
+/* Body cells */
+.converter-table tbody tr td {
+  border-bottom: 2px solid #e0dce8;
+  border-right: 2px solid #e0dce8;
+  padding: 0;
+  vertical-align: top;
+}
+.converter-table tbody tr td:last-child {
+  border-right: none;
+}
+.converter-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Input fields */
+.base-input {
+  width: 100%;
+  min-height: 70px;
+  border: none;
+  outline: none;
+  resize: none;
+  padding: 16px 18px;
+  font-size: 1.05em;
+  font-family: "Segoe UI", monospace;
+  color: #333;
+  background: #fff;
+  line-height: 1.6;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.base-input::placeholder {
+  color: #c8c3de;
+  font-weight: 400;
+  font-family: "Segoe UI", sans-serif;
+  font-size: 0.88em;
+}
+.base-input:focus {
+  background: #faf8ff;
+}
+.base-input.has-value {
+  color: #6c63ff;
+}
+.base-input.error {
+  color: #ff6b6b;
+  background: #fff8f8;
+}
+
+/* Footer row */
+.footer-row td {
+  background: #f7f3ff;
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #c8c3de;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  border-top: 2px solid #e0dce8 !important;
+  border-bottom: none !important;
+}
+
+/* ── Clear button ── */
+.clear-btn {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  border: 2px solid #e0dce8;
+  border-radius: 999px;
+  background: transparent;
+  color: #9992bb;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: "Segoe UI", sans-serif;
+}
+.clear-btn:hover {
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+  background: rgba(255,107,107,0.05);
+}
+
+/* ── Info badge ── */
+.info-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.base-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #f0edf5;
+  font-size: 12px;
+  font-weight: 700;
+  color: #9992bb;
+}
+.base-badge .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+}
+
+/* ── Error message ── */
+.error-msg {
+  text-align: center;
+  font-size: 12px;
+  color: #ff6b6b;
+  font-weight: 600;
+  min-height: 20px;
+  margin-top: 12px;
+  transition: opacity 0.2s;
+}
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: #333;
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s;
+  opacity: 0;
+  z-index: 100;
+}
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+@media (max-width: 640px) {
+  .card { padding: 20px 14px; }
+  .base-input { font-size: 0.95em; padding: 12px 12px; }
+  .converter-table thead tr th { padding: 10px 10px; font-size: 0.7em; }
+}
+</style>
+</head>
+<body>
+
+<!-- Confetti background -->
+<div id="confetti-container"></div>
+
+<!-- Back button -->
+<button class="back-btn" onclick="history.back()" title="Retour">
+  <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+  Retour en arrière
+</button>
+
+<div class="page-wrapper">
+  <div class="page-title">
+    <h1>Convertisseur de Système de Numérisation</h1>
+    <p>Saisissez une valeur dans n'importe quelle base pour la convertir en temps réel</p>
+  </div>
+
+  <div class="card">
+
+    <!-- Base info badges -->
+    <div class="info-row">
+      <div class="base-badge"><div class="dot" style="background:#e74c3c"></div> Unaire — base 1</div>
+      <div class="base-badge"><div class="dot" style="background:#e67e22"></div> Binaire — base 2</div>
+      <div class="base-badge"><div class="dot" style="background:#f1c40f"></div> Octal — base 8</div>
+      <div class="base-badge"><div class="dot" style="background:#2ecc71"></div> Décimal — base 10</div>
+      <div class="base-badge"><div class="dot" style="background:#3498db"></div> Hexadécimal — base 16</div>
+    </div>
+
+    <!-- Converter table -->
+    <table class="converter-table">
+      <thead>
+        <tr>
+          <th><span class="col-dot-inline" style="background:#e74c3c"></span>Unaire</th>
+          <th><span class="col-dot-inline" style="background:#e67e22"></span>Binaire</th>
+          <th><span class="col-dot-inline" style="background:#f1c40f"></span>Octal</th>
+          <th><span class="col-dot-inline" style="background:#2ecc71"></span>Décimal</th>
+          <th><span class="col-dot-inline" style="background:#3498db"></span>Hexadécimal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><textarea class="base-input" id="unary"   placeholder="ex: 111…(×69)"  spellcheck="false" rows="3"></textarea></td>
+          <td><textarea class="base-input" id="binary"  placeholder="ex: 1000101"   spellcheck="false" rows="3"></textarea></td>
+          <td><textarea class="base-input" id="octal"   placeholder="ex: 105"     spellcheck="false" rows="3"></textarea></td>
+          <td><textarea class="base-input" id="decimal" placeholder="ex: 69"     spellcheck="false" rows="3"></textarea></td>
+          <td><textarea class="base-input" id="hex"     placeholder="ex: 45"      spellcheck="false" rows="3"></textarea></td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr class="footer-row">
+          <td>Répétitions de 1</td>
+          <td>Chiffres 0-1</td>
+          <td>Chiffres 0-7</td>
+          <td>Chiffres 0-9</td>
+          <td>Chiffres 0-9, A-F</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <div style="display:flex; justify-content:center;">
+      <button class="clear-btn" id="clearBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        Effacer tout
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const UNARY_MAX = 64; // max unary digits to display
+
+// ── DOM refs ──────────────────────────────────────────────────
+const unaryEl   = document.getElementById('unary');
+const binaryEl  = document.getElementById('binary');
+const octalEl   = document.getElementById('octal');
+const decimalEl = document.getElementById('decimal');
+const hexEl     = document.getElementById('hex');
+const errorMsg  = document.getElementById('errorMsg');
+const clearBtn  = document.getElementById('clearBtn');
+
+const fields = [
+  { el: unaryEl,   id: 'unary' },
+  { el: binaryEl,  id: 'binary' },
+  { el: octalEl,   id: 'octal' },
+  { el: decimalEl, id: 'decimal' },
+  { el: hexEl,     id: 'hex' },
+];
+
+// ── Conversion helpers ────────────────────────────────────────
+function parseValue(id, raw) {
+  const v = raw.trim();
+  if (v === '') return null;
+
+  switch (id) {
+    case 'unary': {
+      if (!/^1*$/.test(v)) throw new Error('Unaire : uniquement des "1"');
+      return v.length;
+    }
+    case 'binary': {
+      if (!/^[01]+$/.test(v)) throw new Error('Binaire : uniquement des 0 et 1');
+      const n = parseInt(v, 2);
+      if (isNaN(n)) throw new Error('Binaire invalide');
+      return n;
+    }
+    case 'octal': {
+      if (!/^[0-7]+$/.test(v)) throw new Error('Octal : chiffres 0 à 7 uniquement');
+      const n = parseInt(v, 8);
+      if (isNaN(n)) throw new Error('Octal invalide');
+      return n;
+    }
+    case 'decimal': {
+      if (!/^\d+$/.test(v)) throw new Error('Décimal : chiffres 0 à 9 uniquement');
+      const n = parseInt(v, 10);
+      if (isNaN(n)) throw new Error('Décimal invalide');
+      return n;
+    }
+    case 'hex': {
+      if (!/^[0-9a-fA-F]+$/.test(v)) throw new Error('Hexadécimal : 0-9 et A-F uniquement');
+      const n = parseInt(v, 16);
+      if (isNaN(n)) throw new Error('Hexadécimal invalide');
+      return n;
+    }
+  }
+}
+
+function toDisplay(id, decimal) {
+  if (decimal === null) return '';
+  switch (id) {
+    case 'unary':
+      if (decimal === 0) return '0';
+      if (decimal > UNARY_MAX) return '1'.repeat(UNARY_MAX) + '…';
+      return '1'.repeat(decimal);
+    case 'binary':  return decimal === 0 ? '0' : decimal.toString(2);
+    case 'octal':   return decimal === 0 ? '0' : decimal.toString(8);
+    case 'decimal': return decimal.toString(10);
+    case 'hex':     return decimal === 0 ? '0' : decimal.toString(16).toUpperCase();
+  }
+}
+
+// ── Update from a given source field ─────────────────────────
+let activeId = null;
+
+function updateFrom(sourceId) {
+  const source = fields.find(f => f.id === sourceId);
+  const raw = source.el.value;
+
+  // Clear error
+  errorMsg.textContent = '';
+
+  if (raw.trim() === '') {
+    // Clear all other fields
+    fields.forEach(f => {
+      if (f.id !== sourceId) {
+        f.el.value = '';
+        f.el.classList.remove('has-value', 'error');
+      }
+    });
+    source.el.classList.remove('has-value', 'error');
+    return;
+  }
+
+  let decVal;
+  try {
+    decVal = parseValue(sourceId, raw);
+  } catch (e) {
+    source.el.classList.add('error');
+    source.el.classList.remove('has-value');
+    errorMsg.textContent = '⚠ ' + e.message;
+    return;
+  }
+
+  if (decVal === null) return;
+
+  // Negative / too large safeguard
+  if (decVal < 0) {
+    errorMsg.textContent = '⚠ Les nombres négatifs ne sont pas pris en charge';
+    source.el.classList.add('error');
+    return;
+  }
+  if (decVal > Number.MAX_SAFE_INTEGER) {
+    errorMsg.textContent = '⚠ Nombre trop grand';
+    source.el.classList.add('error');
+    return;
+  }
+
+  source.el.classList.remove('error');
+  source.el.classList.add('has-value');
+
+  fields.forEach(f => {
+    if (f.id !== sourceId) {
+      f.el.value = toDisplay(f.id, decVal);
+      f.el.classList.toggle('has-value', f.el.value !== '');
+      f.el.classList.remove('error');
+    }
+  });
+}
+
+// ── Bind events ───────────────────────────────────────────────
+fields.forEach(f => {
+  f.el.addEventListener('input', () => {
+    activeId = f.id;
+    updateFrom(f.id);
+  });
+  f.el.addEventListener('focus', () => {
+    activeId = f.id;
+  });
+
+  // Auto-uppercase hex input
+  if (f.id === 'hex') {
+    f.el.addEventListener('input', () => {
+      const pos = f.el.selectionStart;
+      f.el.value = f.el.value.toUpperCase();
+      f.el.setSelectionRange(pos, pos);
+    });
+  }
+
+  // Prevent newlines
+  f.el.addEventListener('keydown', e => {
+    if (e.key === 'Enter') e.preventDefault();
+  });
+});
+
+// ── Clear button ──────────────────────────────────────────────
+clearBtn.addEventListener('click', () => {
+  fields.forEach(f => {
+    f.el.value = '';
+    f.el.classList.remove('has-value', 'error');
+  });
+  errorMsg.textContent = '';
+});
+
+// ── Confetti ──────────────────────────────────────────────────
+(function generateConfetti() {
+  const colors = ['#6c63ff','#ffb703','#00c9a7','#ff6b6b','#a18cd1','#ffd93d'];
+  const container = document.getElementById('confetti-container');
+
+  // Regular confetti
+  for (let i = 0; i < 30; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    const size = 6 + Math.random() * 8;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    el.style.cssText = `
+      left: ${Math.random() * 100}vw;
+      width: ${size}px; height: ${size}px;
+      background: ${color};
+      border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+      --dur: ${4 + Math.random() * 8}s;
+      --delay: -${Math.random() * 10}s;
+      --rot: ${Math.random() > 0.5 ? '' : '-'}${180 + Math.random() * 360}deg;
+      opacity: 0.4;
+    `;
+    container.appendChild(el);
+  }
+
+  // Llamas 🦙
+  for (let i = 0; i < 8; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    const size = 20 + Math.random() * 16;
+    el.style.cssText = `
+      left: ${Math.random() * 100}vw;
+      width: ${size}px; height: ${size}px;
+      font-size: ${size}px;
+      line-height: 1;
+      background: none;
+      display: flex; align-items: center; justify-content: center;
+      --dur: ${6 + Math.random() * 8}s;
+      --delay: -${Math.random() * 12}s;
+      --rot: ${Math.random() > 0.5 ? '' : '-'}${20 + Math.random() * 40}deg;
+      opacity: 0.75;
+    `;
+    el.textContent = '🦙';
+    container.appendChild(el);
+  }
+})();
+</script>
+</body>
+</html>
