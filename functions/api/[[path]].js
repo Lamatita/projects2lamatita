@@ -113,11 +113,15 @@ export async function onRequest(context) {
       if (existing) return jsonResponse({ message: "Ce nom d'utilisateur est deja pris" }, 409);
 
       const hashed = await hashPassword(password);
-      const insertResult = await db.prepare('INSERT INTO users (username, password) VALUES (?, ?) RETURNING id').bind(username, hashed).first();
-      const userId = insertResult.id;
-
       const sessionId = generateId();
       const expires = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString();
+
+      const batchResults = await db.batch([
+        db.prepare('INSERT INTO users (username, password) VALUES (?, ?)').bind(username, hashed),
+        db.prepare('SELECT last_insert_rowid() as id'),
+      ]);
+      const userId = batchResults[1].results[0].id;
+
       await db.prepare('INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)').bind(sessionId, userId, expires).run();
 
       return jsonResponse({ id: userId, username }, 200, { 'Set-Cookie': setSessionCookie(sessionId) });
@@ -187,8 +191,11 @@ export async function onRequest(context) {
         existing = await db.prepare('SELECT id FROM groups WHERE code = ?').bind(code).first();
       } while (existing);
 
-      const groupResult = await db.prepare('INSERT INTO groups (name, code, created_by) VALUES (?, ?, ?) RETURNING id').bind(body.name, code, user.id).first();
-      const groupId = groupResult.id;
+      const groupBatch = await db.batch([
+        db.prepare('INSERT INTO groups (name, code, created_by) VALUES (?, ?, ?)').bind(body.name, code, user.id),
+        db.prepare('SELECT last_insert_rowid() as id'),
+      ]);
+      const groupId = groupBatch[1].results[0].id;
       await db.prepare('INSERT INTO group_members (group_id, user_id) VALUES (?, ?)').bind(groupId, user.id).run();
 
       return jsonResponse({ id: groupId, name: body.name, code });
