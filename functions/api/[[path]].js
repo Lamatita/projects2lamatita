@@ -57,10 +57,14 @@ async function ensureTablesExist(db) {
     db.prepare("CREATE TABLE IF NOT EXISTS groups (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, code TEXT NOT NULL UNIQUE, created_by INTEGER NOT NULL)"),
     db.prepare("CREATE TABLE IF NOT EXISTS group_members (id INTEGER PRIMARY KEY AUTOINCREMENT, group_id INTEGER NOT NULL, user_id INTEGER NOT NULL)"),
     db.prepare("CREATE TABLE IF NOT EXISTS game_scores (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, player_name TEXT NOT NULL, game TEXT NOT NULL DEFAULT 'solitaire', time_seconds INTEGER NOT NULL DEFAULT 0, timer_mode TEXT NOT NULL DEFAULT 'CHRONO', hint_mode INTEGER NOT NULL DEFAULT 0, konami INTEGER NOT NULL DEFAULT 0, anonymous INTEGER NOT NULL DEFAULT 0, score INTEGER NOT NULL DEFAULT 0, difficulty TEXT NOT NULL DEFAULT '', rounds INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')))"),
-    db.prepare("CREATE TABLE IF NOT EXISTS morpion_rooms (code TEXT PRIMARY KEY, state TEXT NOT NULL DEFAULT '{}', player_x TEXT, player_o TEXT, updated_at TEXT NOT NULL DEFAULT (datetime('now')), created_at TEXT NOT NULL DEFAULT (datetime('now')))"),
+    db.prepare("CREATE TABLE IF NOT EXISTS morpion_rooms (code TEXT PRIMARY KEY, state TEXT NOT NULL DEFAULT '{}', player_x TEXT, player_o TEXT, player_x_id INTEGER, player_o_id INTEGER, updated_at TEXT NOT NULL DEFAULT (datetime('now')), created_at TEXT NOT NULL DEFAULT (datetime('now')))"),
     db.prepare("CREATE TABLE IF NOT EXISTS user_presence (user_id INTEGER PRIMARY KEY, last_seen TEXT NOT NULL DEFAULT (datetime('now')))"),
     db.prepare("CREATE TABLE IF NOT EXISTS morpion_invites (id INTEGER PRIMARY KEY AUTOINCREMENT, from_user_id INTEGER NOT NULL, from_username TEXT NOT NULL, to_user_id INTEGER NOT NULL, to_username TEXT NOT NULL, room_code TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', created_at TEXT NOT NULL DEFAULT (datetime('now')))"),
+    db.prepare("CREATE TABLE IF NOT EXISTS morpion_matches (id INTEGER PRIMARY KEY AUTOINCREMENT, player_x_id INTEGER, player_x_name TEXT NOT NULL, player_o_id INTEGER, player_o_name TEXT NOT NULL, winner TEXT, mode TEXT NOT NULL DEFAULT 'classic', room_code TEXT, created_at TEXT NOT NULL DEFAULT (datetime('now')))"),
   ]);
+
+  try { await db.prepare("ALTER TABLE morpion_rooms ADD COLUMN player_x_id INTEGER").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE morpion_rooms ADD COLUMN player_o_id INTEGER").run(); } catch(e) {}
 
   try {
     await db.prepare("DELETE FROM morpion_rooms WHERE created_at < datetime('now', '-24 hours')").run();
@@ -545,13 +549,17 @@ export async function onRequest(context) {
     if (path === '/api/morpion/create' && method === 'POST') {
       const body = await request.json();
       const code = body.code;
-      if (!code || code.length < 6) return jsonResponse({ message: 'Code invalide' }, 400);
+      if (!code || code.length < 4) return jsonResponse({ message: 'Code invalide' }, 400);
+
+      const user = await getSessionUser(request, db);
+      const userId = user ? user.id : null;
+      const playerName = body.playerName || (user ? user.username : 'Joueur X');
 
       const existing = await db.prepare('SELECT code FROM morpion_rooms WHERE code = ?').bind(code).first();
       if (existing) {
-        await db.prepare("UPDATE morpion_rooms SET state = '{}', player_o = NULL, updated_at = datetime('now') WHERE code = ?").bind(code).run();
+        await db.prepare("UPDATE morpion_rooms SET state = '{}', player_x = ?, player_x_id = ?, player_o = NULL, player_o_id = NULL, updated_at = datetime('now') WHERE code = ?").bind(playerName, userId, code).run();
       } else {
-        await db.prepare("INSERT INTO morpion_rooms (code, state, player_x) VALUES (?, '{}', ?)").bind(code, body.playerName || 'Joueur X').run();
+        await db.prepare("INSERT INTO morpion_rooms (code, state, player_x, player_x_id) VALUES (?, '{}', ?, ?)").bind(code, playerName, userId).run();
       }
       return jsonResponse({ ok: true, code });
     }
@@ -562,11 +570,15 @@ export async function onRequest(context) {
       if (!code) return jsonResponse({ message: 'Code requis' }, 400);
 
       const room = await db.prepare('SELECT * FROM morpion_rooms WHERE code = ?').bind(code).first();
-      if (!room) return jsonResponse({ message: 'Partie introuvable' }, 404);
+      if (!room) return jsonResponse({ message: 'Partie introuvable. Vérifiez le code et réessayez.' }, 404);
 
-      await db.prepare("UPDATE morpion_rooms SET player_o = ?, updated_at = datetime('now') WHERE code = ?").bind(body.playerName || 'Joueur O', code).run();
+      const user = await getSessionUser(request, db);
+      const userId = user ? user.id : null;
+      const playerName = body.playerName || (user ? user.username : 'Joueur O');
+
+      await db.prepare("UPDATE morpion_rooms SET player_o = ?, player_o_id = ?, updated_at = datetime('now') WHERE code = ?").bind(playerName, userId, code).run();
       const state = room.state ? JSON.parse(room.state) : {};
-      return jsonResponse({ ok: true, code, state, playerX: room.player_x, playerO: body.playerName || 'Joueur O' });
+      return jsonResponse({ ok: true, code, state, playerX: room.player_x, playerO: playerName });
     }
 
     const morpionStateMatch = path.match(/^\/api\/morpion\/state\/([A-Za-z0-9]+)$/);
@@ -580,7 +592,7 @@ export async function onRequest(context) {
       if (state.ts && String(state.ts) === since) {
         return jsonResponse({ changed: false });
       }
-      return jsonResponse({ changed: true, state, playerX: room.player_x, playerO: room.player_o, updatedAt: room.updated_at });
+      return jsonResponse({ changed: true, state, playerX: room.player_x, playerO: room.player_o, playerXId: room.player_x_id, playerOId: room.player_o_id, updatedAt: room.updated_at });
     }
 
     if (path === '/api/morpion/move' && method === 'POST') {
@@ -594,6 +606,58 @@ export async function onRequest(context) {
       const stateJson = JSON.stringify(body.state || {});
       await db.prepare("UPDATE morpion_rooms SET state = ?, updated_at = datetime('now') WHERE code = ?").bind(stateJson, code).run();
       return jsonResponse({ ok: true });
+    }
+
+    if (path === '/api/morpion/match' && method === 'POST') {
+      const body = await request.json();
+      const { playerXName, playerOName, playerXId, playerOId, winner, mode, roomCode } = body;
+      if (!playerXName || !playerOName) return jsonResponse({ message: 'Donnees manquantes' }, 400);
+
+      await db.prepare(
+        'INSERT INTO morpion_matches (player_x_id, player_x_name, player_o_id, player_o_name, winner, mode, room_code) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      ).bind(playerXId || null, playerXName, playerOId || null, playerOName, winner || null, mode || 'classic', roomCode || null).run();
+      return jsonResponse({ ok: true });
+    }
+
+    if (path === '/api/morpion/matches' && method === 'GET') {
+      const groupId = url.searchParams.get('group');
+      if (groupId) {
+        const members = await db.prepare('SELECT user_id FROM group_members WHERE group_id = ?').bind(parseInt(groupId)).all();
+        if (members.results.length === 0) return jsonResponse([]);
+        const userIds = members.results.map(m => m.user_id);
+
+        const allMatches = await db.prepare('SELECT * FROM morpion_matches ORDER BY created_at DESC LIMIT 200').all();
+        const groupMatches = allMatches.results.filter(m =>
+          (m.player_x_id && userIds.includes(m.player_x_id)) ||
+          (m.player_o_id && userIds.includes(m.player_o_id))
+        );
+        return jsonResponse(groupMatches.map(m => ({
+          id: m.id,
+          playerX: m.player_x_name,
+          playerO: m.player_o_name,
+          playerXId: m.player_x_id,
+          playerOId: m.player_o_id,
+          winner: m.winner,
+          mode: m.mode,
+          date: m.created_at
+        })));
+      }
+
+      const user = await getSessionUser(request, db);
+      if (!user) return jsonResponse({ message: 'Non connecte' }, 401);
+      const matches = await db.prepare(
+        'SELECT * FROM morpion_matches WHERE player_x_id = ? OR player_o_id = ? ORDER BY created_at DESC LIMIT 100'
+      ).bind(user.id, user.id).all();
+      return jsonResponse(matches.results.map(m => ({
+        id: m.id,
+        playerX: m.player_x_name,
+        playerO: m.player_o_name,
+        playerXId: m.player_x_id,
+        playerOId: m.player_o_id,
+        winner: m.winner,
+        mode: m.mode,
+        date: m.created_at
+      })));
     }
 
     return jsonResponse({ message: 'Not found' }, 404);
