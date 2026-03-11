@@ -1,10 +1,50 @@
 async function ensureTablesExist(db) {
+  const usersTable = await db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='users'").first();
+  if (usersTable && usersTable.sql.includes('SERIAL')) {
+    await db.batch([
+      db.prepare("CREATE TABLE users_new (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL UNIQUE, password TEXT NOT NULL)"),
+      db.prepare("INSERT INTO users_new (username, password) SELECT username, password FROM users"),
+      db.prepare("DROP TABLE users"),
+      db.prepare("ALTER TABLE users_new RENAME TO users"),
+    ]);
+  }
+
+  const groupsTable = await db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='groups'").first();
+  if (groupsTable && groupsTable.sql.includes('SERIAL')) {
+    await db.batch([
+      db.prepare("CREATE TABLE groups_new (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, code TEXT NOT NULL UNIQUE, created_by INTEGER NOT NULL)"),
+      db.prepare("INSERT INTO groups_new (name, code, created_by) SELECT name, code, created_by FROM groups"),
+      db.prepare("DROP TABLE groups"),
+      db.prepare("ALTER TABLE groups_new RENAME TO groups"),
+    ]);
+  }
+
+  const gmTable = await db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='group_members'").first();
+  if (gmTable && gmTable.sql.includes('SERIAL')) {
+    await db.batch([
+      db.prepare("CREATE TABLE group_members_new (id INTEGER PRIMARY KEY AUTOINCREMENT, group_id INTEGER NOT NULL, user_id INTEGER NOT NULL)"),
+      db.prepare("INSERT INTO group_members_new (group_id, user_id) SELECT group_id, user_id FROM group_members"),
+      db.prepare("DROP TABLE group_members"),
+      db.prepare("ALTER TABLE group_members_new RENAME TO group_members"),
+    ]);
+  }
+
+  const scoresTable = await db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='game_scores'").first();
+  if (scoresTable && scoresTable.sql.includes('SERIAL')) {
+    await db.batch([
+      db.prepare("CREATE TABLE game_scores_new (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, player_name TEXT NOT NULL, game TEXT NOT NULL DEFAULT 'solitaire', time_seconds INTEGER NOT NULL, timer_mode TEXT NOT NULL DEFAULT 'CHRONO', hint_mode INTEGER NOT NULL DEFAULT 0, konami INTEGER NOT NULL DEFAULT 0, anonymous INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')))"),
+      db.prepare("INSERT INTO game_scores_new (user_id, player_name, game, time_seconds, timer_mode, hint_mode, konami, anonymous, created_at) SELECT user_id, player_name, game, time_seconds, timer_mode, CASE WHEN hint_mode THEN 1 ELSE 0 END, CASE WHEN konami THEN 1 ELSE 0 END, CASE WHEN anonymous THEN 1 ELSE 0 END, created_at FROM game_scores"),
+      db.prepare("DROP TABLE game_scores"),
+      db.prepare("ALTER TABLE game_scores_new RENAME TO game_scores"),
+    ]);
+  }
+
   await db.batch([
     db.prepare("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL UNIQUE, password TEXT NOT NULL)"),
-    db.prepare("CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), created_at TEXT NOT NULL DEFAULT (datetime('now')), expires_at TEXT NOT NULL)"),
-    db.prepare("CREATE TABLE IF NOT EXISTS groups (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, code TEXT NOT NULL UNIQUE, created_by INTEGER NOT NULL REFERENCES users(id))"),
-    db.prepare("CREATE TABLE IF NOT EXISTS group_members (id INTEGER PRIMARY KEY AUTOINCREMENT, group_id INTEGER NOT NULL REFERENCES groups(id), user_id INTEGER NOT NULL REFERENCES users(id))"),
-    db.prepare("CREATE TABLE IF NOT EXISTS game_scores (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER REFERENCES users(id), player_name TEXT NOT NULL, game TEXT NOT NULL DEFAULT 'solitaire', time_seconds INTEGER NOT NULL, timer_mode TEXT NOT NULL DEFAULT 'CHRONO', hint_mode INTEGER NOT NULL DEFAULT 0, konami INTEGER NOT NULL DEFAULT 0, anonymous INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')))"),
+    db.prepare("CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, user_id INTEGER NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')), expires_at TEXT NOT NULL)"),
+    db.prepare("CREATE TABLE IF NOT EXISTS groups (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, code TEXT NOT NULL UNIQUE, created_by INTEGER NOT NULL)"),
+    db.prepare("CREATE TABLE IF NOT EXISTS group_members (id INTEGER PRIMARY KEY AUTOINCREMENT, group_id INTEGER NOT NULL, user_id INTEGER NOT NULL)"),
+    db.prepare("CREATE TABLE IF NOT EXISTS game_scores (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, player_name TEXT NOT NULL, game TEXT NOT NULL DEFAULT 'solitaire', time_seconds INTEGER NOT NULL, timer_mode TEXT NOT NULL DEFAULT 'CHRONO', hint_mode INTEGER NOT NULL DEFAULT 0, konami INTEGER NOT NULL DEFAULT 0, anonymous INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')))"),
   ]);
 }
 
