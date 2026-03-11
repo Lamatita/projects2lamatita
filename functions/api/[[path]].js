@@ -58,10 +58,14 @@ async function ensureTablesExist(db) {
     db.prepare("CREATE TABLE IF NOT EXISTS group_members (id INTEGER PRIMARY KEY AUTOINCREMENT, group_id INTEGER NOT NULL, user_id INTEGER NOT NULL)"),
     db.prepare("CREATE TABLE IF NOT EXISTS game_scores (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, player_name TEXT NOT NULL, game TEXT NOT NULL DEFAULT 'solitaire', time_seconds INTEGER NOT NULL DEFAULT 0, timer_mode TEXT NOT NULL DEFAULT 'CHRONO', hint_mode INTEGER NOT NULL DEFAULT 0, konami INTEGER NOT NULL DEFAULT 0, anonymous INTEGER NOT NULL DEFAULT 0, score INTEGER NOT NULL DEFAULT 0, difficulty TEXT NOT NULL DEFAULT '', rounds INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')))"),
     db.prepare("CREATE TABLE IF NOT EXISTS morpion_rooms (code TEXT PRIMARY KEY, state TEXT NOT NULL DEFAULT '{}', player_x TEXT, player_o TEXT, updated_at TEXT NOT NULL DEFAULT (datetime('now')), created_at TEXT NOT NULL DEFAULT (datetime('now')))"),
+    db.prepare("CREATE TABLE IF NOT EXISTS user_presence (user_id INTEGER PRIMARY KEY, last_seen TEXT NOT NULL DEFAULT (datetime('now')))"),
+    db.prepare("CREATE TABLE IF NOT EXISTS morpion_invites (id INTEGER PRIMARY KEY AUTOINCREMENT, from_user_id INTEGER NOT NULL, from_username TEXT NOT NULL, to_user_id INTEGER NOT NULL, to_username TEXT NOT NULL, room_code TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', created_at TEXT NOT NULL DEFAULT (datetime('now')))"),
   ]);
 
   try {
     await db.prepare("DELETE FROM morpion_rooms WHERE created_at < datetime('now', '-24 hours')").run();
+    await db.prepare("DELETE FROM morpion_invites WHERE created_at < datetime('now', '-1 hour')").run();
+    await db.prepare("DELETE FROM user_presence WHERE last_seen < datetime('now', '-5 minutes')").run();
   } catch(e) {}
 }
 
@@ -425,6 +429,117 @@ export async function onRequest(context) {
         'SELECT u.username FROM group_members gm JOIN users u ON gm.user_id = u.id WHERE gm.group_id = ?'
       ).bind(groupId).all();
       return jsonResponse(members.results);
+    }
+
+    if (path === '/api/presence/ping' && method === 'POST') {
+      const user = await getSessionUser(request, db);
+      if (!user) return jsonResponse({ message: 'Non connecte' }, 401);
+      const existing = await db.prepare('SELECT user_id FROM user_presence WHERE user_id = ?').bind(user.id).first();
+      if (existing) {
+        await db.prepare("UPDATE user_presence SET last_seen = datetime('now') WHERE user_id = ?").bind(user.id).run();
+      } else {
+        await db.prepare("INSERT INTO user_presence (user_id, last_seen) VALUES (?, datetime('now'))").bind(user.id).run();
+      }
+      return jsonResponse({ ok: true });
+    }
+
+    if (path === '/api/presence/online' && method === 'GET') {
+      const user = await getSessionUser(request, db);
+      if (!user) return jsonResponse({ message: 'Non connecte' }, 401);
+
+      const memberships = await db.prepare('SELECT group_id FROM group_members WHERE user_id = ?').bind(user.id).all();
+      if (memberships.results.length === 0) return jsonResponse([]);
+
+      const groupMateIds = new Set();
+      for (const m of memberships.results) {
+        const gm = await db.prepare('SELECT user_id FROM group_members WHERE group_id = ?').bind(m.group_id).all();
+        gm.results.forEach(r => { if (r.user_id !== user.id) groupMateIds.add(r.user_id); });
+      }
+      if (groupMateIds.size === 0) return jsonResponse([]);
+
+      const onlineUsers = [];
+      for (const uid of groupMateIds) {
+        const p = await db.prepare("SELECT user_id FROM user_presence WHERE user_id = ? AND last_seen > datetime('now', '-2 minutes')").bind(uid).first();
+        if (p) onlineUsers.push(uid);
+      }
+      return jsonResponse(onlineUsers);
+    }
+
+    if (path === '/api/groups/members' && method === 'GET') {
+      const user = await getSessionUser(request, db);
+      if (!user) return jsonResponse({ message: 'Non connecte' }, 401);
+
+      const memberships = await db.prepare('SELECT group_id FROM group_members WHERE user_id = ?').bind(user.id).all();
+      const memberMap = {};
+      const groupNames = {};
+      for (const m of memberships.results) {
+        const g = await db.prepare('SELECT name FROM groups WHERE id = ?').bind(m.group_id).first();
+        if (g) groupNames[m.group_id] = g.name;
+        const gm = await db.prepare('SELECT gm.user_id, u.username FROM group_members gm JOIN users u ON gm.user_id = u.id WHERE gm.group_id = ?').bind(m.group_id).all();
+        for (const r of gm.results) {
+          if (r.user_id !== user.id) {
+            if (!memberMap[r.user_id]) memberMap[r.user_id] = { id: r.user_id, username: r.username, groups: [] };
+            memberMap[r.user_id].groups.push({ id: m.group_id, name: groupNames[m.group_id] || '' });
+          }
+        }
+      }
+      return jsonResponse(Object.values(memberMap));
+    }
+
+    if (path === '/api/morpion/invite' && method === 'POST') {
+      const user = await getSessionUser(request, db);
+      if (!user) return jsonResponse({ message: 'Non connecte' }, 401);
+      const body = await request.json();
+      const toUserId = body.toUserId;
+      const roomCode = body.roomCode;
+      if (!toUserId || !roomCode) return jsonResponse({ message: 'Donnees manquantes' }, 400);
+
+      const toUser = await db.prepare('SELECT id, username FROM users WHERE id = ?').bind(toUserId).first();
+      if (!toUser) return jsonResponse({ message: 'Utilisateur introuvable' }, 404);
+
+      await db.prepare("DELETE FROM morpion_invites WHERE from_user_id = ? AND to_user_id = ? AND status = 'pending'").bind(user.id, toUserId).run();
+
+      await db.prepare(
+        'INSERT INTO morpion_invites (from_user_id, from_username, to_user_id, to_username, room_code) VALUES (?, ?, ?, ?, ?)'
+      ).bind(user.id, user.username, toUserId, toUser.username, roomCode).run();
+
+      return jsonResponse({ ok: true });
+    }
+
+    if (path === '/api/morpion/invitations' && method === 'GET') {
+      const user = await getSessionUser(request, db);
+      if (!user) return jsonResponse({ message: 'Non connecte' }, 401);
+
+      const invites = await db.prepare(
+        "SELECT * FROM morpion_invites WHERE to_user_id = ? AND status = 'pending' AND created_at > datetime('now', '-5 minutes') ORDER BY created_at DESC"
+      ).bind(user.id).all();
+
+      return jsonResponse(invites.results.map(i => ({
+        id: i.id,
+        fromUsername: i.from_username,
+        fromUserId: i.from_user_id,
+        roomCode: i.room_code,
+        createdAt: i.created_at
+      })));
+    }
+
+    const inviteActionMatch = path.match(/^\/api\/morpion\/invite\/(\d+)\/(accept|decline)$/);
+    if (inviteActionMatch && method === 'POST') {
+      const user = await getSessionUser(request, db);
+      if (!user) return jsonResponse({ message: 'Non connecte' }, 401);
+      const inviteId = parseInt(inviteActionMatch[1]);
+      const action = inviteActionMatch[2];
+
+      const invite = await db.prepare("SELECT * FROM morpion_invites WHERE id = ? AND to_user_id = ? AND status = 'pending'").bind(inviteId, user.id).first();
+      if (!invite) return jsonResponse({ message: 'Invitation introuvable ou déjà traitée' }, 404);
+
+      const newStatus = action === 'accept' ? 'accepted' : 'declined';
+      await db.prepare('UPDATE morpion_invites SET status = ? WHERE id = ?').bind(newStatus, inviteId).run();
+
+      if (action === 'accept') {
+        return jsonResponse({ ok: true, roomCode: invite.room_code, fromUsername: invite.from_username });
+      }
+      return jsonResponse({ ok: true });
     }
 
     if (path === '/api/morpion/create' && method === 'POST') {
