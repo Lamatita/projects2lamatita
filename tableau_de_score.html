@@ -13,9 +13,8 @@
     --texte: #333;
     --blanc: #ffffff;
 }
-
 * { margin: 0; padding: 0; box-sizing: border-box; }
-
+    
 body {
     font-family: "Segoe UI", sans-serif;
     background: linear-gradient(135deg, var(--fond), #e6e1ff);
@@ -676,7 +675,6 @@ tbody td {
         var titleEl = document.getElementById('view-title');
         var gameLabel = GAMES[currentGame].label;
         var gameParam = '?game=' + currentGame;
-
         if (currentGame === 'morpion') {
             if (currentView === 'personal') {
                 titleEl.textContent = gameLabel + ' \u2014 Mes Parties \u2014 ' + currentUser;
@@ -766,6 +764,5 @@ tbody td {
         .catch(function() { fetchAndRender(); });
 })();
 </script>
-
 </body>
 </html>
