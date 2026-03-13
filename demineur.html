@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Démineur - Jeu en ligne</title>
+<style>
+:root {
+    --fond: #f7f3ff;
+    --principal: #6c63ff;
+    --secondaire: #ffb703;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, var(--fond), #e6e1ff);
+    height: 100vh;
+    overflow: hidden;
+}
+.top-bar {
+    width: 100%;
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 100;
+    position: relative;
+}
+.back-link {
+    color: var(--principal);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1em;
+    transition: opacity .2s;
+}
+.back-link:hover { opacity: .7; }
+.page-title {
+    color: var(--principal);
+    font-size: 1.4em;
+    font-weight: 700;
+}
+.game-wrapper {
+    width: 100%;
+    height: calc(100vh - 45px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#gameCanvas {
+    border-radius: 12px;
+    cursor: default;
+    max-width: 100%;
+    max-height: 100%;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 8px 32px rgba(0,0,0,.2);
+}
+.falling {
+    position: fixed;
+    top: -10%;
+    animation: fall linear infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+.confetti { width: 12px; height: 12px; opacity: .8; }
+.lama { font-size: 2rem; }
+.c1 { background: var(--principal); }
+.c2 { background: var(--secondaire); }
+.c3 { background: #ff6f91; }
+.c4 { background: #00c9a7; }
+.c5 { background: #845ec2; }
+@keyframes fall {
+    0%   { transform: translateY(0) rotate(0deg); }
+    100% { transform: translateY(120vh) rotate(var(--rotation)); }
+}
+
+
+</style>
+</head>
+<body>
+
+<!-- Confettis & llamas identiques au snake -->
+<div class="falling confetti c1" style="left:5%;  animation-duration:5s;   --rotation:720deg;"></div>
+<div class="falling lama"        style="left:12%; animation-duration:7s;   --rotation:-1080deg;">🦙</div>
+<div class="falling confetti c2" style="left:18%; animation-duration:6s;   --rotation:540deg;"></div>
+<div class="falling lama"        style="left:25%; animation-duration:8s;   --rotation:900deg;">🦙</div>
+<div class="falling confetti c3" style="left:32%; animation-duration:4.5s; --rotation:-720deg;"></div>
+<div class="falling lama"        style="left:38%; animation-duration:6.5s; --rotation:1260deg;">🦙</div>
+<div class="falling confetti c4" style="left:45%; animation-duration:5.8s; --rotation:360deg;"></div>
+<div class="falling lama"        style="left:52%; animation-duration:7.2s; --rotation:-1440deg;">🦙</div>
+<div class="falling confetti c5" style="left:60%; animation-duration:6.1s; --rotation:900deg;"></div>
+<div class="falling lama"        style="left:67%; animation-duration:8.5s; --rotation:-1080deg;">🦙</div>
+<div class="falling confetti c1" style="left:74%; animation-duration:5.3s; --rotation:720deg;"></div>
+<div class="falling lama"        style="left:82%; animation-duration:7.9s; --rotation:1620deg;">🦙</div>
+<div class="falling confetti c2" style="left:90%; animation-duration:6.7s; --rotation:-900deg;"></div>
+
+<div class="top-bar">
+    <a href="index.html" class="back-link">← Retour à l'accueil</a>
+    <h1 class="page-title">💣 Démineur</h1>
+    <div style="width:160px;"></div>
+</div>
+
+<div class="game-wrapper">
+    <canvas id="gameCanvas"></canvas>
+</div>
+
+
+
+<script>
+(function () {
+'use strict';
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  DÉMINEUR — version canvas, même format que snake.html
+//  La fenêtre fait TOUJOURS la taille du niveau Expert (30×16 cases + entête)
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── Canvas ────────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+
+// Taille fixe = niveau Expert : 30 cols × 36px + 100px entête, 16 lignes × 36px
+const CELL = 36;
+const EXPERT_COLS = 30;
+const EXPERT_ROWS = 16;
+const HEADER_H    = 100;    // entête (deux rangées de boutons)
+const W = EXPERT_COLS * CELL;        // 1080
+const H = EXPERT_ROWS * CELL + HEADER_H;  // 676
+canvas.width  = W;
+canvas.height = H;
+
+// ── Niveaux ───────────────────────────────────────────────────────────────────
+const NIVEAUX = {
+    'Débutant':      { cols: 9,  rows: 9,  mines: 10 },
+    'Intermédiaire': { cols: 16, rows: 16, mines: 40 },
+    'Expert':        { cols: 30, rows: 16, mines: 99 },
+};
+const NOMS_NIVEAUX = Object.keys(NIVEAUX);
+
+// ── Palette ───────────────────────────────────────────────────────────────────
+const C = {
+    fond:          '#1e1e28',
+    entete:        '#14141c',
+    caseCachee:    '#3a4160',
+    caseSurvol:    '#484e78',
+    caseOuverte:   '#16161e',
+    caseMine:      '#c83250',
+    bordure:       '#505878',
+    bordureOuverte:'#282838',
+    drapeau:       '#f0b432',
+    texte:         '#dcddee',
+    bouton:        '#3282dc',
+    boutonSurvol:  '#4696ff',
+    victoire:      '#32c878',
+    defaite:       '#c83232',
+    modeDrapActif: '#c88c1e',
+    modeRevActif:  '#1eb464',
+    modeInactif:   '#2d2d42',
+    modeSurvol:    '#42425a',
+    panelBg:       '#0e0e18',
+    panelBord:     '#3c3c6e',
+};
+
+const COULEURS_CHIFFRES = ['','#64b4ff','#50d282','#ff6464','#8c64ff','#ffa03c','#50dcc8','#f064c8','#bebebe'];
+
+// ── État du jeu ───────────────────────────────────────────────────────────────
+let niveauActuel  = 'Débutant';
+let modeActuel    = 'normal';   // 'normal' | 'drapeau' | 'reveal'
+let nomJoueur     = '';
+
+// Grille logique
+let nbCols, nbLignes, nbMines;
+let mines, ouvertes, drapeaux, compteurs;
+let minesPlacees, partieFinie, victoire;
+let heureDebut, tempsEcoule, nbDrapeauxPoses;
+
+// Souris
+let sourisX = -1, sourisY = -1;   // position en pixels dans le canvas
+let caseSurvolee = null;           // { r, c }
+
+// Scores localStorage  { 'Débutant': [{nom, temps, date}, ...], ... }
+let scores = chargerScores();
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+function initNiveau(nom) {
+    niveauActuel = nom;
+    const niv = NIVEAUX[nom];
+    nbCols   = niv.cols;
+    nbLignes = niv.rows;
+    nbMines  = niv.mines;
+    reinit();
+}
+
+function reinit() {
+    mines     = Array.from({length: nbLignes}, () => new Array(nbCols).fill(false));
+    ouvertes  = Array.from({length: nbLignes}, () => new Array(nbCols).fill(false));
+    drapeaux  = Array.from({length: nbLignes}, () => new Array(nbCols).fill(false));
+    compteurs = Array.from({length: nbLignes}, () => new Array(nbCols).fill(0));
+    minesPlacees    = false;
+    partieFinie     = false;
+    victoire        = false;
+    heureDebut      = null;
+    tempsEcoule     = 0;
+    nbDrapeauxPoses = 0;
+}
+
+// ── Logique de jeu ────────────────────────────────────────────────────────────
+function placerMines(ligSure, colSure) {
+    const protegees = new Set();
+    for (let dl = -1; dl <= 1; dl++)
+        for (let dc = -1; dc <= 1; dc++) {
+            const l = ligSure + dl, c = colSure + dc;
+            if (l >= 0 && l < nbLignes && c >= 0 && c < nbCols)
+                protegees.add(l + ',' + c);
+        }
+    const candidates = [];
+    for (let l = 0; l < nbLignes; l++)
+        for (let c = 0; c < nbCols; c++)
+            if (!protegees.has(l + ',' + c)) candidates.push([l, c]);
+
+    // Tirage au sort — comme la loterie, mais tout le monde perd
+    const choisis = candidates.sort(() => Math.random() - .5).slice(0, Math.min(nbMines, candidates.length));
+    choisis.forEach(([l, c]) => mines[l][c] = true);
+
+    for (let l = 0; l < nbLignes; l++)
+        for (let c = 0; c < nbCols; c++) {
+            if (mines[l][c]) continue;
+            let cnt = 0;
+            for (let dl = -1; dl <= 1; dl++)
+                for (let dc = -1; dc <= 1; dc++) {
+                    const vl = l + dl, vc = c + dc;
+                    if (vl >= 0 && vl < nbLignes && vc >= 0 && vc < nbCols && mines[vl][vc]) cnt++;
+                }
+            compteurs[l][c] = cnt;
+        }
+    minesPlacees = true;
+}
+
+function ouvrir(l, c) {
+    if (partieFinie || ouvertes[l][c] || drapeaux[l][c]) return;
+    if (!minesPlacees) { placerMines(l, c); heureDebut = performance.now(); }
+
+    if (mines[l][c]) {
+        ouvertes[l][c] = true;
+        partieFinie = true; victoire = false;
+        revelerToutesMines();
+        return;
+    }
+    propager(l, c);
+    verifierVictoire();
+}
+
+function propager(l, c) {
+    const pile = [[l, c]];
+    while (pile.length) {
+        const [cl, cc] = pile.pop();
+        if (cl < 0 || cl >= nbLignes || cc < 0 || cc >= nbCols) continue;
+        if (ouvertes[cl][cc] || drapeaux[cl][cc]) continue;
+        ouvertes[cl][cc] = true;
+        if (compteurs[cl][cc] === 0 && !mines[cl][cc])
+            for (let dl = -1; dl <= 1; dl++)
+                for (let dc = -1; dc <= 1; dc++)
+                    if (dl !== 0 || dc !== 0) pile.push([cl + dl, cc + dc]);
+    }
+}
+
+function chord(l, c) {
+    if (!ouvertes[l][c] || compteurs[l][c] === 0) return;
+    const voisins = [];
+    for (let dl = -1; dl <= 1; dl++)
+        for (let dc = -1; dc <= 1; dc++) {
+            if (dl === 0 && dc === 0) continue;
+            const vl = l + dl, vc = c + dc;
+            if (vl >= 0 && vl < nbLignes && vc >= 0 && vc < nbCols) voisins.push([vl, vc]);
+        }
+    const nbDrap = voisins.filter(([vl, vc]) => drapeaux[vl][vc]).length;
+    if (nbDrap === compteurs[l][c])
+        voisins.forEach(([vl, vc]) => { if (!drapeaux[vl][vc] && !ouvertes[vl][vc]) ouvrir(vl, vc); });
+}
+
+function toggleDrapeau(l, c) {
+    if (partieFinie || ouvertes[l][c]) return;
+    drapeaux[l][c] = !drapeaux[l][c];
+    nbDrapeauxPoses += drapeaux[l][c] ? 1 : -1;
+}
+
+function revelerToutesMines() {
+    for (let l = 0; l < nbLignes; l++)
+        for (let c = 0; c < nbCols; c++)
+            if (mines[l][c]) ouvertes[l][c] = true;
+}
+
+function verifierVictoire() {
+    for (let l = 0; l < nbLignes; l++)
+        for (let c = 0; c < nbCols; c++)
+            if (!mines[l][c] && !ouvertes[l][c]) return;
+    victoire = true; partieFinie = true;
+    const tps = Math.round(tempsEcouleActuel());
+    enregistrerScore(niveauActuel, nomJoueur, tps);
+}
+
+function tempsEcouleActuel() {
+    if (!heureDebut) return 0;
+    if (partieFinie) return tempsEcoule;
+    tempsEcoule = (performance.now() - heureDebut) / 1000;
+    return tempsEcoule;
+}
+
+// ── Scores localStorage ───────────────────────────────────────────────────────
+function chargerScores() {
+    try {
+        return JSON.parse(localStorage.getItem('demineur_scores') || '{}');
+    } catch(e) { return {}; }
+}
+
+function enregistrerScore(niveau, nom, temps) {
+    if (!scores[niveau]) scores[niveau] = [];
+    scores[niveau].push({ nom, temps, date: new Date().toISOString() });
+    // Tri par temps croissant (meilleur temps en premier), garder top 20
+    scores[niveau].sort((a, b) => a.temps - b.temps);
+    scores[niveau] = scores[niveau].slice(0, 20);
+    try { localStorage.setItem('demineur_scores', JSON.stringify(scores)); } catch(e) {}
+}
+
+function meilleurTemps(niveau) {
+    if (!scores[niveau] || scores[niveau].length === 0) return null;
+    return scores[niveau][0].temps;
+}
+
+// ── Coordonnées canvas → grille ───────────────────────────────────────────────
+function offsetGrille() {
+    // La grille est centrée dans la zone de jeu (sous l'entête)
+    const grW = nbCols   * CELL;
+    const grH = nbLignes * CELL;
+    const ox  = Math.floor((W - grW) / 2);
+    const oy  = HEADER_H + Math.floor((H - HEADER_H - grH) / 2);
+    return { ox, oy };
+}
+
+function pixelToCase(px, py) {
+    const { ox, oy } = offsetGrille();
+    const c = Math.floor((px - ox) / CELL);
+    const l = Math.floor((py - oy) / CELL);
+    if (l >= 0 && l < nbLignes && c >= 0 && c < nbCols) return { l, c };
+    return null;
+}
+
+// ── Rectangles des boutons de l'entête ───────────────────────────────────────
+function rectsEntete() {
+    // Rangée haute : mines | temps | reset
+    const btnReset = { x: W - 52, y: 6, w: 40, h: 36 };
+
+    // Rangée basse : niveaux à gauche, modes à droite
+    const largBtnNiv = 95;
+    const rects_niveaux = {};
+    NOMS_NIVEAUX.forEach((nom, i) => {
+        rects_niveaux[nom] = { x: 8 + i * largBtnNiv, y: 64, w: largBtnNiv - 4, h: 26 };
+    });
+
+    const largBtnMode = 95;
+    const btnDrapeau = { x: W - 2 * largBtnMode - 10, y: 64, w: largBtnMode, h: 26 };
+    const btnReveal  = { x: W -     largBtnMode -  4, y: 64, w: largBtnMode, h: 26 };
+
+    return { btnReset, rects_niveaux, btnDrapeau, btnReveal };
+}
+
+function inRect(px, py, r) {
+    return px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h;
+}
+
+// ── Dessin helpers ────────────────────────────────────────────────────────────
+function roundRect(x, y, w, h, r, fill, stroke, sw) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y,     x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x,     y + h, r);
+    ctx.arcTo(x,     y + h, x,     y,     r);
+    ctx.arcTo(x,     y,     x + w, y,     r);
+    ctx.closePath();
+    if (fill)   { ctx.fillStyle   = fill;   ctx.fill(); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = sw || 1; ctx.stroke(); }
+}
+
+function texte(txt, x, y, taille, couleur, gras, align) {
+    ctx.fillStyle = couleur;
+    ctx.font = (gras ? 'bold ' : '') + taille + 'px "Courier New", monospace';
+    ctx.textAlign    = align || 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(txt, x, y);
+}
+
+// ── Dessin grille ─────────────────────────────────────────────────────────────
+function dessinerGrille() {
+    const { ox, oy } = offsetGrille();
+
+    for (let l = 0; l < nbLignes; l++) {
+        for (let c = 0; c < nbCols; c++) {
+            const x = ox + c * CELL + 2;
+            const y = oy + l * CELL + 2;
+            const w = CELL - 4, h = CELL - 4;
+            const estSurvol = caseSurvolee && caseSurvolee.l === l && caseSurvolee.c === c;
+
+            if (ouvertes[l][c]) {
+                if (mines[l][c]) {
+                    // Bombe
+                    roundRect(x, y, w, h, 5, C.caseMine, null);
+                    const cx = x + w / 2, cy = y + h / 2;
+                    const rb = Math.floor(w * 0.28);
+                    ctx.fillStyle = '#141414';
+                    ctx.beginPath(); ctx.arc(cx, cy, rb, 0, Math.PI * 2); ctx.fill();
+                    ctx.strokeStyle = '#141414'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(cx - rb, cy); ctx.lineTo(cx + rb, cy); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(cx, cy - rb); ctx.lineTo(cx, cy + rb); ctx.stroke();
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath(); ctx.arc(cx - 3, cy - 3, 3, 0, Math.PI * 2); ctx.fill();
+                } else {
+                    // Case ouverte
+                    roundRect(x, y, w, h, 5, C.caseOuverte, C.bordureOuverte);
+                    const n = compteurs[l][c];
+                    if (n > 0) {
+                        ctx.fillStyle    = COULEURS_CHIFFRES[n] || C.texte;
+                        ctx.font         = 'bold 16px "Courier New", monospace';
+                        ctx.textAlign    = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(String(n), x + w / 2, y + h / 2);
+                    }
+                }
+            } else {
+                // Case cachée
+                let bg = C.caseCachee;
+                if (estSurvol && !drapeaux[l][c]) {
+                    if      (modeActuel === 'drapeau') bg = '#644a14';
+                    else if (modeActuel === 'reveal')  bg = '#1e5032';
+                    else                               bg = C.caseSurvol;
+                }
+                roundRect(x, y, w, h, 5, bg, C.bordure);
+
+                if (drapeaux[l][c]) {
+                    // Drapeau
+                    const fx = x + w / 2, fy = y + h / 2 - 2;
+                    ctx.strokeStyle = '#b48c50'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(fx, fy + 8); ctx.lineTo(fx, fy - 8); ctx.stroke();
+                    ctx.fillStyle = C.drapeau;
+                    ctx.beginPath();
+                    ctx.moveTo(fx, fy - 8);
+                    ctx.lineTo(fx + 10, fy - 2);
+                    ctx.lineTo(fx, fy + 2);
+                    ctx.closePath(); ctx.fill();
+                } else if (estSurvol && modeActuel === 'drapeau') {
+                    // Mini-drapeau fantôme en preview
+                    const fx = x + w / 2, fy = y + h / 2 - 2;
+                    ctx.strokeStyle = '#8c6430'; ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.moveTo(fx, fy + 8); ctx.lineTo(fx, fy - 8); ctx.stroke();
+                    ctx.fillStyle = '#b47820';
+                    ctx.beginPath();
+                    ctx.moveTo(fx, fy - 8);
+                    ctx.lineTo(fx + 8, fy - 3);
+                    ctx.lineTo(fx, fy + 1);
+                    ctx.closePath(); ctx.fill();
+                }
+            }
+        }
+    }
+
+    // Bordure de grille
+    const { ox: gx, oy: gy } = offsetGrille();
+    roundRect(gx - 2, gy - 2, nbCols * CELL + 4, nbLignes * CELL + 4, 6, null, C.panelBord, 2);
+}
+
+// ── Dessin entête ─────────────────────────────────────────────────────────────
+function dessinerEntete() {
+    const { btnReset, rects_niveaux, btnDrapeau, btnReveal } = rectsEntete();
+
+    roundRect(0, 0, W, HEADER_H, 0, C.entete, null);
+    ctx.strokeStyle = C.bordure; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, HEADER_H); ctx.lineTo(W, HEADER_H); ctx.stroke();
+    // Séparateur interne
+    ctx.strokeStyle = '#22223a';
+    ctx.beginPath(); ctx.moveTo(0, 56); ctx.lineTo(W, 56); ctx.stroke();
+
+    // ── Rangée haute ──────────────────────────────────────────────────────────
+    const minesRestantes = nbMines - nbDrapeauxPoses;
+    texte('💣 ' + String(minesRestantes).padStart(3, '0'), 90, 28, 16, C.drapeau, true);
+
+    const tps = Math.round(tempsEcouleActuel());
+    texte('⏱ ' + String(tps).padStart(3, '0') + 's', W / 2, 28, 16, C.texte, true);
+
+    // Bouton reset
+    let coulBtnReset = victoire ? C.victoire : (partieFinie ? C.defaite : C.bouton);
+    const survolReset = inRect(sourisX, sourisY, btnReset);
+    if (!partieFinie && survolReset) coulBtnReset = C.boutonSurvol;
+    roundRect(btnReset.x, btnReset.y, btnReset.w, btnReset.h, 8, coulBtnReset, null);
+    const emoji = victoire ? '😎' : (partieFinie ? '😵' : '🙂');
+    texte(emoji, btnReset.x + btnReset.w / 2, btnReset.y + btnReset.h / 2, 16, '#fff', false);
+
+    // ── Rangée basse : niveaux ────────────────────────────────────────────────
+    NOMS_NIVEAUX.forEach(nom => {
+        const r = rects_niveaux[nom];
+        const actif = nom === niveauActuel;
+        const surv  = inRect(sourisX, sourisY, r);
+        const bg    = actif ? '#3c5096' : (surv ? '#2d2d4e' : '#282840');
+        const brd   = actif ? '#7890e0' : C.bordure;
+        roundRect(r.x, r.y, r.w, r.h, 6, bg, brd);
+        texte(nom, r.x + r.w / 2, r.y + r.h / 2, 11, actif ? '#c8d8ff' : '#8890b0', actif);
+
+        // Meilleur temps sous le nom du niveau
+        const mt = meilleurTemps(nom);
+        if (mt !== null) {
+            texte('🏆 ' + mt + 's', r.x + r.w / 2, r.y + r.h / 2 + 10, 9, '#ffd700', false);
+        }
+    });
+
+    // ── Rangée basse : boutons de mode ────────────────────────────────────────
+    // Mode Drapeau
+    const surv_d = inRect(sourisX, sourisY, btnDrapeau);
+    const bg_d = modeActuel === 'drapeau' ? C.modeDrapActif : (surv_d ? C.modeSurvol : C.modeInactif);
+    const brd_d = modeActuel === 'drapeau' ? '#ffc840' : C.bordure;
+    roundRect(btnDrapeau.x, btnDrapeau.y, btnDrapeau.w, btnDrapeau.h, 6, bg_d, brd_d);
+    texte('🚩 Drapeau', btnDrapeau.x + btnDrapeau.w / 2, btnDrapeau.y + btnDrapeau.h / 2, 11, C.texte, modeActuel === 'drapeau');
+
+    // Mode Révéler
+    const surv_r = inRect(sourisX, sourisY, btnReveal);
+    const bg_r = modeActuel === 'reveal' ? C.modeRevActif : (surv_r ? C.modeSurvol : C.modeInactif);
+    const brd_r = modeActuel === 'reveal' ? '#50e896' : C.bordure;
+    roundRect(btnReveal.x, btnReveal.y, btnReveal.w, btnReveal.h, 6, bg_r, brd_r);
+    texte('👁 Révéler', btnReveal.x + btnReveal.w / 2, btnReveal.y + btnReveal.h / 2, 11, C.texte, modeActuel === 'reveal');
+}
+
+// ── Overlay fin de partie ─────────────────────────────────────────────────────
+function dessinerOverlay() {
+    if (!partieFinie) return;
+
+    ctx.fillStyle = 'rgba(0,0,0,0.72)';
+    ctx.fillRect(0, HEADER_H, W, H - HEADER_H);
+
+    const pw = 500, ph = victoire ? 260 : 220;
+    const px = W / 2 - pw / 2, py = H / 2 - ph / 2 + HEADER_H / 2;
+
+    const coulBord = victoire ? C.victoire : C.defaite;
+    roundRect(px, py, pw, ph, 14, C.panelBg, coulBord, 2);
+
+    const msg = victoire ? '🎉 Félicitations !' : '💥 Boom !';
+    texte(msg, W / 2, py + 44, 26, coulBord, true);
+
+    if (victoire) {
+        const tps = Math.round(tempsEcoule);
+        texte('Temps : ' + tps + ' secondes', W / 2, py + 90, 18, '#fff', false);
+
+        const mt = meilleurTemps(niveauActuel);
+        const isRecord = mt === tps && scores[niveauActuel] && scores[niveauActuel][0].temps === tps;
+        if (isRecord && scores[niveauActuel].filter(s => s.temps === tps).length === 1) {
+            texte('✦ Nouveau record ! ✦', W / 2, py + 124, 16, '#ffd700', true);
+        }
+        texte('Niveau : ' + niveauActuel, W / 2, py + 156, 14, '#aaa', false);
+    }
+
+    texte('Cliquez sur 🙂 pour rejouer', W / 2, py + ph - 34, 13, '#a0a0c0', false);
+}
+
+// ── Dessin des scores en overlay (mode 'scores') ──────────────────────────────
+// (affichage dans la console ou futur tableau — ici on envoie à localStorage)
+
+// ── Boucle de dessin ──────────────────────────────────────────────────────────
+function draw() {
+    ctx.fillStyle = C.fond;
+    ctx.fillRect(0, 0, W, H);
+
+    dessinerEntete();
+    dessinerGrille();
+    dessinerOverlay();
+
+    requestAnimationFrame(draw);
+}
+
+// ── Gestion de la souris ──────────────────────────────────────────────────────
+function posCanvas(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = W / rect.width;
+    const scaleY = H / rect.height;
+    return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top)  * scaleY,
+    };
+}
+
+canvas.addEventListener('mousemove', function(e) {
+    const { x, y } = posCanvas(e);
+    sourisX = x; sourisY = y;
+    caseSurvolee = (y > HEADER_H) ? pixelToCase(x, y) : null;
+});
+
+canvas.addEventListener('mouseleave', function() {
+    sourisX = -1; sourisY = -1; caseSurvolee = null;
+});
+
+canvas.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+
+canvas.addEventListener('mousedown', function(e) {
+    const { x, y } = posCanvas(e);
+    const { btnReset, rects_niveaux, btnDrapeau, btnReveal } = rectsEntete();
+
+    // Reset
+    if (inRect(x, y, btnReset)) { reinit(); modeActuel = 'normal'; return; }
+
+    // Niveaux
+    for (const nom of NOMS_NIVEAUX) {
+        if (inRect(x, y, rects_niveaux[nom])) { initNiveau(nom); modeActuel = 'normal'; return; }
+    }
+
+    // Mode drapeau (toggle)
+    if (inRect(x, y, btnDrapeau)) {
+        modeActuel = modeActuel === 'drapeau' ? 'normal' : 'drapeau'; return;
+    }
+
+    // Mode reveal (toggle)
+    if (inRect(x, y, btnReveal)) {
+        modeActuel = modeActuel === 'reveal' ? 'normal' : 'reveal'; return;
+    }
+
+    // Grille
+    if (y > HEADER_H && !partieFinie) {
+        const cas = pixelToCase(x, y);
+        if (!cas) return;
+        const { l, c } = cas;
+
+        if (e.button === 2) {
+            // Clic droit → drapeau, toujours
+            toggleDrapeau(l, c);
+        } else if (e.button === 0) {
+            if (modeActuel === 'drapeau') {
+                toggleDrapeau(l, c);
+            } else if (modeActuel === 'reveal') {
+                if (ouvertes[l][c]) chord(l, c);
+                else ouvrir(l, c);
+            } else {
+                if (ouvertes[l][c]) chord(l, c);
+                else ouvrir(l, c);
+            }
+        }
+    }
+});
+
+// ── Démarrage ─────────────────────────────────────────────────────────────────
+nomJoueur = localStorage.getItem('demineur_joueur') || 'Anonyme';
+initNiveau('Débutant');
+requestAnimationFrame(draw);
+
+})();
+</script>
+</body>
+</html>
