@@ -2,19 +2,16 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Morpion</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300..800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
 :root {
-    /* Page (solitaire palette) */
     --fond-page: #f7f3ff;
     --fond-page2: #e6e1ff;
     --principal-page: #6c63ff;
-
-    /* Game window (original morpion dark palette) */
     --fond: #0d0518;
     --principal: #a855f7;
     --accent: #f472b6;
@@ -78,271 +75,111 @@ body {
     flex-shrink: 0;
     flex-wrap: wrap;
 }
-.mp-section {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.mp-label {
-    font-size: 0.78em;
-    color: #6c63ff;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    white-space: nowrap;
-}
+.mp-section { display: flex; align-items: center; gap: 8px; }
+.mp-label { font-size: 0.78em; color: #6c63ff; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
 .mp-code {
     font-family: 'Space Mono', monospace;
-    font-size: 1em;
-    font-weight: 700;
-    color: #4a3fbf;
-    background: rgba(108,99,255,0.1);
-    border: 1px solid rgba(108,99,255,0.35);
-    padding: 5px 12px;
-    border-radius: 8px;
-    letter-spacing: 0.12em;
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
-    user-select: all;
+    font-size: 1em; font-weight: 700; color: #4a3fbf;
+    background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.35);
+    padding: 5px 12px; border-radius: 8px; letter-spacing: 0.12em;
+    cursor: pointer; transition: all 0.2s; white-space: nowrap; user-select: all;
 }
-.mp-code:hover {
-    background: rgba(108,99,255,0.18);
-    border-color: var(--principal-page);
-    box-shadow: 0 0 10px rgba(108,99,255,0.25);
-}
-.mp-divider {
-    width: 1px; height: 28px;
-    background: rgba(108,99,255,0.2);
-}
+.mp-code:hover { background: rgba(108,99,255,0.18); border-color: var(--principal-page); box-shadow: 0 0 10px rgba(108,99,255,0.25); }
+.mp-divider { width: 1px; height: 28px; background: rgba(108,99,255,0.2); }
 .mp-join-input {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.9em;
-    background: rgba(255,255,255,0.7);
-    border: 1px solid rgba(108,99,255,0.3);
-    border-radius: 8px;
-    color: #333;
-    padding: 5px 10px;
-    width: 140px;
-    letter-spacing: 0.1em;
-    outline: none;
-    transition: all 0.2s;
-    text-transform: uppercase;
+    font-family: 'Space Mono', monospace; font-size: 0.9em;
+    background: rgba(255,255,255,0.7); border: 1px solid rgba(108,99,255,0.3);
+    border-radius: 8px; color: #333; padding: 5px 10px; width: 140px;
+    letter-spacing: 0.1em; outline: none; transition: all 0.2s; text-transform: uppercase;
 }
-.mp-join-input:focus {
-    border-color: var(--principal-page);
-    background: #fff;
-    box-shadow: 0 0 8px rgba(108,99,255,0.2);
-}
+.mp-join-input:focus { border-color: var(--principal-page); background: #fff; box-shadow: 0 0 8px rgba(108,99,255,0.2); }
 .mp-join-input::placeholder { color: #a9a4d4; letter-spacing: 0.05em; }
 .mp-btn {
-    padding: 5px 14px;
-    background: rgba(108,99,255,0.12);
-    border: 1px solid rgba(108,99,255,0.4);
-    border-radius: 8px;
-    color: #4a3fbf;
-    font-family: 'Outfit', sans-serif;
-    font-size: 0.85em;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
+    padding: 5px 14px; background: rgba(108,99,255,0.12); border: 1px solid rgba(108,99,255,0.4);
+    border-radius: 8px; color: #4a3fbf; font-family: 'Outfit', sans-serif;
+    font-size: 0.85em; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;
 }
-.mp-btn:hover {
-    background: rgba(108,99,255,0.22);
-    border-color: var(--principal-page);
-    box-shadow: 0 0 10px rgba(108,99,255,0.2);
-}
-.mp-btn.danger {
-    background: rgba(239,68,68,0.08);
-    border-color: rgba(239,68,68,0.35);
-    color: #dc2626;
-}
-.mp-btn.danger:hover {
-    background: rgba(239,68,68,0.15);
-    border-color: #ef4444;
-    box-shadow: 0 0 10px rgba(239,68,68,0.2);
-}
-.mp-status {
-    font-size: 0.8em;
-    font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 20px;
-    white-space: nowrap;
-}
+.mp-btn:hover { background: rgba(108,99,255,0.22); border-color: var(--principal-page); box-shadow: 0 0 10px rgba(108,99,255,0.2); }
+.mp-btn.danger { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.35); color: #dc2626; }
+.mp-btn.danger:hover { background: rgba(239,68,68,0.15); border-color: #ef4444; box-shadow: 0 0 10px rgba(239,68,68,0.2); }
+.mp-status { font-size: 0.8em; font-weight: 600; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
 .mp-status.solo { background: rgba(150,150,150,0.12); color: #888; border: 1px solid rgba(150,150,150,0.25); }
 .mp-status.waiting { background: rgba(251,191,36,0.15); color: #b45309; border: 1px solid rgba(251,191,36,0.4); animation: pulse-status 1.5s ease-in-out infinite; }
 .mp-status.connected { background: rgba(34,197,94,0.12); color: #15803d; border: 1px solid rgba(34,197,94,0.35); }
 .mp-status.joined { background: rgba(99,102,241,0.12); color: #4338ca; border: 1px solid rgba(99,102,241,0.35); }
-@keyframes pulse-status {
-    0%,100% { opacity: 1; } 50% { opacity: 0.6; }
-}
+@keyframes pulse-status { 0%,100%{opacity:1} 50%{opacity:0.6} }
 .copy-toast {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
+    position: fixed; bottom: 24px; left: 50%;
     transform: translateX(-50%) translateY(20px);
-    background: rgba(108,99,255,0.92);
-    color: white;
-    padding: 8px 20px;
-    border-radius: 20px;
-    font-size: 0.85em;
-    font-weight: 600;
-    opacity: 0;
-    transition: all 0.3s;
-    pointer-events: none;
-    z-index: 9999;
+    background: rgba(108,99,255,0.92); color: white;
+    padding: 8px 20px; border-radius: 20px; font-size: 0.85em; font-weight: 600;
+    opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 9999;
 }
 .copy-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* ── GAME AREA ── */
 .game-wrapper {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-    padding: 8px 12px;
-    position: relative;
-    z-index: 1;
-    min-height: 0;
+    flex: 1; display: flex; justify-content: center; align-items: center;
+    overflow: hidden; padding: 8px 12px; position: relative; z-index: 1; min-height: 0;
 }
-
 .game-window {
     background: rgba(20,8,38,0.97);
-    border: 1px solid var(--border);
-    border-radius: 20px;
+    border: 1px solid var(--border); border-radius: 20px;
     box-shadow: 0 0 60px rgba(168,85,247,0.2), 0 0 120px rgba(168,85,247,0.08), inset 0 1px 0 rgba(255,255,255,0.05);
-    padding: 16px 20px;
-    overflow: hidden;
-    width: fit-content;
-    max-width: calc(100vw - 24px);
-    max-height: 100%;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    z-index: 1;
+    padding: 16px 20px; overflow: hidden;
+    width: fit-content; max-width: calc(100vw - 24px); max-height: 100%;
+    display: flex; flex-direction: column; position: relative; z-index: 1;
 }
 
 /* ── PAGES ── */
 .page { display: none; }
-.page.active {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 0;
-    flex: 1;
-}
+.page.active { display: flex; flex-direction: column; align-items: center; min-height: 0; flex: 1; }
 
 /* HOME PAGE */
 .home-title {
-    font-size: clamp(1.6rem, 4vh, 2.8rem);
-    font-weight: 800;
-    color: #d8b4fe;
+    font-size: clamp(1.6rem, 4vh, 2.8rem); font-weight: 800; color: #d8b4fe;
     text-shadow: 0 0 30px rgba(216,180,254,0.5), 0 0 60px rgba(168,85,247,0.2);
-    margin-bottom: 0.2rem;
-    text-align: center;
+    margin-bottom: 0.2rem; text-align: center;
 }
-.home-subtitle {
-    font-size: clamp(0.8rem, 1.5vh, 1rem);
-    color: #9b7cc8;
-    margin-bottom: clamp(0.8rem, 2vh, 1.5rem);
-    text-align: center;
-}
-.modes {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: clamp(0.6rem, 1.5vw, 1.2rem);
-    min-width: 560px;
-}
+.home-subtitle { font-size: clamp(0.8rem, 1.5vh, 1rem); color: #9b7cc8; margin-bottom: clamp(0.8rem, 2vh, 1.5rem); text-align: center; }
+.modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(0.6rem, 1.5vw, 1.2rem); min-width: 560px; }
 .mode-card {
-    display: block;
-    text-decoration: none;
-    color: inherit;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: clamp(1rem, 2.5vh, 1.8rem) 1rem;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    text-align: center;
+    display: block; text-decoration: none; color: inherit;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: clamp(1rem, 2.5vh, 1.8rem) 1rem;
+    transition: all 0.3s ease; cursor: pointer; text-align: center;
 }
-.mode-card:hover {
-    border-color: rgba(168,85,247,0.6);
-    background: var(--surface-hover);
-    transform: translateY(-4px);
-    box-shadow: 0 0 25px rgba(168,85,247,0.2);
-}
+.mode-card:hover { border-color: rgba(168,85,247,0.6); background: var(--surface-hover); transform: translateY(-4px); box-shadow: 0 0 25px rgba(168,85,247,0.2); }
 .mode-icon { font-size: clamp(1.4rem, 3vh, 2.2rem); margin-bottom: 0.5rem; color: var(--principal); }
 .mode-card h2 { font-size: clamp(1rem, 2vh, 1.3rem); margin-bottom: 0.4rem; color: #c084fc; }
 .mode-card p { font-size: clamp(0.75rem, 1.4vh, 0.85rem); color: #9b7cc8; line-height: 1.4; }
 
 /* GAME PAGE */
-.game-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: clamp(0.5rem, 1.5vh, 1rem);
-    gap: 1rem;
-    width: 100%;
-}
+.game-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: clamp(0.5rem, 1.5vh, 1rem); gap: 1rem; width: 100%; }
 .game-title { font-size: clamp(1.1rem, 2.5vh, 1.6rem); color: #c084fc; }
-.back-game-link {
-    color: #9b7cc8;
-    text-decoration: none;
-    font-size: 0.88rem;
-    display: flex; align-items: center; gap: 4px;
-    transition: color 0.2s;
-    cursor: pointer;
-    white-space: nowrap;
-}
+.back-game-link { color: #9b7cc8; text-decoration: none; font-size: 0.88rem; display: flex; align-items: center; gap: 4px; transition: color 0.2s; cursor: pointer; white-space: nowrap; }
 .back-game-link:hover { color: var(--principal); }
 
-.status-bar {
-    text-align: center;
-    margin-bottom: clamp(0.4rem, 1.2vh, 1rem);
-    font-size: clamp(0.85rem, 1.8vh, 1.1rem);
-    font-weight: 600;
-    color: #d8b4fe;
-    min-height: 1.6rem;
-    line-height: 1.4;
-}
+.status-bar { text-align: center; margin-bottom: clamp(0.4rem, 1.2vh, 1rem); font-size: clamp(0.85rem, 1.8vh, 1.1rem); font-weight: 600; color: #d8b4fe; min-height: 1.6rem; line-height: 1.4; }
 .player-x { color: #c084fc; text-shadow: 0 0 8px rgba(192,132,252,0.6); }
 .player-o { color: #f472b6; text-shadow: 0 0 8px rgba(244,114,182,0.6); }
 .winner-msg { font-size: 1.4rem; font-weight: 800; animation: scaleIn 0.3s ease-out; }
-
 @keyframes scaleIn { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
 
 /* CLASSIC / DURATION GRID */
 .grid-3x3 {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 4px;
-    width: clamp(200px, 32vh, 300px);
-    margin: 0 auto clamp(0.5rem, 1.5vh, 1.2rem);
-    background: var(--principal);
-    border-radius: 12px;
-    padding: 4px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+    width: clamp(200px, 32vh, 300px); margin: 0 auto clamp(0.5rem, 1.5vh, 1.2rem);
+    background: var(--principal); border-radius: 12px; padding: 4px;
     box-shadow: 0 0 20px rgba(168,85,247,0.5), 0 0 40px rgba(168,85,247,0.2);
 }
 .cell {
-    aspect-ratio: 1;
-    background: #1a0a2e;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: clamp(1.6rem, 5vh, 2.4rem);
-    font-weight: 800;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    border: none;
-    position: relative;
-    font-family: 'Outfit', sans-serif;
+    aspect-ratio: 1; background: #1a0a2e; display: flex; align-items: center; justify-content: center;
+    font-size: clamp(1.6rem, 5vh, 2.4rem); font-weight: 800; cursor: pointer;
+    transition: all 0.15s ease; border: none; position: relative; font-family: 'Outfit', sans-serif;
 }
-.cell:first-child{border-radius:8px 0 0 0}
-.cell:nth-child(3){border-radius:0 8px 0 0}
-.cell:nth-child(7){border-radius:0 0 0 8px}
-.cell:nth-child(9){border-radius:0 0 8px 0}
+.cell:first-child{border-radius:8px 0 0 0} .cell:nth-child(3){border-radius:0 8px 0 0}
+.cell:nth-child(7){border-radius:0 0 0 8px} .cell:nth-child(9){border-radius:0 0 8px 0}
 .cell:hover:not(.disabled) { background: rgba(168,85,247,0.18); }
 .cell.disabled { cursor: default; }
 .cell.winning { background: rgba(168,85,247,0.28); }
@@ -351,93 +188,43 @@ body {
 .symbol-o { color: #f472b6; text-shadow: 0 0 10px rgba(244,114,182,0.7); animation: scaleIn 0.2s ease-out; }
 
 /* ACTIONS */
-.actions {
-    text-align: center;
-    margin-top: clamp(0.4rem, 1.2vh, 1rem);
-    display: flex;
-    justify-content: center;
-    gap: 0.7rem;
-    flex-wrap: wrap;
-}
+.actions { text-align: center; margin-top: clamp(0.4rem, 1.2vh, 1rem); display: flex; justify-content: center; gap: 0.7rem; flex-wrap: wrap; }
 .btn {
-    padding: 0.5rem 1.4rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    color: var(--texte);
-    font-family: 'Outfit', sans-serif;
-    font-size: clamp(0.8rem, 1.6vh, 0.95rem);
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-decoration: none;
-    display: inline-block;
+    padding: 0.5rem 1.4rem; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--texte); font-family: 'Outfit', sans-serif;
+    font-size: clamp(0.8rem, 1.6vh, 0.95rem); font-weight: 700; cursor: pointer;
+    transition: all 0.2s ease; text-decoration: none; display: inline-block;
 }
-.btn:hover {
-    background: rgba(168,85,247,0.25);
-    border-color: rgba(168,85,247,0.7);
-    box-shadow: 0 0 15px rgba(168,85,247,0.3);
-    transform: translateY(-1px);
-}
+.btn:hover { background: rgba(168,85,247,0.25); border-color: rgba(168,85,247,0.7); box-shadow: 0 0 15px rgba(168,85,247,0.3); transform: translateY(-1px); }
 .btn-primary { background: rgba(168,85,247,0.3); border-color: var(--principal); }
 
-/* TURN INDICATOR for multiplayer */
-.turn-indicator {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 0.75em;
-    font-weight: 700;
-    margin-top: 3px;
-}
+.turn-indicator { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.75em; font-weight: 700; margin-top: 3px; }
 .turn-mine { background: rgba(168,85,247,0.25); color: #c084fc; border: 1px solid rgba(168,85,247,0.5); }
 .turn-opponent { background: rgba(244,114,182,0.15); color: #f472b6; border: 1px solid rgba(244,114,182,0.4); }
 
-/* ULTIMATE GRID */
+/* ── ULTIMATE GRID — responsive mobile ── */
 .ultimate-container {
-    width: clamp(300px, 55vh, 500px);
-    margin: 0 auto clamp(0.4rem, 1.2vh, 1.2rem);
+    /* Prend toute la hauteur disponible sans déborder */
+    width: min(500px, min(calc(100vw - 48px), calc(100vh - 260px)));
+    margin: 0 auto clamp(0.3rem, 1vh, 1rem);
 }
-.win-condition-selector {
-    display: flex;
-    gap: 0.7rem;
-    justify-content: center;
-    margin-bottom: clamp(0.4rem, 1.2vh, 1.2rem);
-    flex-wrap: wrap;
-}
+.win-condition-selector { display: flex; gap: 0.7rem; justify-content: center; margin-bottom: clamp(0.3rem, 1vh, 1rem); flex-wrap: wrap; }
 .win-option {
-    padding: 0.45rem 0.9rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    color: #9b7cc8;
-    cursor: pointer;
-    font-family: 'Outfit', sans-serif;
-    font-size: clamp(0.75rem, 1.4vh, 0.85rem);
-    font-weight: 600;
-    transition: all 0.2s ease;
+    padding: 0.45rem 0.9rem; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; color: #9b7cc8; cursor: pointer; font-family: 'Outfit', sans-serif;
+    font-size: clamp(0.75rem, 1.4vh, 0.85rem); font-weight: 600; transition: all 0.2s ease;
 }
-.win-option:hover, .win-option.active {
-    background: rgba(168,85,247,0.2);
-    border-color: var(--principal);
-    color: #d8b4fe;
-    box-shadow: 0 0 10px rgba(168,85,247,0.2);
-}
+.win-option:hover, .win-option.active { background: rgba(168,85,247,0.2); border-color: var(--principal); color: #d8b4fe; box-shadow: 0 0 10px rgba(168,85,247,0.2); }
 .mega-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 5px;
-    background: var(--principal);
-    border-radius: 14px;
-    padding: 5px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;
+    background: var(--principal); border-radius: 14px; padding: 5px;
     box-shadow: 0 0 40px rgba(168,85,247,0.7), 0 0 80px rgba(168,85,247,0.3);
+    /* Toujours carré et contenu dans le container */
+    aspect-ratio: 1;
 }
 .sub-board {
-    background: #1a0a2e;
-    border-radius: 6px;
-    padding: 3px;
-    transition: all 0.3s ease;
-    position: relative;
+    background: #1a0a2e; border-radius: 6px; padding: 3px;
+    transition: all 0.3s ease; position: relative; aspect-ratio: 1;
 }
 .sub-board.active-target { background: rgba(168,85,247,0.15); box-shadow: inset 0 0 15px rgba(168,85,247,0.2); }
 .sub-board.won-x { background: rgba(192,132,252,0.15); }
@@ -445,421 +232,148 @@ body {
 .sub-board.drawn { background: rgba(100,60,150,0.1); }
 .sub-board.win-line { box-shadow: 0 0 20px rgba(168,85,247,0.6); }
 .sub-board-overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2.8rem;
-    font-weight: 800;
-    border-radius: 6px;
-    z-index: 2;
-    animation: scaleIn 0.3s ease-out;
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: clamp(1.4rem, 4vw, 2.8rem); font-weight: 800; border-radius: 6px; z-index: 2; animation: scaleIn 0.3s ease-out;
 }
 .overlay-x { color: #c084fc; text-shadow: 0 0 20px rgba(192,132,252,0.8); background: rgba(26,10,46,0.85); }
 .overlay-o { color: #f472b6; text-shadow: 0 0 20px rgba(244,114,182,0.8); background: rgba(26,10,46,0.85); }
-.overlay-draw { color: #9b7cc8; background: rgba(26,10,46,0.8); font-size: 2rem; }
+.overlay-draw { color: #9b7cc8; background: rgba(26,10,46,0.8); font-size: clamp(1rem, 3vw, 2rem); }
 .mini-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1px;
-    background: rgba(168,85,247,0.18);
-    border-radius: 4px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+    background: rgba(168,85,247,0.18); border-radius: 4px; height: 100%;
 }
 .mini-cell {
-    aspect-ratio: 1;
-    background: #1a0a2e;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.95rem;
-    font-weight: 800;
-    cursor: pointer;
-    transition: all 0.1s ease;
-    border: none;
-    font-family: 'Outfit', sans-serif;
+    aspect-ratio: 1; background: #1a0a2e; display: flex; align-items: center; justify-content: center;
+    font-size: clamp(0.55rem, 1.8vw, 0.95rem); font-weight: 800;
+    cursor: pointer; transition: all 0.1s ease; border: none; font-family: 'Outfit', sans-serif;
 }
-.mini-cell:first-child{border-radius:3px 0 0 0}
-.mini-cell:nth-child(3){border-radius:0 3px 0 0}
-.mini-cell:nth-child(7){border-radius:0 0 0 3px}
-.mini-cell:nth-child(9){border-radius:0 0 3px 0}
+.mini-cell:first-child{border-radius:3px 0 0 0} .mini-cell:nth-child(3){border-radius:0 3px 0 0}
+.mini-cell:nth-child(7){border-radius:0 0 0 3px} .mini-cell:nth-child(9){border-radius:0 0 3px 0}
 .mini-cell:hover:not(.disabled) { background: rgba(168,85,247,0.12); }
 .mini-cell.disabled { cursor: default; }
 
-.scoreboard {
-    display: flex;
-    justify-content: center;
-    gap: 2.5rem;
-    margin-bottom: clamp(0.4rem, 1.2vh, 1rem);
-}
+.scoreboard { display: flex; justify-content: center; gap: 2.5rem; margin-bottom: clamp(0.3rem, 1vh, 1rem); }
 .score-item { text-align: center; }
 .score-label { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.15rem; }
 .score-value { font-size: clamp(1.2rem, 3vh, 1.8rem); font-weight: 800; }
 .score-x .score-label, .score-x .score-value { color: #c084fc; }
 .score-o .score-label, .score-o .score-value { color: #f472b6; }
 
-/* OFFLINE INDICATOR */
-.offline-notice {
-    text-align: center;
-    font-size: 0.75em;
-    color: #b45309;
-    margin-top: 6px;
-    opacity: 0;
-    transition: opacity 0.3s;
+/* mode 9x9 : fenêtre de jeu adaptée */
+#page-ultimate.active ~ * { display: none; }
+.page#page-ultimate.active {
+    overflow: hidden;
 }
+/* Sur mobile, réduire les marges pour gagner de la place */
+@media (max-width: 600px) {
+    .game-window { padding: 10px 12px; border-radius: 14px; }
+    .top-bar { padding: 6px 12px; }
+    .mp-bar { padding: 5px 8px; gap: 6px; }
+    .mp-divider { display: none; }
+    .game-header { margin-bottom: 4px; }
+    .status-bar { margin-bottom: 4px; font-size: 0.82rem; min-height: 1.2rem; }
+    .win-condition-selector { margin-bottom: 4px; gap: 4px; }
+    .win-option { padding: 0.3rem 0.6rem; font-size: 0.72rem; }
+    .scoreboard { margin-bottom: 4px; gap: 1.5rem; }
+    .ultimate-container { margin-bottom: 4px; }
+    .actions { margin-top: 4px; gap: 0.4rem; }
+    .btn { padding: 0.4rem 0.9rem; font-size: 0.8rem; }
+    .mega-grid { gap: 3px; padding: 3px; }
+    .sub-board { padding: 2px; }
+}
+
+.offline-notice { text-align: center; font-size: 0.75em; color: #b45309; margin-top: 6px; opacity: 0; transition: opacity 0.3s; }
 .offline-notice.show { opacity: 1; }
 
 /* INVITE PANEL */
 .invite-panel-toggle {
-    padding: 5px 14px;
-    background: rgba(108,99,255,0.12);
-    border: 1px solid rgba(108,99,255,0.4);
-    border-radius: 8px;
-    color: #4a3fbf;
-    font-family: 'Outfit', sans-serif;
-    font-size: 0.85em;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
-    position: relative;
+    padding: 5px 14px; background: rgba(108,99,255,0.12); border: 1px solid rgba(108,99,255,0.4);
+    border-radius: 8px; color: #4a3fbf; font-family: 'Outfit', sans-serif;
+    font-size: 0.85em; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;
 }
-.invite-panel-toggle:hover {
-    background: rgba(108,99,255,0.22);
-    border-color: var(--principal-page);
-    box-shadow: 0 0 10px rgba(108,99,255,0.2);
-}
+.invite-panel-toggle:hover { background: rgba(108,99,255,0.22); border-color: var(--principal-page); box-shadow: 0 0 10px rgba(108,99,255,0.2); }
 .invite-panel {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #fff;
-    border-radius: 18px;
+    display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: #fff; border-radius: 18px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(108,99,255,0.15);
-    padding: 24px;
-    z-index: 10000;
-    width: 360px;
-    max-width: 92vw;
-    max-height: 80vh;
-    overflow-y: auto;
-    animation: scaleIn 0.2s ease-out;
+    padding: 24px; z-index: 10000; width: 360px; max-width: 92vw;
+    max-height: 80vh; overflow-y: auto; animation: scaleIn 0.2s ease-out;
 }
 .invite-panel.open { display: block; }
-.invite-panel-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.35);
-    z-index: 9999;
-}
+.invite-panel-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 9999; }
 .invite-panel-overlay.open { display: block; }
-.invite-panel h3 {
-    color: #6c63ff;
-    font-size: 1.1em;
-    margin-bottom: 16px;
-    text-align: center;
-}
-.invite-panel .close-panel {
-    position: absolute;
-    top: 12px;
-    right: 14px;
-    background: none;
-    border: none;
-    font-size: 1.3em;
-    color: #999;
-    cursor: pointer;
-    transition: color 0.2s;
-    line-height: 1;
-}
+.invite-panel h3 { color: #6c63ff; font-size: 1.1em; margin-bottom: 16px; text-align: center; }
+.invite-panel .close-panel { position: absolute; top: 12px; right: 14px; background: none; border: none; font-size: 1.3em; color: #999; cursor: pointer; transition: color 0.2s; line-height: 1; }
 .invite-panel .close-panel:hover { color: #333; }
-.member-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-radius: 10px;
-    transition: background 0.2s;
-    margin-bottom: 4px;
-}
+.member-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; transition: background 0.2s; margin-bottom: 4px; }
 .member-item:hover { background: rgba(108,99,255,0.06); }
-.member-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #6c63ff, #a855f7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    font-weight: 700;
-    font-size: 0.9em;
-    flex-shrink: 0;
-    position: relative;
-}
-.online-dot {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #22c55e;
-    border: 2px solid #fff;
-    display: none;
-}
+.member-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #6c63ff, #a855f7); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 0.9em; flex-shrink: 0; position: relative; }
+.online-dot { position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; border-radius: 50%; background: #22c55e; border: 2px solid #fff; display: none; }
 .online-dot.show { display: block; }
-.offline-dot {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #ccc;
-    border: 2px solid #fff;
-}
-.member-info {
-    flex: 1;
-    min-width: 0;
-}
-.member-name {
-    font-weight: 600;
-    color: #333;
-    font-size: 0.95em;
-}
-.member-groups {
-    font-size: 0.75em;
-    color: #999;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.invite-btn {
-    padding: 5px 12px;
-    background: #6c63ff;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.8em;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
-    font-family: 'Outfit', sans-serif;
-}
-.invite-btn:hover {
-    background: #5548e0;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(108,99,255,0.3);
-}
-.invite-btn:disabled {
-    background: #ccc;
-    cursor: default;
-    transform: none;
-    box-shadow: none;
-}
-.invite-btn.sent {
-    background: #22c55e;
-}
-.no-members {
-    text-align: center;
-    color: #999;
-    padding: 20px;
-    font-size: 0.9em;
-}
+.offline-dot { position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; border-radius: 50%; background: #ccc; border: 2px solid #fff; }
+.member-info { flex: 1; min-width: 0; }
+.member-name { font-weight: 600; color: #333; font-size: 0.95em; }
+.member-groups { font-size: 0.75em; color: #999; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.invite-btn { padding: 5px 12px; background: #6c63ff; color: #fff; border: none; border-radius: 8px; font-size: 0.8em; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; font-family: 'Outfit', sans-serif; }
+.invite-btn:hover { background: #5548e0; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(108,99,255,0.3); }
+.invite-btn:disabled { background: #ccc; cursor: default; transform: none; box-shadow: none; }
+.invite-btn.sent { background: #22c55e; }
+.no-members { text-align: center; color: #999; padding: 20px; font-size: 0.9em; }
 
-/* SIDE PANEL NOTIFICATION */
-.invite-notification-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.3);
-    z-index: 10000;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.35s ease;
-}
-.invite-notification-overlay.show {
-    opacity: 1;
-    pointer-events: auto;
-}
+/* INVITE NOTIFICATION */
+.invite-notification-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.35s ease; }
+.invite-notification-overlay.show { opacity: 1; pointer-events: auto; }
 .invite-notification {
-    position: fixed;
-    top: 0;
-    right: 0;
-    height: 100vh;
-    width: 340px;
-    max-width: 85vw;
+    position: fixed; top: 0; right: 0; height: 100vh; width: 340px; max-width: 85vw;
     background: linear-gradient(180deg, #f8f7ff 0%, #fff 40%);
     box-shadow: -8px 0 40px rgba(108,99,255,0.18), -2px 0 0 rgba(108,99,255,0.12);
-    z-index: 10001;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 28px;
-    transform: translateX(100%);
-    transition: transform 0.35s cubic-bezier(0.22, 0.68, 0, 1.0);
+    z-index: 10001; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 40px 28px; transform: translateX(100%); transition: transform 0.35s cubic-bezier(0.22, 0.68, 0, 1.0);
 }
-.invite-notification.show {
-    transform: translateX(0);
-}
-.notif-llama {
-    font-size: 3.5em;
-    margin-bottom: 10px;
-    animation: llamaBounce 1.2s ease infinite;
-}
-@keyframes llamaBounce {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    30% { transform: translateY(-12px) rotate(-5deg); }
-    60% { transform: translateY(-4px) rotate(3deg); }
-}
-.notif-badge {
-    display: inline-block;
-    background: linear-gradient(135deg, #6c63ff, #a855f7);
-    color: #fff;
-    font-size: 0.7em;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    padding: 4px 14px;
-    border-radius: 20px;
-    margin-bottom: 18px;
-}
-.invite-notification .notif-title {
-    font-weight: 800;
-    color: #333;
-    font-size: 1.2em;
-    margin-bottom: 8px;
-    text-align: center;
-    line-height: 1.3;
-}
-.invite-notification .notif-text {
-    color: #6c63ff;
-    font-size: 1em;
-    font-weight: 700;
-    margin-bottom: 6px;
-    text-align: center;
-}
-.notif-sub {
-    color: #999;
-    font-size: 0.82em;
-    margin-bottom: 30px;
-    text-align: center;
-}
-.invite-notification .notif-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    width: 100%;
-    max-width: 260px;
-}
-.notif-accept {
-    width: 100%;
-    padding: 14px 20px;
-    background: linear-gradient(135deg, #6c63ff, #7c5cfc);
-    color: #fff;
-    border: none;
-    border-radius: 14px;
-    font-weight: 700;
-    font-size: 1em;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: 'Outfit', sans-serif;
-    box-shadow: 0 6px 20px rgba(108,99,255,0.35);
-    letter-spacing: 0.02em;
-}
-.notif-accept:hover {
-    background: linear-gradient(135deg, #5548e0, #6c63ff);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 28px rgba(108,99,255,0.45);
-}
-.notif-decline {
-    width: 100%;
-    padding: 12px 20px;
-    background: transparent;
-    border: 2px solid rgba(239,68,68,0.25);
-    color: #dc2626;
-    border-radius: 14px;
-    font-weight: 600;
-    font-size: 0.9em;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: 'Outfit', sans-serif;
-}
-.notif-decline:hover {
-    background: rgba(239,68,68,0.06);
-    border-color: rgba(239,68,68,0.5);
-}
-.notif-pulse {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #22c55e;
-    animation: pulse 1.5s ease infinite;
-}
-@keyframes pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
-    50% { box-shadow: 0 0 0 8px rgba(34,197,94,0); }
-}
+.invite-notification.show { transform: translateX(0); }
+.notif-llama { font-size: 3.5em; margin-bottom: 10px; animation: llamaBounce 1.2s ease infinite; }
+@keyframes llamaBounce { 0%,100%{transform:translateY(0) rotate(0deg)} 30%{transform:translateY(-12px) rotate(-5deg)} 60%{transform:translateY(-4px) rotate(3deg)} }
+.notif-badge { display: inline-block; background: linear-gradient(135deg, #6c63ff, #a855f7); color: #fff; font-size: 0.7em; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 14px; border-radius: 20px; margin-bottom: 18px; }
+.invite-notification .notif-title { font-weight: 800; color: #333; font-size: 1.2em; margin-bottom: 8px; text-align: center; line-height: 1.3; }
+.invite-notification .notif-text { color: #6c63ff; font-size: 1em; font-weight: 700; margin-bottom: 6px; text-align: center; }
+.notif-sub { color: #999; font-size: 0.82em; margin-bottom: 30px; text-align: center; }
+.invite-notification .notif-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 260px; }
+.notif-accept { width: 100%; padding: 14px 20px; background: linear-gradient(135deg, #6c63ff, #7c5cfc); color: #fff; border: none; border-radius: 14px; font-weight: 700; font-size: 1em; cursor: pointer; transition: all 0.2s; font-family: 'Outfit', sans-serif; box-shadow: 0 6px 20px rgba(108,99,255,0.35); letter-spacing: 0.02em; }
+.notif-accept:hover { background: linear-gradient(135deg, #5548e0, #6c63ff); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(108,99,255,0.45); }
+.notif-decline { width: 100%; padding: 12px 20px; background: transparent; border: 2px solid rgba(239,68,68,0.25); color: #dc2626; border-radius: 14px; font-weight: 600; font-size: 0.9em; cursor: pointer; transition: all 0.2s; font-family: 'Outfit', sans-serif; }
+.notif-decline:hover { background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.5); }
+.notif-pulse { position: absolute; top: 20px; right: 20px; width: 12px; height: 12px; border-radius: 50%; background: #22c55e; animation: pulse 1.5s ease infinite; }
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.5)} 50%{box-shadow:0 0 0 8px rgba(34,197,94,0)} }
 
-/* FLOATING CONFETTI like solitaire */
-.falling {
-    position: fixed;
-    top: -10%;
-    animation: fall linear infinite;
-    pointer-events: none;
-    z-index: 0;
-}
+/* CONFETTI */
+.falling { position: fixed; top: -10%; animation: fall linear infinite; pointer-events: none; z-index: 0; }
 .confetti { width: 12px; height: 12px; opacity: 0.75; }
 .lama { font-size: 1.8rem; }
-.cc1 { background: #6c63ff; }
-.cc2 { background: #ffb703; }
-.cc3 { background: #ff6f91; }
-.cc4 { background: #00c9a7; }
-.cc5 { background: #845ec2; }
-
-@keyframes fall {
-    0%   { transform: translateY(0) rotate(0deg); }
-    100% { transform: translateY(120vh) rotate(var(--rotation)); }
-}
-
-@media (max-width: 700px) {
-    .modes { grid-template-columns: 1fr; min-width: unset; }
-    .game-window { padding: 16px; }
-    .mp-bar { gap: 8px; padding: 6px 12px; }
-    .mp-divider { display: none; }
-    .mega-grid { gap: 4px; padding: 4px; }
-    .sub-board-overlay { font-size: 2rem; }
-    .mini-cell { font-size: 0.7rem; }
-}
+.cc1{background:#6c63ff} .cc2{background:#ffb703} .cc3{background:#ff6f91} .cc4{background:#00c9a7} .cc5{background:#845ec2}
+@keyframes fall { 0%{transform:translateY(0) rotate(0deg)} 100%{transform:translateY(120vh) rotate(var(--rotation))} }
 </style>
 </head>
 
 <body>
 
-<!-- Falling confetti + lamas (solitaire style) -->
-<div class="falling confetti cc1" style="left:5%;  animation-duration:5s;   --rotation:720deg;"></div>
-<div class="falling lama"         style="left:9%;  animation-duration:7s;   --rotation:-1080deg;">🦙</div>
-<div class="falling confetti cc2" style="left:14%; animation-duration:6.2s; --rotation:540deg;"></div>
-<div class="falling confetti cc3" style="left:20%; animation-duration:4.8s; --rotation:-720deg;"></div>
-<div class="falling lama"         style="left:26%; animation-duration:8.1s; --rotation:900deg;">🦙</div>
-<div class="falling confetti cc4" style="left:31%; animation-duration:5.5s; --rotation:1260deg;"></div>
-<div class="falling confetti cc5" style="left:37%; animation-duration:6.9s; --rotation:360deg;"></div>
-<div class="falling lama"         style="left:42%; animation-duration:7.4s; --rotation:-1440deg;">🦙</div>
-<div class="falling confetti cc1" style="left:48%; animation-duration:5.1s; --rotation:900deg;"></div>
-<div class="falling confetti cc2" style="left:54%; animation-duration:6.6s; --rotation:-1080deg;"></div>
-<div class="falling lama"         style="left:59%; animation-duration:8.8s; --rotation:1620deg;">🦙</div>
-<div class="falling confetti cc3" style="left:65%; animation-duration:5.3s; --rotation:-900deg;"></div>
-<div class="falling confetti cc4" style="left:71%; animation-duration:7.7s; --rotation:720deg;"></div>
-<div class="falling lama"         style="left:77%; animation-duration:6.3s; --rotation:-1260deg;">🦙</div>
-<div class="falling confetti cc5" style="left:83%; animation-duration:5.9s; --rotation:1080deg;"></div>
-<div class="falling confetti cc1" style="left:89%; animation-duration:7.2s; --rotation:-540deg;"></div>
-<div class="falling lama"         style="left:94%; animation-duration:8.4s; --rotation:1440deg;">🦙</div>
+<!-- Confetti -->
+<div class="falling confetti cc1" style="left:5%;animation-duration:5s;--rotation:720deg;"></div>
+<div class="falling lama" style="left:9%;animation-duration:7s;--rotation:-1080deg;">🦙</div>
+<div class="falling confetti cc2" style="left:14%;animation-duration:6.2s;--rotation:540deg;"></div>
+<div class="falling confetti cc3" style="left:20%;animation-duration:4.8s;--rotation:-720deg;"></div>
+<div class="falling lama" style="left:26%;animation-duration:8.1s;--rotation:900deg;">🦙</div>
+<div class="falling confetti cc4" style="left:31%;animation-duration:5.5s;--rotation:1260deg;"></div>
+<div class="falling confetti cc5" style="left:37%;animation-duration:6.9s;--rotation:360deg;"></div>
+<div class="falling lama" style="left:42%;animation-duration:7.4s;--rotation:-1440deg;">🦙</div>
+<div class="falling confetti cc1" style="left:48%;animation-duration:5.1s;--rotation:900deg;"></div>
+<div class="falling confetti cc2" style="left:54%;animation-duration:6.6s;--rotation:-1080deg;"></div>
+<div class="falling lama" style="left:59%;animation-duration:8.8s;--rotation:1620deg;">🦙</div>
+<div class="falling confetti cc3" style="left:65%;animation-duration:5.3s;--rotation:-900deg;"></div>
+<div class="falling confetti cc4" style="left:71%;animation-duration:7.7s;--rotation:720deg;"></div>
+<div class="falling lama" style="left:77%;animation-duration:6.3s;--rotation:-1260deg;">🦙</div>
+<div class="falling confetti cc5" style="left:83%;animation-duration:5.9s;--rotation:1080deg;"></div>
+<div class="falling confetti cc1" style="left:89%;animation-duration:7.2s;--rotation:-540deg;"></div>
+<div class="falling lama" style="left:94%;animation-duration:8.4s;--rotation:1440deg;">🦙</div>
 
 <!-- TOP BAR -->
 <div class="top-bar">
@@ -977,8 +491,8 @@ body {
                 <div style="width:80px"></div>
             </div>
             <div class="win-condition-selector" id="ultimate-mode-selector">
-                <button class="win-option active" id="btn-mode-points" onclick="setUltimateMode('points')">🏆 Points (max sous-cases)</button>
-                <button class="win-option" id="btn-mode-align" onclick="setUltimateMode('align')">➡ Aligner 3 victoires</button>
+                <button class="win-option active" id="btn-mode-points" onclick="setUltimateMode('points')">🏆 Points</button>
+                <button class="win-option" id="btn-mode-align" onclick="setUltimateMode('align')">➡ Aligner 3</button>
             </div>
             <div class="scoreboard" id="ultimate-scoreboard" style="display:none">
                 <div class="score-item score-x"><div class="score-label">Joueur X</div><div class="score-value" id="score-x">0</div></div>
@@ -1014,37 +528,48 @@ function checkWinner(board) {
     return { winner: null, line: null };
 }
 
-// Classic state
 let classic = null;
-// Duration state
 let duration = null;
-// Ultimate state
 let ultimate = null;
-
 let currentMode = null;
 
-function freshClassic() {
-    return { board: Array(9).fill(null), current: 'X', winner: null, winLine: null };
+// ── Échange de symboles entre parties ─────────────────────────────────────
+// Compteur de parties jouées pour chaque mode (pour alterner X/O)
+const partieCount = { classic: 0, duration: 0, ultimate: 0 };
+
+// Retourne le premier joueur de la prochaine partie selon le compteur
+function premierJoueur(mode) {
+    return partieCount[mode] % 2 === 0 ? 'X' : 'O';
 }
-function freshDuration() {
-    return { board: Array(9).fill(null), current: 'X', winner: null, winLine: null, history: [] };
+
+function freshClassic(first) {
+    first = first || 'X';
+    return { board: Array(9).fill(null), current: first, winner: null, winLine: null, firstPlayer: first };
 }
-function freshUltimate(winMode = 'points') {
+function freshDuration(first) {
+    first = first || 'X';
+    return { board: Array(9).fill(null), current: first, winner: null, winLine: null, history: [], firstPlayer: first };
+}
+function freshUltimate(winMode, first) {
+    winMode = winMode || 'points';
+    first = first || 'X';
     return {
         boards: Array.from({length:9}, () => Array(9).fill(null)),
-        current: 'X', winner: null, winLine: null,
+        current: first, winner: null, winLine: null,
         subWinners: Array(9).fill(null), subDraws: Array(9).fill(false),
-        activeGrid: null, winMode,
+        activeGrid: null, winMode, firstPlayer: first,
     };
 }
 
 function resetGame(mode) {
     mp.matchSaved = false;
-    if (mode === 'classic') { classic = freshClassic(); renderClassic(); }
-    else if (mode === 'duration') { duration = freshDuration(); renderDuration(); }
+    partieCount[mode]++;   // incrémente → alterne le premier joueur
+    const first = premierJoueur(mode);
+    if (mode === 'classic')  { classic  = freshClassic(first);  renderClassic(); }
+    else if (mode === 'duration') { duration = freshDuration(first); renderDuration(); }
     else if (mode === 'ultimate') {
         const wm = ultimate ? ultimate.winMode : 'points';
-        ultimate = freshUltimate(wm);
+        ultimate = freshUltimate(wm, first);
         renderUltimate();
     }
     pushState();
@@ -1066,9 +591,9 @@ function goHome() {
 
 function startGame(mode) {
     currentMode = mode;
-    if (mode === 'classic' && !classic) classic = freshClassic();
-    if (mode === 'duration' && !duration) duration = freshDuration();
-    if (mode === 'ultimate' && !ultimate) ultimate = freshUltimate();
+    if (mode === 'classic'  && !classic)  classic  = freshClassic(premierJoueur('classic'));
+    if (mode === 'duration' && !duration) duration = freshDuration(premierJoueur('duration'));
+    if (mode === 'ultimate' && !ultimate) ultimate = freshUltimate('points', premierJoueur('ultimate'));
     showPage(mode);
     render(mode);
     pushState();
@@ -1080,12 +605,18 @@ function startGame(mode) {
 
 function classicClick(i) {
     if (!classic || classic.winner || classic.board[i]) return;
-    if (mp.connected && mp.mySymbol !== classic.current) return; // not your turn in MP
+    if (mp.connected && mp.mySymbol !== classic.current) return;
     classic.board[i] = classic.current;
     const r = checkWinner(classic.board);
-    if (r.winner) { classic.winner = r.winner; classic.winLine = r.line; if (mp.hosting) saveMatchResult(r.winner, 'classic'); }
-    else if (!classic.board.includes(null)) { classic.winner = 'Draw'; if (mp.hosting) saveMatchResult('Draw', 'classic'); }
-    else { classic.current = classic.current === 'X' ? 'O' : 'X'; }
+    if (r.winner) {
+        classic.winner = r.winner; classic.winLine = r.line;
+        saveMatchResult(r.winner, 'classic');
+    } else if (!classic.board.includes(null)) {
+        classic.winner = 'Draw';
+        saveMatchResult('Draw', 'classic');
+    } else {
+        classic.current = classic.current === 'X' ? 'O' : 'X';
+    }
     renderClassic();
     pushState();
 }
@@ -1129,8 +660,12 @@ function durationClick(i) {
     duration.board[i] = duration.current;
     duration.history.push({player: duration.current, index: i});
     const r = checkWinner(duration.board);
-    if (r.winner) { duration.winner = r.winner; duration.winLine = r.line; if (mp.hosting) saveMatchResult(r.winner, 'duration'); }
-    else { duration.current = duration.current === 'X' ? 'O' : 'X'; }
+    if (r.winner) {
+        duration.winner = r.winner; duration.winLine = r.line;
+        saveMatchResult(r.winner, 'duration');
+    } else {
+        duration.current = duration.current === 'X' ? 'O' : 'X';
+    }
     renderDuration();
     pushState();
 }
@@ -1160,7 +695,7 @@ function renderDuration() {
     if (duration.winner) s.innerHTML = `<span class="winner-msg">Joueur <span class="player-${duration.winner.toLowerCase()}">${duration.winner}</span> a gagné !</span>`;
     else {
         let txt = `Au tour de <span class="player-${duration.current.toLowerCase()}">${duration.current}</span>`;
-        if (fading !== null) txt += `<br><small style="color:#9b7cc8; font-size:0.8em">(Le symbole estompé va disparaître)</small>`;
+        if (fading !== null) txt += `<br><small style="color:#9b7cc8;font-size:0.8em">(Le symbole estompé va disparaître)</small>`;
         if (mp.connected) txt += ` <br><span class="turn-indicator ${mp.mySymbol === duration.current ? 'turn-mine' : 'turn-opponent'}">${mp.mySymbol === duration.current ? '→ Votre tour' : '⏳ Tour de l\'adversaire'}</span>`;
         s.innerHTML = txt;
     }
@@ -1191,18 +726,16 @@ function ultimateClick(g, c) {
     if (ultimate.winMode === 'align') {
         const mainR = checkWinner(ultimate.subWinners);
         if (mainR.winner) { ultimate.winner = mainR.winner; ultimate.winLine = mainR.line; }
-        else if (Array.from({length:9}, (_,i)=>i).every(i => isSubDone(i))) {
-            ultimate.winner = 'Draw';
-        }
+        else if (Array.from({length:9},(_,i)=>i).every(i=>isSubDone(i))) ultimate.winner = 'Draw';
     } else {
-        if (Array.from({length:9}, (_,i)=>i).every(i => isSubDone(i))) {
+        if (Array.from({length:9},(_,i)=>i).every(i=>isSubDone(i))) {
             const xP = ultimate.subWinners.filter(w=>w==='X').length;
             const oP = ultimate.subWinners.filter(w=>w==='O').length;
             ultimate.winner = xP > oP ? 'X' : oP > xP ? 'O' : 'Draw';
         }
     }
 
-    if (ultimate.winner && mp.hosting) saveMatchResult(ultimate.winner, 'ultimate');
+    if (ultimate.winner) saveMatchResult(ultimate.winner, 'ultimate');
 
     ultimate.activeGrid = isSubDone(c) ? null : c;
     if (!ultimate.winner) ultimate.current = ultimate.current === 'X' ? 'O' : 'X';
@@ -1212,7 +745,7 @@ function ultimateClick(g, c) {
 
 function setUltimateMode(mode) {
     if (ultimate) ultimate.winMode = mode;
-    else ultimate = freshUltimate(mode);
+    else ultimate = freshUltimate(mode, premierJoueur('ultimate'));
     document.getElementById('btn-mode-points').classList.toggle('active', mode === 'points');
     document.getElementById('btn-mode-align').classList.toggle('active', mode === 'align');
     document.getElementById('ultimate-scoreboard').style.display = mode === 'points' ? 'flex' : 'none';
@@ -1277,7 +810,7 @@ function renderUltimate() {
     else if (ultimate.winner) s.innerHTML = `<span class="winner-msg">Joueur <span class="player-${ultimate.winner.toLowerCase()}">${ultimate.winner}</span> a gagné !</span>`;
     else {
         let txt = `Au tour de <span class="player-${ultimate.current.toLowerCase()}">${ultimate.current}</span>`;
-        if (ultimate.activeGrid !== null) txt += ` — Case n°${ultimate.activeGrid + 1}`;
+        if (ultimate.activeGrid !== null) txt += ` — Case n°${ultimate.activeGrid+1}`;
         else txt += ` — Jouez où vous voulez`;
         if (mp.connected) txt += ` <br><span class="turn-indicator ${mp.mySymbol === ultimate.current ? 'turn-mine' : 'turn-opponent'}">${mp.mySymbol === ultimate.current ? '→ Votre tour' : '⏳ Tour de l\'adversaire'}</span>`;
         s.innerHTML = txt;
@@ -1291,30 +824,57 @@ function render(mode) {
 }
 
 // =====================================================================
-// MULTIPLAYER SYSTEM — online via API + D1 database
+// ENREGISTREMENT DES SCORES — toutes les fins de parties
+// Appelé dès qu'une partie se termine (solo ou multi)
 // =====================================================================
-// Principe : l'hôte (X) crée une room sur le serveur avec son code.
-// Le joueur O rejoint en entrant le code. Chaque coup envoie l'état
-// complet au serveur. Les deux joueurs pollent le serveur (~1s)
-// pour récupérer les mises à jour de l'adversaire.
+
+function saveMatchResult(winner, mode) {
+    if (mp.matchSaved) return;
+    mp.matchSaved = true;
+
+    // Résolution des noms selon le contexte solo/multi
+    var playerXName, playerOName, playerXId, playerOId;
+
+    if (mp.connected && mp.opponentName) {
+        // Mode multijoueur : on connaît les deux joueurs
+        playerXName = mp.hosting ? (currentUsername || 'Joueur X') : mp.opponentName;
+        playerOName = mp.hosting ? mp.opponentName : (currentUsername || 'Joueur O');
+        playerXId   = mp.hosting ? currentUserId : mp.opponentId;
+        playerOId   = mp.hosting ? mp.opponentId : currentUserId;
+    } else {
+        // Mode solo : les deux joueurs sont locaux
+        playerXName = currentUsername || 'Joueur X';
+        playerOName = currentUsername ? currentUsername + ' (O)' : 'Joueur O';
+        playerXId   = currentUserId || null;
+        playerOId   = null;
+    }
+
+    fetch('/api/morpion/match', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+            playerXName, playerOName, playerXId, playerOId,
+            winner: winner,
+            mode: mode || currentMode || 'classic',
+            roomCode: mp.roomCode || null
+        })
+    }).catch(function(){});
+}
+
+// =====================================================================
+// MULTIPLAYER SYSTEM
 // =====================================================================
 
 const mp = {
-    myCode:    '',
-    roomCode:  '',
-    connected: false,
-    mySymbol:  'X',
-    pollTimer: null,
-    lastTs:    0,
-    hosting:   false,
-    opponentName: '',
-    opponentId: null,
-    matchSaved: false,
+    myCode: '', roomCode: '', connected: false, mySymbol: 'X',
+    pollTimer: null, lastTs: 0, hosting: false,
+    opponentName: '', opponentId: null, matchSaved: false,
 };
 
 const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 function genCode() {
-    return Array.from({length:10}, () => CHARS[Math.floor(Math.random() * CHARS.length)]).join('');
+    return Array.from({length:10}, () => CHARS[Math.floor(Math.random()*CHARS.length)]).join('');
 }
 
 function buildStatePayload() {
@@ -1325,9 +885,9 @@ function applyState(st) {
     if (!st || !st.ts || st.ts <= mp.lastTs) return;
     mp.lastTs = st.ts;
     let changed = false;
-    if (st.classic   && JSON.stringify(st.classic)   !== JSON.stringify(classic))   { classic   = st.classic;   changed = true; }
-    if (st.duration  && JSON.stringify(st.duration)  !== JSON.stringify(duration))  { duration  = st.duration;  changed = true; }
-    if (st.ultimate  && JSON.stringify(st.ultimate)  !== JSON.stringify(ultimate))  { ultimate  = st.ultimate;  changed = true; }
+    if (st.classic  && JSON.stringify(st.classic)  !== JSON.stringify(classic))  { classic  = st.classic;  changed = true; }
+    if (st.duration && JSON.stringify(st.duration) !== JSON.stringify(duration)) { duration = st.duration; changed = true; }
+    if (st.ultimate && JSON.stringify(st.ultimate) !== JSON.stringify(ultimate)) { ultimate = st.ultimate; changed = true; }
     if (st.currentMode !== undefined && st.currentMode !== currentMode) {
         currentMode = st.currentMode;
         showPage(currentMode || 'home');
@@ -1341,8 +901,7 @@ function saveToServer() {
     const state = buildStatePayload();
     mp.lastTs = state.ts;
     fetch('/api/morpion/move', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: mp.roomCode, state })
     }).catch(function() {
         document.getElementById('offlineNotice').classList.add('show');
@@ -1358,24 +917,13 @@ function pollServer() {
             if (!data) return;
             if (data.changed && data.state) {
                 applyState(data.state);
-                if (data.playerO && !mp.opponentName && mp.hosting) {
-                    mp.opponentName = data.playerO;
-                    mp.opponentId = data.playerOId || null;
-                    updateMPStatus();
-                }
-                if (data.playerX && !mp.opponentName && !mp.hosting) {
-                    mp.opponentName = data.playerX;
-                    mp.opponentId = data.playerXId || null;
-                }
+                if (data.playerO && !mp.opponentName && mp.hosting) { mp.opponentName = data.playerO; mp.opponentId = data.playerOId||null; updateMPStatus(); }
+                if (data.playerX && !mp.opponentName && !mp.hosting) { mp.opponentName = data.playerX; mp.opponentId = data.playerXId||null; }
             }
-        })
-        .catch(function() {});
+        }).catch(function(){});
 }
 
-function startPoll() {
-    clearInterval(mp.pollTimer);
-    mp.pollTimer = setInterval(pollServer, 1000);
-}
+function startPoll() { clearInterval(mp.pollTimer); mp.pollTimer = setInterval(pollServer, 1000); }
 
 function initMP() {
     mp.myCode = genCode();
@@ -1385,10 +933,8 @@ function initMP() {
 
 function createRoom(code) {
     fetch('/api/morpion/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ code: code, playerName: currentUsername || 'Joueur X' })
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ code, playerName: currentUsername || 'Joueur X' })
     }).catch(function() {
         document.getElementById('offlineNotice').classList.add('show');
         setTimeout(() => document.getElementById('offlineNotice').classList.remove('show'), 3000);
@@ -1397,52 +943,29 @@ function createRoom(code) {
 
 function ensureHost() {
     if (mp.roomCode) return;
-    mp.roomCode  = mp.myCode;
-    mp.mySymbol  = 'X';
-    mp.connected = true;
-    mp.hosting   = true;
-    createRoom(mp.myCode);
-    startPoll();
-    updateMPStatus();
+    mp.roomCode = mp.myCode; mp.mySymbol = 'X'; mp.connected = true; mp.hosting = true;
+    createRoom(mp.myCode); startPoll(); updateMPStatus();
 }
 
 function joinSession(code) {
     code = code.toUpperCase().trim();
-    if (code.length < 6)       { alert('Le code est trop court.'); return; }
-    if (code === mp.myCode)    { alert('Vous ne pouvez pas rejoindre votre propre partie !'); return; }
-
+    if (code.length < 6) { alert('Le code est trop court.'); return; }
+    if (code === mp.myCode) { alert('Vous ne pouvez pas rejoindre votre propre partie !'); return; }
     document.getElementById('joinBtn').disabled = true;
     document.getElementById('joinBtn').textContent = '...';
-
     fetch('/api/morpion/join', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ code, playerName: currentUsername || 'Joueur O' })
     })
-    .then(r => {
-        if (!r.ok) return r.json().then(d => { throw new Error(d.message || 'Erreur'); });
-        return r.json();
-    })
+    .then(r => { if (!r.ok) return r.json().then(d => { throw new Error(d.message||'Erreur'); }); return r.json(); })
     .then(data => {
-        mp.roomCode  = code;
-        mp.mySymbol  = 'O';
-        mp.connected = true;
-        mp.hosting   = false;
-        mp.lastTs    = 0;
-        mp.opponentName = data.playerX || '';
-
+        mp.roomCode = code; mp.mySymbol = 'O'; mp.connected = true; mp.hosting = false;
+        mp.lastTs = 0; mp.opponentName = data.playerX || '';
         if (data.state && data.state.ts) applyState(data.state);
-        startPoll();
-        updateMPStatus();
+        startPoll(); updateMPStatus();
     })
-    .catch(err => {
-        alert(err.message || 'Partie introuvable. Vérifiez le code.');
-    })
-    .finally(() => {
-        document.getElementById('joinBtn').disabled = false;
-        document.getElementById('joinBtn').textContent = 'Rejoindre';
-    });
+    .catch(err => alert(err.message || 'Partie introuvable. Vérifiez le code.'))
+    .finally(() => { document.getElementById('joinBtn').disabled = false; document.getElementById('joinBtn').textContent = 'Rejoindre'; });
 }
 
 function pushState() {
@@ -1451,276 +974,122 @@ function pushState() {
     saveToServer();
 }
 
-function saveMatchResult(winner, mode) {
-    if (!mp.connected || mp.matchSaved) return;
-    if (!mp.opponentName) return;
-    mp.matchSaved = true;
-
-    var playerXName = mp.hosting ? (currentUsername || 'Joueur X') : mp.opponentName;
-    var playerOName = mp.hosting ? mp.opponentName : (currentUsername || 'Joueur O');
-    var playerXId = mp.hosting ? currentUserId : mp.opponentId;
-    var playerOId = mp.hosting ? mp.opponentId : currentUserId;
-
-    fetch('/api/morpion/match', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-            playerXName: playerXName,
-            playerOName: playerOName,
-            playerXId: playerXId,
-            playerOId: playerOId,
-            winner: winner,
-            mode: mode || currentMode || 'classic',
-            roomCode: mp.roomCode
-        })
-    }).catch(function(){});
-}
-
 function leaveSession() {
     clearInterval(mp.pollTimer);
-    mp.connected = false;
-    mp.roomCode  = '';
-    mp.mySymbol  = 'X';
-    mp.lastTs    = 0;
-    mp.hosting   = false;
-    mp.matchSaved = false;
-    mp.opponentName = '';
+    mp.connected = false; mp.roomCode = ''; mp.mySymbol = 'X'; mp.lastTs = 0;
+    mp.hosting = false; mp.matchSaved = false; mp.opponentName = '';
     document.getElementById('joinInput').value = '';
     document.getElementById('leaveBtn').style.display = 'none';
     document.getElementById('offlineNotice').classList.remove('show');
-    initMP();
-    updateMPStatus();
+    initMP(); updateMPStatus();
 }
 
 function updateMPStatus() {
     const el = document.getElementById('mpStatus');
     const lb = document.getElementById('leaveBtn');
-    if (!mp.connected) {
-        el.className = 'mp-status solo';
-        el.textContent = 'Solo';
-        lb.style.display = 'none';
-    } else if (mp.hosting && !mp.opponentName) {
-        el.className = 'mp-status waiting';
-        el.textContent = 'En attente d\'un adversaire...';
-        lb.style.display = 'inline-block';
-    } else {
-        el.className = mp.mySymbol === 'X' ? 'mp-status connected' : 'mp-status joined';
-        el.textContent = `✓ En ligne — Vous êtes ${mp.mySymbol}`;
-        lb.style.display = 'inline-block';
-    }
+    if (!mp.connected) { el.className = 'mp-status solo'; el.textContent = 'Solo'; lb.style.display = 'none'; }
+    else if (mp.hosting && !mp.opponentName) { el.className = 'mp-status waiting'; el.textContent = 'En attente d\'un adversaire...'; lb.style.display = 'inline-block'; }
+    else { el.className = mp.mySymbol === 'X' ? 'mp-status connected' : 'mp-status joined'; el.textContent = `✓ En ligne — Vous êtes ${mp.mySymbol}`; lb.style.display = 'inline-block'; }
 }
 
 document.getElementById('myCode').addEventListener('click', () => {
-    const code = document.getElementById('myCode').textContent;
-    navigator.clipboard.writeText(code).catch(() => {});
+    navigator.clipboard.writeText(document.getElementById('myCode').textContent).catch(()=>{});
     const t = document.getElementById('copyToast');
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2000);
+    t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000);
 });
-
 document.getElementById('joinBtn').addEventListener('click', () => {
     const code = document.getElementById('joinInput').value.trim();
     if (!code) return;
-    joinSession(code);
-    document.getElementById('joinInput').value = '';
+    joinSession(code); document.getElementById('joinInput').value = '';
 });
-
-document.getElementById('joinInput').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') document.getElementById('joinBtn').click();
-});
-
+document.getElementById('joinInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('joinBtn').click(); });
 document.getElementById('leaveBtn').addEventListener('click', leaveSession);
-
-document.getElementById('joinInput').addEventListener('input', function() {
-    this.value = this.value.toUpperCase();
-});
+document.getElementById('joinInput').addEventListener('input', function() { this.value = this.value.toUpperCase(); });
 
 // =====================================================================
 // PRESENCE + INVITATIONS
 // =====================================================================
 
-let currentUserId = null;
-let currentUsername = '';
-let groupMembers = [];
-let onlineUserIds = [];
-let pendingInviteId = null;
-let invitePollTimer = null;
-let presencePingTimer = null;
+let currentUserId = null, currentUsername = '', groupMembers = [], onlineUserIds = [];
+let pendingInviteId = null, invitePollTimer = null, presencePingTimer = null;
 
-function pingPresence() {
-    fetch('/api/presence/ping', { method: 'POST', credentials: 'include' }).catch(function(){});
-}
-
-function fetchOnlineUsers() {
-    return fetch('/api/presence/online', { credentials: 'include' })
-        .then(r => r.ok ? r.json() : [])
-        .catch(() => []);
-}
-
-function fetchGroupMembers() {
-    return fetch('/api/groups/members', { credentials: 'include' })
-        .then(r => r.ok ? r.json() : [])
-        .catch(() => []);
-}
+function pingPresence() { fetch('/api/presence/ping', { method:'POST', credentials:'include' }).catch(function(){}); }
+function fetchOnlineUsers() { return fetch('/api/presence/online',{credentials:'include'}).then(r=>r.ok?r.json():[]).catch(()=>[]); }
+function fetchGroupMembers() { return fetch('/api/groups/members',{credentials:'include'}).then(r=>r.ok?r.json():[]).catch(()=>[]); }
 
 function renderMembersList() {
     const el = document.getElementById('membersList');
-    if (groupMembers.length === 0) {
-        el.innerHTML = '<div class="no-members">Aucun membre dans vos groupes.<br>Rejoignez un groupe depuis le tableau de score !</div>';
-        return;
-    }
+    if (groupMembers.length === 0) { el.innerHTML = '<div class="no-members">Aucun membre dans vos groupes.<br>Rejoignez un groupe depuis le tableau de score !</div>'; return; }
     let html = '';
     for (const m of groupMembers) {
         const isOnline = onlineUserIds.includes(m.id);
         const initial = m.username.charAt(0).toUpperCase();
         const groupStr = m.groups.map(g => g.name).join(', ');
-        html += '<div class="member-item" data-member-id="' + m.id + '">' +
-            '<div class="member-avatar">' + initial +
-            '<span class="' + (isOnline ? 'online-dot show' : 'offline-dot') + '"></span>' +
-            '</div>' +
-            '<div class="member-info">' +
-            '<div class="member-name">' + m.username + (isOnline ? ' <span style="color:#22c55e;font-size:0.75em">en ligne</span>' : '') + '</div>' +
-            '<div class="member-groups">' + groupStr + '</div>' +
-            '</div>' +
-            '<button class="invite-btn" data-uid="' + m.id + '" data-uname="' + m.username + '" onclick="sendInvite(' + m.id + ', \'' + m.username.replace(/'/g, "\\'") + '\', this)">Inviter</button>' +
-            '</div>';
+        html += '<div class="member-item">' +
+            '<div class="member-avatar">' + initial + '<span class="' + (isOnline ? 'online-dot show' : 'offline-dot') + '"></span></div>' +
+            '<div class="member-info"><div class="member-name">' + m.username + (isOnline ? ' <span style="color:#22c55e;font-size:0.75em">en ligne</span>' : '') + '</div><div class="member-groups">' + groupStr + '</div></div>' +
+            '<button class="invite-btn" onclick="sendInvite(' + m.id + ',\'' + m.username.replace(/'/g,"\\'") + '\',this)">Inviter</button></div>';
     }
     el.innerHTML = html;
 }
 
 function sendInvite(userId, username, btnEl) {
-    ensureHost();
-    btnEl.disabled = true;
-    btnEl.textContent = '...';
-    fetch('/api/morpion/invite', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ toUserId: userId, roomCode: mp.roomCode })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.ok) {
-            btnEl.textContent = '✓ Envoyée';
-            btnEl.classList.add('sent');
-            setTimeout(() => {
-                btnEl.textContent = 'Inviter';
-                btnEl.classList.remove('sent');
-                btnEl.disabled = false;
-            }, 4000);
-        } else {
-            btnEl.textContent = 'Erreur';
-            btnEl.disabled = false;
-            setTimeout(() => { btnEl.textContent = 'Inviter'; }, 2000);
-        }
-    })
-    .catch(() => {
-        btnEl.textContent = 'Erreur';
-        btnEl.disabled = false;
-        setTimeout(() => { btnEl.textContent = 'Inviter'; }, 2000);
-    });
+    ensureHost(); btnEl.disabled = true; btnEl.textContent = '...';
+    fetch('/api/morpion/invite', { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({toUserId:userId,roomCode:mp.roomCode}) })
+    .then(r=>r.json()).then(data => {
+        if (data.ok) { btnEl.textContent='✓ Envoyée'; btnEl.classList.add('sent'); setTimeout(()=>{ btnEl.textContent='Inviter'; btnEl.classList.remove('sent'); btnEl.disabled=false; },4000); }
+        else { btnEl.textContent='Erreur'; btnEl.disabled=false; setTimeout(()=>{btnEl.textContent='Inviter';},2000); }
+    }).catch(()=>{ btnEl.textContent='Erreur'; btnEl.disabled=false; setTimeout(()=>{btnEl.textContent='Inviter';},2000); });
 }
 
 function pollInvitations() {
     if (!currentUserId) return;
-    fetch('/api/morpion/invitations', { credentials: 'include' })
-        .then(r => r.ok ? r.json() : [])
-        .then(invites => {
-            if (invites.length > 0 && !pendingInviteId) {
-                const inv = invites[0];
-                pendingInviteId = inv.id;
-                showInviteNotification(inv);
-            }
-        })
-        .catch(() => {});
+    fetch('/api/morpion/invitations',{credentials:'include'}).then(r=>r.ok?r.json():[]).then(invites=>{
+        if (invites.length > 0 && !pendingInviteId) { pendingInviteId = invites[0].id; showInviteNotification(invites[0]); }
+    }).catch(()=>{});
 }
 
 function showInviteNotification(inv) {
-    const el = document.getElementById('inviteNotification');
-    const overlay = document.getElementById('inviteNotifOverlay');
+    const el = document.getElementById('inviteNotification'), overlay = document.getElementById('inviteNotifOverlay');
     document.getElementById('notifText').textContent = inv.fromUsername + ' vous invite à jouer !';
-    el.classList.add('show');
-    overlay.classList.add('show');
-
-    function hideNotif() {
-        el.classList.remove('show');
-        overlay.classList.remove('show');
-    }
-
+    el.classList.add('show'); overlay.classList.add('show');
+    function hideNotif() { el.classList.remove('show'); overlay.classList.remove('show'); }
     document.getElementById('notifAccept').onclick = function() {
         hideNotif();
-        fetch('/api/morpion/invite/' + inv.id + '/accept', { method: 'POST', credentials: 'include' })
-            .then(r => r.json())
-            .then(data => {
-                if (data.ok && data.roomCode) {
-                    joinSession(data.roomCode);
-                }
-                pendingInviteId = null;
-            })
-            .catch(() => { pendingInviteId = null; });
+        fetch('/api/morpion/invite/'+inv.id+'/accept',{method:'POST',credentials:'include'}).then(r=>r.json()).then(data=>{ if(data.ok&&data.roomCode) joinSession(data.roomCode); pendingInviteId=null; }).catch(()=>{pendingInviteId=null;});
     };
-
     document.getElementById('notifDecline').onclick = function() {
-        hideNotif();
-        fetch('/api/morpion/invite/' + inv.id + '/decline', { method: 'POST', credentials: 'include' }).catch(()=>{});
-        pendingInviteId = null;
+        hideNotif(); fetch('/api/morpion/invite/'+inv.id+'/decline',{method:'POST',credentials:'include'}).catch(()=>{}); pendingInviteId=null;
     };
-
     overlay.onclick = function() {
-        hideNotif();
-        fetch('/api/morpion/invite/' + inv.id + '/decline', { method: 'POST', credentials: 'include' }).catch(()=>{});
-        pendingInviteId = null;
+        hideNotif(); fetch('/api/morpion/invite/'+inv.id+'/decline',{method:'POST',credentials:'include'}).catch(()=>{}); pendingInviteId=null;
     };
 }
 
 function openInvitePanel() {
-    fetchOnlineUsers().then(ids => {
-        onlineUserIds = ids;
-        renderMembersList();
-    });
+    fetchOnlineUsers().then(ids=>{ onlineUserIds=ids; renderMembersList(); });
     document.getElementById('invitePanel').classList.add('open');
     document.getElementById('invitePanelOverlay').classList.add('open');
 }
-
 function closeInvitePanelFn() {
     document.getElementById('invitePanel').classList.remove('open');
     document.getElementById('invitePanelOverlay').classList.remove('open');
 }
-
 document.getElementById('invitePanelBtn').addEventListener('click', openInvitePanel);
 document.getElementById('closeInvitePanel').addEventListener('click', closeInvitePanelFn);
 document.getElementById('invitePanelOverlay').addEventListener('click', closeInvitePanelFn);
 
 function initAuth() {
-    fetch('/api/auth/me', { credentials: 'include' })
-        .then(r => r.ok ? r.json() : null)
-        .then(data => {
-            if (data && data.id) {
-                currentUserId = data.id;
-                currentUsername = data.username;
-                document.getElementById('inviteSection').style.display = 'flex';
-
-                pingPresence();
-                presencePingTimer = setInterval(pingPresence, 30000);
-
-                fetchGroupMembers().then(members => {
-                    groupMembers = members;
-                    fetchOnlineUsers().then(ids => {
-                        onlineUserIds = ids;
-                    });
-                });
-
-                invitePollTimer = setInterval(pollInvitations, 2500);
-
-                setInterval(() => {
-                    fetchOnlineUsers().then(ids => {
-                        onlineUserIds = ids;
-                    });
-                }, 15000);
-            }
-        })
-        .catch(() => {});
+    fetch('/api/auth/me',{credentials:'include'}).then(r=>r.ok?r.json():null).then(data=>{
+        if (data&&data.id) {
+            currentUserId=data.id; currentUsername=data.username;
+            document.getElementById('inviteSection').style.display='flex';
+            pingPresence(); presencePingTimer=setInterval(pingPresence,30000);
+            fetchGroupMembers().then(members=>{ groupMembers=members; fetchOnlineUsers().then(ids=>{onlineUserIds=ids;}); });
+            invitePollTimer=setInterval(pollInvitations,2500);
+            setInterval(()=>fetchOnlineUsers().then(ids=>{onlineUserIds=ids;}),15000);
+        }
+    }).catch(()=>{});
 }
 
 // =====================================================================
