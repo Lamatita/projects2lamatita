@@ -266,7 +266,14 @@ body {
 }
 /* Sur mobile, réduire les marges pour gagner de la place */
 @media (max-width: 600px) {
-    .game-window { padding: 10px 12px; border-radius: 14px; }
+    body { overflow-y: auto; height: auto; min-height: 100vh; }
+    .game-wrapper { align-items: flex-start; padding: 8px; overflow: visible; }
+    .game-window {
+        width: 100%;
+        max-width: 100%;
+        padding: 10px 10px;
+        border-radius: 14px;
+    }
     .top-bar { padding: 6px 12px; }
     .mp-bar { padding: 5px 8px; gap: 6px; }
     .mp-divider { display: none; }
@@ -275,11 +282,28 @@ body {
     .win-condition-selector { margin-bottom: 4px; gap: 4px; }
     .win-option { padding: 0.3rem 0.6rem; font-size: 0.72rem; }
     .scoreboard { margin-bottom: 4px; gap: 1.5rem; }
-    .ultimate-container { margin-bottom: 4px; }
+    .ultimate-container { margin-bottom: 4px; width: 100%; }
     .actions { margin-top: 4px; gap: 0.4rem; }
     .btn { padding: 0.4rem 0.9rem; font-size: 0.8rem; }
     .mega-grid { gap: 3px; padding: 3px; }
     .sub-board { padding: 2px; }
+    /* Menu : cartes en colonne, lisibles */
+    .modes {
+        grid-template-columns: 1fr;
+        min-width: unset;
+        width: 100%;
+        gap: 0.6rem;
+    }
+    .mode-card {
+        padding: 0.8rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        text-align: left;
+    }
+    .mode-icon { font-size: 1.6rem; margin-bottom: 0; flex-shrink: 0; }
+    .mode-card h2 { font-size: 1rem; margin-bottom: 2px; }
+    .mode-card p { font-size: 0.8rem; }
 }
 
 .offline-notice { text-align: center; font-size: 0.75em; color: #b45309; margin-top: 6px; opacity: 0; transition: opacity 0.3s; }
