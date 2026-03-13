@@ -351,6 +351,7 @@ tbody td {
     var GAMES = {
         solitaire: { label: '🃏 Solitaire', link: 'solitaire.html', emoji: '🃏' },
         snake:     { label: '🐍 Snake',     link: 'snake.html',     emoji: '🐍' },
+        demineur:  { label: '💣 Démineur',  link: 'demineur.html',  emoji: '💣' },
         ppg:       { label: '🐾 Papatte Patoune Griffes', link: 'papatte_patoune_griffes.html', emoji: '🐾' },
         morpion:   { label: '❌⭕ Morpion', link: 'morpion.html', emoji: '❌' }
     };
@@ -657,9 +658,106 @@ tbody td {
             '<a href="morpion.html" class="btn-play" data-testid="link-play-morpion">\u274C\u2B55 Jouer</a>';
     }
 
+    // ── Démineur : scores locaux par difficulté ────────────────────────────────
+    // Stockés dans localStorage : { 'Débutant': [{nom, temps, date},...], ... }
+    var DEMINEUR_NIVEAUX = ['Débutant', 'Intermédiaire', 'Expert'];
+    var demineurNiveauActif = 'Débutant';
+
+    function chargerScoresDemineur() {
+        try { return JSON.parse(localStorage.getItem('demineur_scores') || '{}'); }
+        catch(e) { return {}; }
+    }
+
+    window.switchDemineurNiveau = function(niv) {
+        demineurNiveauActif = niv;
+        renderDemineurTable();
+    };
+
+    function renderDemineurNiveauTabs() {
+        var el = document.getElementById('demineur-niveau-tabs');
+        if (!el) return;
+        var html = '';
+        DEMINEUR_NIVEAUX.forEach(function(niv) {
+            var isActive = niv === demineurNiveauActif;
+            html += '<button class="view-tab' + (isActive ? ' active' : '') + '" ' +
+                    'onclick="switchDemineurNiveau(\'' + niv + '\')">' + niv + '</button>';
+        });
+        el.innerHTML = html;
+    }
+
+    function renderDemineurTable() {
+        var statsRow   = document.getElementById('stats-row');
+        var content    = document.getElementById('scores-content');
+        var actionsRow = document.getElementById('actions-row');
+
+        // Zone onglets de niveau (insérée au-dessus du contenu si absente)
+        if (!document.getElementById('demineur-niveau-tabs')) {
+            var tabsDiv = document.createElement('div');
+            tabsDiv.id = 'demineur-niveau-tabs';
+            tabsDiv.style.cssText = 'display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;';
+            content.parentNode.insertBefore(tabsDiv, content);
+        }
+        renderDemineurNiveauTabs();
+
+        var tousScores = chargerScoresDemineur();
+        var scoresNiv  = (tousScores[demineurNiveauActif] || []).slice();
+
+        if (scoresNiv.length === 0) {
+            statsRow.innerHTML = '';
+            content.innerHTML =
+                '<div class="empty-state">' +
+                '<div class="emoji">\uD83D\uDCA3</div>' +
+                '<p>Aucun score en <strong>' + demineurNiveauActif + '</strong> pour le moment !</p>' +
+                '<a href="demineur.html" class="btn-play">\uD83D\uDCA3 Jouer au D\u00e9mineur</a>' +
+                '</div>';
+            actionsRow.innerHTML = '';
+            return;
+        }
+
+        var meilleurTemps = scoresNiv[0].temps;
+        var tempsMoyen    = Math.round(scoresNiv.reduce(function(s, e) { return s + e.temps; }, 0) / scoresNiv.length);
+
+        statsRow.innerHTML =
+            '<div class="stat-box"><div class="stat-value">' + scoresNiv.length + '</div>' +
+            '<div class="stat-label">Parties gagn\u00e9es</div></div>' +
+            '<div class="stat-box"><div class="stat-value" style="color:var(--principal)">' + meilleurTemps + 's</div>' +
+            '<div class="stat-label">\u26A1 Meilleur temps</div></div>' +
+            '<div class="stat-box"><div class="stat-value">' + tempsMoyen + 's</div>' +
+            '<div class="stat-label">Temps moyen</div></div>';
+
+        var html = '<table data-testid="table-scores"><thead><tr>' +
+            '<th>#</th><th>Joueur</th><th>Temps</th><th>Difficult\u00e9</th><th>Date</th>' +
+            '</tr></thead><tbody>';
+
+        for (var i = 0; i < scoresNiv.length; i++) {
+            var s = scoresNiv[i];
+            var rankClass = '';
+            if (i === 0) rankClass = ' rank-1';
+            else if (i === 1) rankClass = ' rank-2';
+            else if (i === 2) rankClass = ' rank-3';
+
+            var tempsDisplay = '<strong>' + s.temps + 's</strong>' +
+                (i === 0 ? ' <span class="badge" style="background:#fff8e1;color:#c77700">\u26A1 Record</span>' : '');
+            var diffBadge = '<span class="badge badge-difficulty">' + demineurNiveauActif + '</span>';
+
+            html += '<tr>' +
+                '<td class="rank-cell' + rankClass + '">' + getRankIcon(i + 1) + '</td>' +
+                '<td>' + (s.nom || 'Anonyme') + '</td>' +
+                '<td>' + tempsDisplay + '</td>' +
+                '<td>' + diffBadge + '</td>' +
+                '<td>' + formatDate(s.date) + '</td>' +
+                '</tr>';
+        }
+
+        html += '</tbody></table>';
+        content.innerHTML = html;
+        actionsRow.innerHTML = '<a href="demineur.html" class="btn-play">\uD83D\uDCA3 Jouer</a>';
+    }
+
     function renderTable(scores, showGroup) {
-        if (currentGame === 'snake') return renderSnakeTable(scores, showGroup);
-        if (currentGame === 'ppg') return renderPPGTable(scores, showGroup);
+        if (currentGame === 'snake')    return renderSnakeTable(scores, showGroup);
+        if (currentGame === 'demineur') return renderDemineurTable();
+        if (currentGame === 'ppg')      return renderPPGTable(scores, showGroup);
         return renderSolitaireTable(scores, showGroup);
     }
 
@@ -675,6 +773,13 @@ tbody td {
         var titleEl = document.getElementById('view-title');
         var gameLabel = GAMES[currentGame].label;
         var gameParam = '?game=' + currentGame;
+        // Démineur : scores 100% locaux (localStorage), pas d'API
+        if (currentGame === 'demineur') {
+            titleEl.textContent = gameLabel + ' \u2014 Scores Locaux \u2014 ' + demineurNiveauActif;
+            renderDemineurTable();
+            return;
+        }
+
         if (currentGame === 'morpion') {
             if (currentView === 'personal') {
                 titleEl.textContent = gameLabel + ' \u2014 Mes Parties \u2014 ' + currentUser;
@@ -744,6 +849,9 @@ tbody td {
         currentGame = game;
         if (game === 'morpion' && currentUser) {
             currentView = 'personal';
+        } else if (game === 'demineur') {
+            currentView = 'general';
+            demineurNiveauActif = 'Débutant';
         } else {
             currentView = 'general';
         }
