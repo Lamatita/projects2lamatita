@@ -55,6 +55,10 @@ body {
     padding: 20px 30px 60px;
     position: relative;
     z-index: 2;
+    transition: max-width 0.2s;
+}
+.container.wide {
+    max-width: 1100px;
 }
 
 .game-tabs {
@@ -688,8 +692,8 @@ tbody td {
             '<div class="stat-box"><div class="stat-value" data-testid="text-total">' + totalMatches + '</div><div class="stat-label">Parties</div></div>' +
             (topWinner ? '<div class="stat-box"><div class="stat-value" data-testid="text-top-winner">' + topWinner + '</div><div class="stat-label">' + topWins + ' victoire' + (topWins > 1 ? 's' : '') + '</div></div>' : '');
 
-        var html = '<div style="overflow-x:auto;"><table data-testid="table-scores" style="width:100%;table-layout:fixed;"><thead><tr>' +
-            '<th style="width:40px">#</th><th>Joueur X</th><th style="width:40px">VS</th><th>Joueur O</th><th>Vainqueur</th><th style="width:80px">Mode</th><th style="width:110px">Date</th>' +
+        var html = '<div style="overflow-x:auto;"><table data-testid="table-scores" style="width:100%;"><thead><tr>' +
+            '<th style="width:36px">#</th><th>Joueur X</th><th style="width:44px;text-align:center">VS</th><th>Joueur O</th><th>Vainqueur</th><th style="width:90px">Mode</th><th style="width:120px">Date</th>' +
             '</tr></thead><tbody>';
 
         for (var i = 0; i < matches.length; i++) {
@@ -899,6 +903,12 @@ tbody td {
 
     window.switchGame = function(game) {
         currentGame = game;
+        var container = document.querySelector('.container');
+        if (game === 'morpion') {
+            container.classList.add('wide');
+        } else {
+            container.classList.remove('wide');
+        }
         if (game === 'morpion' && currentUser) {
             currentView = 'personal';
         } else if (game === 'demineur') {
@@ -916,6 +926,12 @@ tbody td {
         fetchAndRender();
     };
 
+    function applyContainerWidth() {
+        var container = document.querySelector('.container');
+        if (currentGame === 'morpion') container.classList.add('wide');
+        else container.classList.remove('wide');
+    }
+
     fetch('/api/auth/me', { credentials: 'include' })
         .then(function(r) { return r.ok ? r.json() : null; })
         .then(function(data) {
@@ -926,8 +942,8 @@ tbody td {
                     .then(function(groups) { userGroups = groups; });
             }
         })
-        .then(function() { fetchAndRender(); })
-        .catch(function() { fetchAndRender(); });
+        .then(function() { applyContainerWidth(); fetchAndRender(); })
+        .catch(function() { applyContainerWidth(); fetchAndRender(); });
 })();
 </script>
 </body>
