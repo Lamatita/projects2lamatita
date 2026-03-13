@@ -759,6 +759,77 @@ document.addEventListener('keyup', function(e) {
     delete keysHeld[e.key];
 });
 
+// ── Contrôles tactiles (swipe) ────────────────────────────────────────────────
+(function() {
+    var touchStartX = 0, touchStartY = 0;
+    var touchStartTime = 0;
+    var MIN_SWIPE = 30;   // pixels minimum pour valider un swipe
+    var MAX_TAP   = 200;  // ms max pour un tap (pause / rejouer / menu)
+
+    canvas.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        var t = e.changedTouches[0];
+        touchStartX    = t.clientX;
+        touchStartY    = t.clientY;
+        touchStartTime = performance.now();
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        var t = e.changedTouches[0];
+        var dx   = t.clientX - touchStartX;
+        var dy   = t.clientY - touchStartY;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        var dt   = performance.now() - touchStartTime;
+
+        // ── Tap court → action contextuelle (comme ESPACE / ENTRÉE) ──────────
+        if (dist < MIN_SWIPE && dt < MAX_TAP) {
+            if (state === 'MENU') {
+                difficulty = DIFF_LIST[diffIndex];
+                reset();
+                state = 'PLAYING';
+            } else if (state === 'PLAYING') {
+                state = 'PAUSED';
+            } else if (state === 'PAUSED') {
+                state = 'PLAYING';
+                lastMove    = performance.now();
+                flemmeLastKey = performance.now();
+            } else if (state === 'GAME_OVER') {
+                reset(); state = 'PLAYING';
+            }
+            return;
+        }
+
+        // ── Swipe → direction ─────────────────────────────────────────────────
+        if (dist < MIN_SWIPE) return;   // trop court, on ignore
+
+        var [curDx, curDy] = dir;
+        var moved = false;
+
+        if (Math.abs(dx) > Math.abs(dy)) {
+            // Swipe horizontal
+            if (dx > 0 && curDx === 0) { nextDir = [1,  0]; moved = true; }   // droite
+            if (dx < 0 && curDx === 0) { nextDir = [-1, 0]; moved = true; }   // gauche
+        } else {
+            // Swipe vertical
+            if (dy > 0 && curDy === 0) { nextDir = [0,  1]; moved = true; }   // bas
+            if (dy < 0 && curDy === 0) { nextDir = [0, -1]; moved = true; }   // haut
+        }
+
+        // Boost Flemme au swipe
+        if (moved && difficulty === 'Flemme') {
+            flemmeLastKey = performance.now();
+            flemmeBoost   = Math.min(1, flemmeBoost + 0.15);
+        }
+
+        // Sur le menu, un swipe gauche/droite change la difficulté
+        if (state === 'MENU') {
+            if (dx > MIN_SWIPE)  diffIndex = (diffIndex + 1) % DIFF_LIST.length;
+            if (dx < -MIN_SWIPE) diffIndex = (diffIndex - 1 + DIFF_LIST.length) % DIFF_LIST.length;
+        }
+    }, { passive: false });
+})();
+
 // ── Démarrage ─────────────────────────────────────────────────────────────────
 reset();
 requestAnimationFrame(loop);
