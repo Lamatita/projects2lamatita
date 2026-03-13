@@ -476,37 +476,71 @@ tbody td {
             '<a href="solitaire.html" class="btn-play" data-testid="link-play-again">\uD83C\uDCCF Jouer</a>';
     }
 
+    // ── Snake : filtre par difficulté ─────────────────────────────────────────
+    var SNAKE_DIFFICULTES = ['Flemme', 'Facile', 'Normal', 'Difficile', 'Ironman'];
+    var snakeDifficulteActive = 'Normal';
+    // Correspondance entre le label court "Ironman" et la valeur stockée dans l'API
+    var SNAKE_DIFF_API_MAP = {
+        'Flemme':   'Flemme',
+        'Facile':   'Facile',
+        'Normal':   'Normal',
+        'Difficile':'Difficile',
+        'Ironman':  'Ironman (franchement, courage)'
+    };
+
+    window.switchSnakeDifficulte = function(diff) {
+        snakeDifficulteActive = diff;
+        // On re-render avec les scores déjà chargés — on les refetch pour rester propre
+        fetchAndRender();
+    };
+
     function renderSnakeTable(scores, showGroup) {
         var statsRow = document.getElementById('stats-row');
         var content = document.getElementById('scores-content');
         var actionsRow = document.getElementById('actions-row');
 
-        if (scores.length === 0) {
+        // Onglets de difficulté
+        var tabsHtml = '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">';
+        SNAKE_DIFFICULTES.forEach(function(diff) {
+            var isActive = diff === snakeDifficulteActive;
+            tabsHtml += '<button class="view-tab' + (isActive ? ' active' : '') + '" ' +
+                'onclick="switchSnakeDifficulte(\'' + diff + '\')">' + diff + '</button>';
+        });
+        tabsHtml += '</div>';
+
+        // Filtre les scores selon la difficulté active
+        var apiDiff = SNAKE_DIFF_API_MAP[snakeDifficulteActive];
+        var scoresFiltres = scores.filter(function(s) {
+            return s.difficulty === apiDiff || s.difficulty === snakeDifficulteActive;
+        });
+
+        if (scoresFiltres.length === 0) {
             statsRow.innerHTML = '';
-            content.innerHTML = '<div class="empty-state">' +
+            content.innerHTML = tabsHtml +
+                '<div class="empty-state">' +
                 '<div class="emoji">\uD83D\uDC0D</div>' +
-                '<p>Aucun score enregistr\u00e9 pour le moment !</p>' +
+                '<p>Aucun score en <strong>' + snakeDifficulteActive + '</strong> pour le moment\u00a0!</p>' +
                 '<a href="snake.html" class="btn-play" data-testid="link-play-snake">\uD83D\uDC0D Jouer au Snake</a>' +
                 '</div>';
             actionsRow.innerHTML = '';
             return;
         }
 
-        var bestScore = scores[0].score;
-        var totalEntries = scores.length;
-        var avgScore = Math.round(scores.reduce(function(sum, s) { return sum + (s.score || 0); }, 0) / totalEntries);
+        var bestScore = scoresFiltres[0].score;
+        var totalEntries = scoresFiltres.length;
+        var avgScore = Math.round(scoresFiltres.reduce(function(sum, s) { return sum + (s.score || 0); }, 0) / totalEntries);
 
         statsRow.innerHTML =
             '<div class="stat-box"><div class="stat-value" data-testid="text-total">' + totalEntries + '</div><div class="stat-label">' + (currentView === 'personal' ? 'Parties' : 'Joueurs') + '</div></div>' +
             '<div class="stat-box"><div class="stat-value" data-testid="text-best-score">' + bestScore + '</div><div class="stat-label">Meilleur score</div></div>' +
             '<div class="stat-box"><div class="stat-value" data-testid="text-avg-score">' + avgScore + '</div><div class="stat-label">Score moyen</div></div>';
 
-        var html = '<table data-testid="table-scores"><thead><tr>' +
+        var html = tabsHtml + '<table data-testid="table-scores"><thead><tr>' +
             '<th>#</th><th>Joueur</th><th>Score</th><th>Difficult\u00e9</th><th>Date</th>' +
             '</tr></thead><tbody>';
 
-        for (var i = 0; i < scores.length; i++) {
-            var s = scores[i];
+        for (var i = 0; i < scoresFiltres.length; i++) {
+            var s = scoresFiltres[i];
             var rankClass = '';
             if (i === 0) rankClass = ' rank-1';
             else if (i === 1) rankClass = ' rank-2';
@@ -517,7 +551,7 @@ tbody td {
                 playerDisplay += ' <span class="group-label">(' + s.groupName + ')</span>';
             }
 
-            var diffBadge = s.difficulty ? '<span class="badge badge-difficulty">' + s.difficulty + '</span>' : '-';
+            var diffBadge = s.difficulty ? '<span class="badge badge-difficulty">' + snakeDifficulteActive + '</span>' : '-';
 
             html += '<tr data-testid="row-score-' + i + '">' +
                 '<td class="rank-cell' + rankClass + '">' + getRankIcon(i + 1) + '</td>' +
@@ -842,6 +876,9 @@ tbody td {
         } else if (game === 'demineur') {
             currentView = 'general';
             demineurNiveauActif = 'Débutant';
+        } else if (game === 'snake') {
+            currentView = 'general';
+            snakeDifficulteActive = 'Normal';
         } else {
             currentView = 'general';
         }
