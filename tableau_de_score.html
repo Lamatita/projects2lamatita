@@ -408,37 +408,64 @@ tbody td {
         tabsEl.innerHTML = html;
     }
 
+    // ── Solitaire : filtre par mode ───────────────────────────────────────────
+    var SOLITAIRE_MODES = ['Chrono', 'Flemme'];
+    var solitaireModeActif = 'Chrono';
+
+    window.switchSolitaireMode = function(mode) {
+        solitaireModeActif = mode;
+        fetchAndRender();
+    };
+
     function renderSolitaireTable(scores, showGroup) {
         var statsRow = document.getElementById('stats-row');
         var content = document.getElementById('scores-content');
         var actionsRow = document.getElementById('actions-row');
 
-        if (scores.length === 0) {
+        // Onglets Chrono / Flemme
+        var tabsHtml = '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">';
+        SOLITAIRE_MODES.forEach(function(mode) {
+            var isActive = mode === solitaireModeActif;
+            tabsHtml += '<button class="view-tab' + (isActive ? ' active' : '') + '" ' +
+                'onclick="switchSolitaireMode(\'' + mode + '\')">' +
+                (mode === 'Chrono' ? '\u23F1 Chrono' : '\uD83D\uDE34 Flemme') + '</button>';
+        });
+        tabsHtml += '</div>';
+
+        // Filtre par timerMode (CHRONO ou FLEMME), sans exclure les indices (on les affiche toujours)
+        var scoresFiltres = scores.filter(function(s) {
+            return s.timerMode === solitaireModeActif.toUpperCase();
+        });
+
+        if (scoresFiltres.length === 0) {
             statsRow.innerHTML = '';
-            content.innerHTML = '<div class="empty-state">' +
+            content.innerHTML = tabsHtml +
+                '<div class="empty-state">' +
                 '<div class="emoji">\uD83E\uDD99</div>' +
-                '<p>Aucun temps enregistr\u00e9 pour le moment !</p>' +
+                '<p>Aucun temps enregistr\u00e9 en mode <strong>' +
+                (solitaireModeActif === 'Chrono' ? '\u23F1 Chrono' : '\uD83D\uDE34 Flemme') +
+                '</strong> pour le moment\u00a0!</p>' +
                 '<a href="solitaire.html" class="btn-play" data-testid="link-play-solitaire">\uD83C\uDCCF Jouer au Solitaire</a>' +
                 '</div>';
             actionsRow.innerHTML = '';
             return;
         }
 
-        var bestTime = scores[0].time;
-        var totalEntries = scores.length;
-        var avgTime = Math.round(scores.reduce(function(sum, s) { return sum + s.time; }, 0) / totalEntries);
+        var bestTime = scoresFiltres[0].time;
+        var totalEntries = scoresFiltres.length;
+        var avgTime = Math.round(scoresFiltres.reduce(function(sum, s) { return sum + s.time; }, 0) / totalEntries);
 
         statsRow.innerHTML =
             '<div class="stat-box"><div class="stat-value" data-testid="text-total">' + totalEntries + '</div><div class="stat-label">' + (currentView === 'personal' ? 'Parties gagn\u00e9es' : 'Joueurs') + '</div></div>' +
             '<div class="stat-box"><div class="stat-value" data-testid="text-best-time">' + formatTime(bestTime) + '</div><div class="stat-label">Meilleur temps</div></div>' +
             '<div class="stat-box"><div class="stat-value" data-testid="text-avg-time">' + formatTime(avgTime) + '</div><div class="stat-label">Temps moyen</div></div>';
 
-        var html = '<table data-testid="table-scores"><thead><tr>' +
+        var html = tabsHtml + '<table data-testid="table-scores"><thead><tr>' +
             '<th>#</th><th>Joueur</th><th>Temps</th><th>Mode</th><th>Date</th>' +
             '</tr></thead><tbody>';
 
-        for (var i = 0; i < scores.length; i++) {
-            var s = scores[i];
+        for (var i = 0; i < scoresFiltres.length; i++) {
+            var s = scoresFiltres[i];
             var rankClass = '';
             if (i === 0) rankClass = ' rank-1';
             else if (i === 1) rankClass = ' rank-2';
@@ -454,6 +481,7 @@ tbody td {
                 timeDisplay = '<span class="konami-time">\uD83E\uDD99 ' + timeDisplay + ' \uD83E\uDD99</span>';
             }
 
+            // Badge mode (Chrono ou Flemme) + badge Indices affiché si présent, sans impacter le filtre
             var modeBadge = '<span class="badge ' + (s.timerMode === 'CHRONO' ? 'badge-chrono' : 'badge-flemme') + '">' +
                 (s.timerMode === 'CHRONO' ? '\u23F1 Chrono' : '\uD83D\uDE34 Flemme') + '</span>';
             if (s.hintMode) {
@@ -660,32 +688,32 @@ tbody td {
             '<div class="stat-box"><div class="stat-value" data-testid="text-total">' + totalMatches + '</div><div class="stat-label">Parties</div></div>' +
             (topWinner ? '<div class="stat-box"><div class="stat-value" data-testid="text-top-winner">' + topWinner + '</div><div class="stat-label">' + topWins + ' victoire' + (topWins > 1 ? 's' : '') + '</div></div>' : '');
 
-        var html = '<table data-testid="table-scores"><thead><tr>' +
-            '<th>#</th><th>Joueur X</th><th>VS</th><th>Joueur O</th><th>R\u00e9sultat</th><th>Mode</th><th>Date</th>' +
+        var html = '<div style="overflow-x:auto;"><table data-testid="table-scores" style="width:100%;table-layout:fixed;"><thead><tr>' +
+            '<th style="width:40px">#</th><th>Joueur X</th><th style="width:40px">VS</th><th>Joueur O</th><th>Vainqueur</th><th style="width:80px">Mode</th><th style="width:110px">Date</th>' +
             '</tr></thead><tbody>';
 
         for (var i = 0; i < matches.length; i++) {
             var m = matches[i];
             var resultText = '';
-            if (m.winner === 'X') resultText = '<span style="color:#c084fc;font-weight:700">' + m.playerX + ' \uD83C\uDFC6</span>';
-            else if (m.winner === 'O') resultText = '<span style="color:#f472b6;font-weight:700">' + m.playerO + ' \uD83C\uDFC6</span>';
-            else if (m.winner === 'Draw') resultText = '<span style="color:#999;font-weight:600">\uD83E\uDD1D Nul</span>';
+            if (m.winner === 'X') resultText = '<span style="color:#c084fc;font-weight:700">' + m.playerX + '</span>';
+            else if (m.winner === 'O') resultText = '<span style="color:#f472b6;font-weight:700">' + m.playerO + '</span>';
+            else if (m.winner === 'Draw') resultText = '<span style="color:#999;font-weight:600">Nul</span>';
             else resultText = '-';
 
             var modeText = modeLabels[m.mode] || m.mode || '-';
 
             html += '<tr data-testid="row-match-' + i + '">' +
                 '<td>' + (i + 1) + '</td>' +
-                '<td><span style="color:#c084fc;font-weight:600">\u274C ' + m.playerX + '</span></td>' +
+                '<td style="color:#c084fc;font-weight:600">' + m.playerX + '</td>' +
                 '<td style="text-align:center;font-weight:700;color:#6c63ff">VS</td>' +
-                '<td><span style="color:#f472b6;font-weight:600">\u2B55 ' + m.playerO + '</span></td>' +
+                '<td style="color:#f472b6;font-weight:600">' + m.playerO + '</td>' +
                 '<td>' + resultText + '</td>' +
                 '<td><span class="badge badge-chrono">' + modeText + '</span></td>' +
                 '<td>' + formatDate(m.date) + '</td>' +
                 '</tr>';
         }
 
-        html += '</tbody></table>';
+        html += '</tbody></table></div>';
         content.innerHTML = html;
 
         actionsRow.innerHTML =
@@ -879,6 +907,9 @@ tbody td {
         } else if (game === 'snake') {
             currentView = 'general';
             snakeDifficulteActive = 'Normal';
+        } else if (game === 'solitaire') {
+            currentView = 'general';
+            solitaireModeActif = 'Chrono';
         } else {
             currentView = 'general';
         }
