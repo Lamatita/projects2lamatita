@@ -358,7 +358,7 @@ tbody td {
         demineur:  { label: '💣 Démineur',  link: 'demineur.html',  emoji: '💣' },
         ppg:       { label: '🐾 Papatte Patoune Griffes', link: 'papatte_patoune_griffes.html', emoji: '🐾' },
         morpion:   { label: '❌⭕ Morpion', link: 'morpion.html', emoji: '❌' },
-        lamarunner:{ label: '🦙 Lama Runner', link: 'lamatita-runner.html', emoji: '🦙' }
+        lamarunner:{ label: '🦙 Lama Runner', link: 'lama_runner.html', emoji: '🦙' }
     };
 
     function formatTime(seconds) {
@@ -672,7 +672,7 @@ tbody td {
             content.innerHTML = '<div class="empty-state">' +
                 '<div class="emoji">\uD83E\uDD99</div>' +
                 '<p>Aucun score enregistr\u00e9 pour le moment\u00a0!</p>' +
-                '<a href="lamatita-runner.html" class="btn-play">\uD83E\uDD99 Jouer au Lama Runner</a>' +
+                '<a href="lama_runner.html" class="btn-play">\uD83E\uDD99 Jouer au Lama Runner</a>' +
                 '</div>';
             actionsRow.innerHTML = '';
             return;
@@ -713,7 +713,7 @@ tbody td {
         content.innerHTML = html;
 
         actionsRow.innerHTML =
-            '<a href="lamatita-runner.html" class="btn-play">\uD83E\uDD99 Jouer</a>';
+            '<a href="lama_runner.html" class="btn-play">\uD83E\uDD99 Jouer</a>';
     }
 
     function renderMorpionTable(matches) {
