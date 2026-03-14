@@ -657,6 +657,65 @@ tbody td {
             '<a href="papatte_patoune_griffes.html" class="btn-play" data-testid="link-play-again">\uD83D\uDC3E Jouer</a>';
     }
 
+
+    function renderLamaRunnerTable() {
+        var statsRow = document.getElementById('stats-row');
+        var content = document.getElementById('scores-content');
+        var actionsRow = document.getElementById('actions-row');
+
+        var scores;
+        try { scores = JSON.parse(localStorage.getItem('lamatita_runner_scores') || '[]'); }
+        catch(e) { scores = []; }
+
+        if (scores.length === 0) {
+            statsRow.innerHTML = '';
+            content.innerHTML = '<div class="empty-state">' +
+                '<div class="emoji">\uD83E\uDD99</div>' +
+                '<p>Aucun score enregistr\u00e9 pour le moment\u00a0!</p>' +
+                '<a href="lamatita-runner.html" class="btn-play">\uD83E\uDD99 Jouer au Lama Runner</a>' +
+                '</div>';
+            actionsRow.innerHTML = '';
+            return;
+        }
+
+        var bestDist = scores[0].dist;
+        var totalEntries = scores.length;
+        var totalOiseaux = scores.reduce(function(t, s) { return t + (s.birds || 0); }, 0);
+
+        statsRow.innerHTML =
+            '<div class="stat-box"><div class="stat-value" data-testid="text-total">' + totalEntries + '</div><div class="stat-label">Parties</div></div>' +
+            '<div class="stat-box"><div class="stat-value" data-testid="text-best-dist">' + bestDist + ' m</div><div class="stat-label">Meilleure distance</div></div>' +
+            '<div class="stat-box"><div class="stat-value" data-testid="text-total-birds">' + totalOiseaux + '</div><div class="stat-label">\uD83E\uDDA5 Total oiseaux</div></div>';
+
+        var html = '<table data-testid="table-scores"><thead><tr>' +
+            '<th>#</th><th>Joueur</th><th>Distance</th><th>\uD83E\uDDA5 Oiseaux</th><th>Date</th>' +
+            '</tr></thead><tbody>';
+
+        for (var i = 0; i < scores.length; i++) {
+            var s = scores[i];
+            var rankClass = '';
+            if (i === 0) rankClass = ' rank-1';
+            else if (i === 1) rankClass = ' rank-2';
+            else if (i === 2) rankClass = ' rank-3';
+
+            var nom = (s.nom && s.nom.trim() !== '' && s.nom !== 'Anonyme') ? s.nom : 'Petit Random Malicieux #' + (i + 1);
+
+            html += '<tr data-testid="row-score-' + i + '">' +
+                '<td class="rank-cell' + rankClass + '">' + getRankIcon(i + 1) + '</td>' +
+                '<td>' + nom + '</td>' +
+                '<td><strong>' + (s.dist || 0) + ' m</strong></td>' +
+                '<td>' + (s.birds || 0) + '</td>' +
+                '<td>' + formatDate(s.date) + '</td>' +
+                '</tr>';
+        }
+
+        html += '</tbody></table>';
+        content.innerHTML = html;
+
+        actionsRow.innerHTML =
+            '<a href="lamatita-runner.html" class="btn-play">\uD83E\uDD99 Jouer</a>';
+    }
+
     function renderMorpionTable(matches) {
         var statsRow = document.getElementById('stats-row');
         var content = document.getElementById('scores-content');
@@ -731,64 +790,6 @@ tbody td {
         if (currentGame === 'ppg') return renderPPGTable(scores, showGroup);
         if (currentGame === 'lamarunner') return renderLamaRunnerTable();
         return renderSolitaireTable(scores, showGroup);
-    }
-
-
-    // ── Lama Runner : scores locaux (localStorage) ───────────────────────────
-    function renderLamaRunnerTable() {
-        var statsRow   = document.getElementById('stats-row');
-        var content    = document.getElementById('scores-content');
-        var actionsRow = document.getElementById('actions-row');
-        var scores;
-        try { scores = JSON.parse(localStorage.getItem('lamatita_runner_scores') || '[]'); }
-        catch(e) { scores = []; }
-
-        if (scores.length === 0) {
-            statsRow.innerHTML = '';
-            content.innerHTML =
-                '<div class="empty-state">' +
-                '<div class="emoji">\uD83E\uDD99</div>' +
-                '<p>Aucun score pour le moment\u00a0! Lance ta premi\u00e8re course\u00a0!</p>' +
-                '</div>';
-            actionsRow.innerHTML = '<a href="lamatita-runner.html" class="btn-play">\uD83E\uDD99 Jouer au Lama Runner</a>';
-            return;
-        }
-
-        var meilleureDist = scores[0].dist;
-        var maxOiseaux    = scores.reduce(function(m, s) { return Math.max(m, s.birds || 0); }, 0);
-        var totalOiseaux  = scores.reduce(function(t, s) { return t + (s.birds || 0); }, 0);
-
-        statsRow.innerHTML =
-            '<div class="stat-box"><div class="stat-value">' + scores.length + '</div><div class="stat-label">Parties</div></div>' +
-            '<div class="stat-box"><div class="stat-value" style="color:var(--principal)">' + meilleureDist + '\u00a0m</div><div class="stat-label">\uD83C\uDFC6 Meilleure distance</div></div>' +
-            '<div class="stat-box"><div class="stat-value">' + maxOiseaux + '</div><div class="stat-label">\uD83E\uDDA5 Max oiseaux</div></div>' +
-            '<div class="stat-box"><div class="stat-value">' + totalOiseaux + '</div><div class="stat-label">\uD83E\uDDA5 Total abattus</div></div>';
-
-        var html = '<table><thead><tr>' +
-            '<th>#</th><th>Joueur</th><th>Distance</th><th>\uD83E\uDDA5 Oiseaux</th><th>Date</th>' +
-            '</tr></thead><tbody>';
-
-        for (var i = 0; i < scores.length; i++) {
-            var s = scores[i];
-            var rankClass = i === 0 ? ' rank-1' : i === 1 ? ' rank-2' : i === 2 ? ' rank-3' : '';
-            var nom = (s.nom && s.nom.trim() && s.nom !== 'Anonyme') ? s.nom : 'Petit Random Malicieux #' + (i + 1);
-            var distDisplay = '<strong>' + s.dist + '\u00a0m</strong>' +
-                (i === 0 ? ' <span class="badge" style="background:#fff8e1;color:#c77700">\u26a1 Record</span>' : '');
-            var birdDisplay = (s.birds || 0) > 0
-                ? s.birds + ' <span class="badge" style="background:#e8f5e9;color:#2e7d32">\uD83E\uDDA5</span>'
-                : '0';
-            html += '<tr>' +
-                '<td class="rank-cell' + rankClass + '">' + getRankIcon(i + 1) + '</td>' +
-                '<td>' + nom + '</td>' +
-                '<td>' + distDisplay + '</td>' +
-                '<td>' + birdDisplay + '</td>' +
-                '<td>' + formatDate(s.date) + '</td>' +
-                '</tr>';
-        }
-
-        html += '</tbody></table>';
-        content.innerHTML = html;
-        actionsRow.innerHTML = '<a href="lamatita-runner.html" class="btn-play">\uD83E\uDD99 Jouer</a>';
     }
 
     // ── Démineur : scores locaux (localStorage) ───────────────────────────────
