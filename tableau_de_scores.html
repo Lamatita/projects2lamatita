@@ -66,21 +66,19 @@ body {
     gap: 8px;
     margin-bottom: 15px;
     flex-wrap: wrap;
-    align-items: flex-start;
 }
 
 .game-tab {
-    padding: 8px 14px;
+    padding: 10px 20px;
     border: 2px solid var(--secondaire);
     border-radius: 12px;
     background: transparent;
     color: var(--secondaire);
     font-weight: 600;
     font-family: "Segoe UI", sans-serif;
-    font-size: 0.85em;
+    font-size: 0.9em;
     cursor: pointer;
     transition: all 0.2s;
-    white-space: nowrap;
 }
 
 .game-tab.active {
@@ -731,25 +729,21 @@ tbody td {
         if (currentGame === 'snake') return renderSnakeTable(scores, showGroup);
         if (currentGame === 'demineur') return renderDemineurTable();
         if (currentGame === 'ppg') return renderPPGTable(scores, showGroup);
-        if (currentGame === 'lamarunner') return renderLamaRunnerTable(scores, showGroup);
+        if (currentGame === 'lamarunner') return renderLamaRunnerTable();
         return renderSolitaireTable(scores, showGroup);
     }
 
 
-    // ── Lama Runner : via API (même logique que les autres jeux) ─────────────
-    function nomLamaRunner(player, index) {
-        if (!player || player.trim() === '' || player === 'Anonyme') {
-            return 'Petit Random Malicieux #' + (index + 1);
-        }
-        return player;
-    }
-
-    function renderLamaRunnerTable(scores, showGroup) {
+    // ── Lama Runner : scores locaux (localStorage) ───────────────────────────
+    function renderLamaRunnerTable() {
         var statsRow   = document.getElementById('stats-row');
         var content    = document.getElementById('scores-content');
         var actionsRow = document.getElementById('actions-row');
+        var scores;
+        try { scores = JSON.parse(localStorage.getItem('lamatita_runner_scores') || '[]'); }
+        catch(e) { scores = []; }
 
-        if (!scores || scores.length === 0) {
+        if (scores.length === 0) {
             statsRow.innerHTML = '';
             content.innerHTML =
                 '<div class="empty-state">' +
@@ -760,41 +754,32 @@ tbody td {
             return;
         }
 
-        // Les scores sont triés par dist desc côté API
-        var meilleureDist = scores[0].dist || scores[0].score || 0;
+        var meilleureDist = scores[0].dist;
         var maxOiseaux    = scores.reduce(function(m, s) { return Math.max(m, s.birds || 0); }, 0);
         var totalOiseaux  = scores.reduce(function(t, s) { return t + (s.birds || 0); }, 0);
-        var totalEntries  = scores.length;
 
         statsRow.innerHTML =
-            '<div class="stat-box"><div class="stat-value">' + totalEntries + '</div><div class="stat-label">' + (currentView === 'personal' ? 'Parties' : 'Joueurs') + '</div></div>' +
-            '<div class="stat-box"><div class="stat-value" style="color:var(--principal)">' + meilleureDist + ' m</div><div class="stat-label">\uD83C\uDFC6 Meilleure distance</div></div>' +
+            '<div class="stat-box"><div class="stat-value">' + scores.length + '</div><div class="stat-label">Parties</div></div>' +
+            '<div class="stat-box"><div class="stat-value" style="color:var(--principal)">' + meilleureDist + '\u00a0m</div><div class="stat-label">\uD83C\uDFC6 Meilleure distance</div></div>' +
             '<div class="stat-box"><div class="stat-value">' + maxOiseaux + '</div><div class="stat-label">\uD83E\uDDA5 Max oiseaux</div></div>' +
             '<div class="stat-box"><div class="stat-value">' + totalOiseaux + '</div><div class="stat-label">\uD83E\uDDA5 Total abattus</div></div>';
 
-        var html = '<table data-testid="table-scores"><thead><tr>' +
+        var html = '<table><thead><tr>' +
             '<th>#</th><th>Joueur</th><th>Distance</th><th>\uD83E\uDDA5 Oiseaux</th><th>Date</th>' +
             '</tr></thead><tbody>';
 
         for (var i = 0; i < scores.length; i++) {
             var s = scores[i];
             var rankClass = i === 0 ? ' rank-1' : i === 1 ? ' rank-2' : i === 2 ? ' rank-3' : '';
-            var dist = s.dist || s.score || 0;
-
-            var playerDisplay = nomLamaRunner(s.player, i);
-            if (showGroup && s.groupName) {
-                playerDisplay += ' <span class="group-label">(' + s.groupName + ')</span>';
-            }
-
-            var distDisplay = '<strong>' + dist + ' m</strong>' +
+            var nom = (s.nom && s.nom.trim() && s.nom !== 'Anonyme') ? s.nom : 'Petit Random Malicieux #' + (i + 1);
+            var distDisplay = '<strong>' + s.dist + '\u00a0m</strong>' +
                 (i === 0 ? ' <span class="badge" style="background:#fff8e1;color:#c77700">\u26a1 Record</span>' : '');
             var birdDisplay = (s.birds || 0) > 0
-                ? '<strong>' + s.birds + '</strong> <span class="badge" style="background:#e8f5e9;color:#2e7d32">\uD83E\uDDA5 \u00d7' + s.birds + '</span>'
+                ? s.birds + ' <span class="badge" style="background:#e8f5e9;color:#2e7d32">\uD83E\uDDA5</span>'
                 : '0';
-
             html += '<tr>' +
                 '<td class="rank-cell' + rankClass + '">' + getRankIcon(i + 1) + '</td>' +
-                '<td>' + playerDisplay + '</td>' +
+                '<td>' + nom + '</td>' +
                 '<td>' + distDisplay + '</td>' +
                 '<td>' + birdDisplay + '</td>' +
                 '<td>' + formatDate(s.date) + '</td>' +
@@ -806,7 +791,7 @@ tbody td {
         actionsRow.innerHTML = '<a href="lamatita-runner.html" class="btn-play">\uD83E\uDD99 Jouer</a>';
     }
 
-        // ── Démineur : scores locaux (localStorage) ───────────────────────────────
+    // ── Démineur : scores locaux (localStorage) ───────────────────────────────
     var DEMINEUR_NIVEAUX = ['Débutant', 'Intermédiaire', 'Expert'];
     var demineurNiveauActif = 'Débutant';
 
@@ -942,35 +927,9 @@ tbody td {
             return;
         }
 
-        // Lama Runner : même logique que les autres jeux via l'API
         if (currentGame === 'lamarunner') {
-            if (currentView === 'general') {
-                titleEl.textContent = gameLabel + ' \u2014 Classement G\u00e9n\u00e9ral';
-                showLoading();
-                fetch('/api/scores/general' + gameParam)
-                    .then(function(r) { return r.ok ? r.json() : []; })
-                    .then(function(scores) { renderLamaRunnerTable(scores, true); })
-                    .catch(function() { renderLamaRunnerTable([], true); });
-            } else if (currentView === 'personal') {
-                titleEl.textContent = gameLabel + ' \u2014 Mes Scores \u2014 ' + currentUser;
-                showLoading();
-                fetch('/api/scores/personal' + gameParam, { credentials: 'include' })
-                    .then(function(r) { return r.ok ? r.json() : []; })
-                    .then(function(scores) { renderLamaRunnerTable(scores, false); })
-                    .catch(function() { renderLamaRunnerTable([], false); });
-            } else if (currentView.indexOf('group_') === 0) {
-                var groupId = currentView.substring(6);
-                var groupName = '';
-                for (var i = 0; i < userGroups.length; i++) {
-                    if (String(userGroups[i].id) === groupId) { groupName = userGroups[i].name; break; }
-                }
-                titleEl.textContent = gameLabel + ' \u2014 ' + groupName;
-                showLoading();
-                fetch('/api/scores/group/' + groupId + gameParam, { credentials: 'include' })
-                    .then(function(r) { return r.ok ? r.json() : []; })
-                    .then(function(scores) { renderLamaRunnerTable(scores, false); })
-                    .catch(function() { renderLamaRunnerTable([], false); });
-            }
+            titleEl.textContent = GAMES['lamarunner'].label + ' \u2014 Classement G\u00e9n\u00e9ral';
+            renderLamaRunnerTable();
             return;
         }
 
