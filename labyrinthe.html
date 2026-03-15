@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Labyrinthe</title>
+<style>
+:root {
+    --fond: #f7f3ff;
+    --principal: #6c63ff;
+    --secondaire: #ffb703;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: "Segoe UI", sans-serif;
+    background: #f7f3ff;
+    height: 100vh;
+    overflow: hidden;
+}
+.top-bar {
+    width: 100%;
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 100;
+    position: relative;
+}
+.back-link {
+    background: transparent;
+    border: 2px solid var(--principal);
+    color: var(--principal);
+    font-family: "Segoe UI", sans-serif;
+    font-weight: 700;
+    font-size: 1em;
+    padding: 6px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .2s, color .2s;
+    text-decoration: none;
+}
+.back-link:hover {
+    background: var(--principal);
+    color: #fff;
+}
+.page-title {
+    color: var(--principal);
+    font-size: 1.4em;
+    font-weight: 700;
+}
+.game-wrapper {
+    width: 100%;
+    height: calc(100vh - 45px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#gameCanvas {
+    border-radius: 12px;
+    cursor: default;
+    max-width: 100%;
+    max-height: 100%;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 8px 32px rgba(0,0,0,.2);
+}
+
+/* Confettis */
+.falling { position: fixed; top: -10%; animation: fall linear infinite; pointer-events: none; z-index: 0; }
+.confetti { width: 12px; height: 12px; opacity: .8; }
+.lama { font-size: 2rem; }
+.c1 { background: var(--principal); } .c2 { background: var(--secondaire); }
+.c3 { background: #ff6f91; } .c4 { background: #00c9a7; } .c5 { background: #845ec2; }
+@keyframes fall { 0% { transform: translateY(0) rotate(0deg); } 100% { transform: translateY(120vh) rotate(var(--rotation)); } }
+</style>
+</head>
+<body>
+
+<div class="falling confetti c1" style="left:5%;  animation-duration:5s;   --rotation:720deg;"></div>
+<div class="falling lama"        style="left:12%; animation-duration:7s;   --rotation:-1080deg;">🦙</div>
+<div class="falling confetti c2" style="left:18%; animation-duration:6s;   --rotation:540deg;"></div>
+<div class="falling lama"        style="left:25%; animation-duration:8s;   --rotation:900deg;">🦙</div>
+<div class="falling confetti c3" style="left:32%; animation-duration:4.5s; --rotation:-720deg;"></div>
+<div class="falling lama"        style="left:38%; animation-duration:6.5s; --rotation:1260deg;">🦙</div>
+<div class="falling confetti c4" style="left:45%; animation-duration:5.8s; --rotation:360deg;"></div>
+<div class="falling lama"        style="left:52%; animation-duration:7.2s; --rotation:-1440deg;">🦙</div>
+<div class="falling confetti c5" style="left:60%; animation-duration:6.1s; --rotation:900deg;"></div>
+<div class="falling lama"        style="left:67%; animation-duration:8.5s; --rotation:-1080deg;">🦙</div>
+<div class="falling confetti c1" style="left:74%; animation-duration:5.3s; --rotation:720deg;"></div>
+<div class="falling lama"        style="left:82%; animation-duration:7.9s; --rotation:1620deg;">🦙</div>
+<div class="falling confetti c2" style="left:90%; animation-duration:6.7s; --rotation:-900deg;"></div>
+
+<div class="top-bar">
+    <button class="back-link" onclick="history.back()">← Retour en arrière</button>
+    <h1 class="page-title">Labyrinthe</h1>
+    <div style="width:160px;"></div>
+</div>
+
+<div class="game-wrapper">
+    <canvas id="gameCanvas"></canvas>
+</div>
+
+<script>
+(function () {
+'use strict';
+
+// ── Canvas ────────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+const W = 800, H = 650;
+canvas.width  = W;
+canvas.height = H;
+
+// ── Constantes ────────────────────────────────────────────────────────────────
+const PORTEE_DE_LA_BOUGIE = 5;   // rayon lumineux en nombre de briques
+const COOLDOWN_PAS        = 110; // ms entre deux déplacements
+
+const NIVEAUX = {
+    'Facile':    [5,   5],
+    'Moyen':     [10,  10],
+    'Difficile': [25,  25],
+    'I\'m Batman, I live in the shadows': [100, 100],
+};
+const NOMS_NIVEAUX = Object.keys(NIVEAUX);
+
+// ── Palette ───────────────────────────────────────────────────────────────────
+const NEANT           = '#000000';
+const COULEUR_REMPART = '#282832';
+const COULEUR_COULOIR = '#121216';
+const COULEUR_HEROS   = '#ffd23a';
+const COULEUR_SALUT   = '#50ffa0';
+const COULEUR_TITRE   = '#ffd23a';
+const BOUTON_REPOS    = 'rgba(35,35,45,0.92)';
+const BOUTON_EXCITE   = 'rgba(60,60,80,0.95)';
+const BOUTON_CONTOUR  = '#64648c';
+
+// ── État global ───────────────────────────────────────────────────────────────
+let etat          = 'menu';   // 'menu' | 'playing' | 'win'
+let niveauChoisi  = null;
+let prison        = null;     // grille [rangees][cols] = Set de murs {'N','S','E','W'}
+let nbRangees     = 0, nbCols = 0;
+let rangHeros     = 0, colHeros = 0;
+let rangSortie    = 0, colSortie = 0;
+let tailleBrique  = 20;
+let nombreDePas   = 0;
+let momentDepart  = 0;
+let fatigue       = 0;        // cooldown en ms
+let lastTime      = 0;
+let canvasLueur   = null;     // offscreen canvas du gradient de bougie
+
+// Touches maintenues
+const touchesActives = {};
+
+// ── Étoiles de fond (seed fixe) ───────────────────────────────────────────────
+const ETOILES = [];
+(function () {
+    let s = 42;
+    function rng() { s = (s * 1664525 + 1013904223) >>> 0; return s / 0xffffffff; }
+    for (let i = 0; i < 120; i++) {
+        ETOILES.push({ x: rng() * W, y: rng() * H, r: rng() < 0.3 ? 2 : 1, a: 0.2 + rng() * 0.5 });
+    }
+})();
+
+function semer_les_etoiles() {
+    ETOILES.forEach(e => {
+        ctx.globalAlpha = e.a;
+        ctx.fillStyle = '#b4b4d0';
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+}
+
+// ── Génération du labyrinthe (DFS itératif) ───────────────────────────────────
+function construire_le_daedale(rangees, cols) {
+    // Chaque cellule = ensemble des murs présents
+    const grille = Array.from({ length: rangees }, () =>
+        Array.from({ length: cols }, () => new Set(['N', 'S', 'E', 'W']))
+    );
+    const visite = Array.from({ length: rangees }, () => new Array(cols).fill(false));
+
+    function voisins(r, c) {
+        const v = [];
+        if (r > 0)       v.push([r-1, c,  'N', 'S']);
+        if (r < rangees-1) v.push([r+1, c, 'S', 'N']);
+        if (c > 0)       v.push([r, c-1,  'W', 'E']);
+        if (c < cols-1)  v.push([r, c+1,  'E', 'W']);
+        return v;
+    }
+
+    const pile = [[0, 0]];
+    visite[0][0] = true;
+
+    while (pile.length) {
+        const [r, c] = pile[pile.length - 1];
+        const inexplores = voisins(r, c).filter(([nr, nc]) => !visite[nr][nc]);
+        if (inexplores.length) {
+            const [nr, nc, mur, murVoisin] = inexplores[Math.floor(Math.random() * inexplores.length)];
+            grille[r][c].delete(mur);
+            grille[nr][nc].delete(murVoisin);
+            visite[nr][nc] = true;
+            pile.push([nr, nc]);
+        } else {
+            pile.pop();
+        }
+    }
+    return grille;
+}
+
+function percer_la_sortie(rangees, cols, grille) {
+    const perimetre = [];
+    for (let r = 0; r < rangees; r++) {
+        perimetre.push([r, 0,       'W']);
+        perimetre.push([r, cols-1,  'E']);
+    }
+    for (let c = 0; c < cols; c++) {
+        perimetre.push([0,        c, 'N']);
+        perimetre.push([rangees-1, c, 'S']);
+    }
+    const candidats = perimetre.filter(([r, c]) => !(r === 0 && c === 0));
+    const [rs, cs, cote] = candidats[Math.floor(Math.random() * candidats.length)];
+    grille[rs][cs].delete(cote);
+    return [rs, cs];
+}
+
+// ── Bougie : on stocke simplement le rayon de lumière en pixels ─────────────
+// Le fog est dessiné dans peindre_tout() avec un gradient radial direct.
+function fabriquer_la_bougie(porteePx, tailleBrique) {
+    return porteePx;  // on retourne juste le rayon : pas besoin d'un canvas ici
+}
+
+// ── Initialisation d'une partie ───────────────────────────────────────────────
+function preparer_le_supplice(niveau) {
+    niveauChoisi       = niveau;
+    [nbRangees, nbCols] = NIVEAUX[niveau];
+    prison             = construire_le_daedale(nbRangees, nbCols);
+    [rangSortie, colSortie] = percer_la_sortie(nbRangees, nbCols, prison);
+
+    // Taille de brique calée pour que le cercle de lumière tienne
+    // avec 1 carreau de marge en haut et en bas
+    tailleBrique = Math.floor(H / (2 * (PORTEE_DE_LA_BOUGIE + 1)));
+
+    rangHeros   = 0;
+    colHeros    = 0;
+    nombreDePas = 0;
+    fatigue     = 0;
+    momentDepart = performance.now();
+
+    const porteePx = PORTEE_DE_LA_BOUGIE * tailleBrique;
+    canvasLueur    = fabriquer_la_bougie(porteePx, tailleBrique);
+}
+
+// ── Mouvement du héros ────────────────────────────────────────────────────────
+function bouger_le_heros(dt) {
+    fatigue = Math.max(0, fatigue - dt);
+    if (fatigue > 0) return;
+
+    const murs = prison[rangHeros][colHeros];
+    let nr = rangHeros, nc = colHeros, bouge = false;
+
+    if ((touchesActives['ArrowUp']    || touchesActives['w'] || touchesActives['W'] ||
+         touchesActives['z'] || touchesActives['Z']) && !murs.has('N')) {
+        nr--; bouge = true;
+    } else if ((touchesActives['ArrowDown']  || touchesActives['s'] || touchesActives['S']) && !murs.has('S')) {
+        nr++; bouge = true;
+    } else if ((touchesActives['ArrowLeft']  || touchesActives['q'] || touchesActives['Q'] ||
+                touchesActives['a'] || touchesActives['A']) && !murs.has('W')) {
+        nc--; bouge = true;
+    } else if ((touchesActives['ArrowRight'] || touchesActives['d'] || touchesActives['D']) && !murs.has('E')) {
+        nc++; bouge = true;
+    }
+
+    if (bouge) {
+        rangHeros = nr;
+        colHeros  = nc;
+        nombreDePas++;
+        fatigue = COOLDOWN_PAS;
+    }
+}
+
+// ── Rendu du jeu ──────────────────────────────────────────────────────────────
+function peindre_le_tableau() {
+    const brique = tailleBrique;
+
+    // Caméra centrée sur le héros
+    const camX = colHeros  * brique + brique / 2 - W / 2;
+    const camY = rangHeros * brique + brique / 2 - H / 2;
+
+    ctx.fillStyle = NEANT;
+    ctx.fillRect(0, 0, W, H);
+
+    // Cellules visibles uniquement
+    const cMin = Math.max(0, Math.floor(camX / brique));
+    const cMax = Math.min(nbCols  - 1, Math.floor((camX + W) / brique) + 1);
+    const rMin = Math.max(0, Math.floor(camY / brique));
+    const rMax = Math.min(nbRangees - 1, Math.floor((camY + H) / brique) + 1);
+
+    const lw = Math.max(1, Math.floor(brique / 8));
+
+    for (let r = rMin; r <= rMax; r++) {
+        for (let c = cMin; c <= cMax; c++) {
+            const ex = Math.round(c * brique - camX);
+            const ey = Math.round(r * brique - camY);
+
+            // Sol du couloir
+            ctx.fillStyle = COULEUR_COULOIR;
+            ctx.fillRect(ex, ey, brique, brique);
+
+            // Murs
+            const murs = prison[r][c];
+            ctx.strokeStyle = COULEUR_REMPART;
+            ctx.lineWidth   = lw;
+            if (murs.has('N')) { ctx.beginPath(); ctx.moveTo(ex, ey);           ctx.lineTo(ex + brique, ey);           ctx.stroke(); }
+            if (murs.has('S')) { ctx.beginPath(); ctx.moveTo(ex, ey + brique);  ctx.lineTo(ex + brique, ey + brique);  ctx.stroke(); }
+            if (murs.has('W')) { ctx.beginPath(); ctx.moveTo(ex, ey);           ctx.lineTo(ex, ey + brique);           ctx.stroke(); }
+            if (murs.has('E')) { ctx.beginPath(); ctx.moveTo(ex + brique, ey);  ctx.lineTo(ex + brique, ey + brique);  ctx.stroke(); }
+        }
+    }
+
+    // Sortie
+    const sx = Math.round(colSortie  * brique - camX);
+    const sy = Math.round(rangSortie * brique - camY);
+    const mg = Math.floor(brique / 4);
+    ctx.fillStyle = COULEUR_SALUT;
+    ctx.beginPath();
+    ctx.roundRect(sx + mg, sy + mg, brique - 2*mg, brique - 2*mg, 3);
+    ctx.fill();
+
+    // Héros — toujours au centre
+    const hx = Math.floor(W / 2 - brique / 2);
+    const hy = Math.floor(H / 2 - brique / 2);
+    const pad = Math.max(2, Math.floor(brique / 5));
+    ctx.fillStyle = COULEUR_HEROS;
+    ctx.beginPath();
+    ctx.roundRect(hx + pad, hy + pad, brique - 2*pad, brique - 2*pad, Math.max(2, Math.floor(brique/5)));
+    ctx.fill();
+
+    // Voile des ténèbres avec la bougie
+    const lueur  = canvasLueur;
+    const lx     = Math.floor(W / 2 - lueur.width  / 2);
+    const ly     = Math.floor(H / 2 - lueur.height / 2);
+
+    // Zone hors bougie = noir absolu
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);          // on rembourre tout en noir…
+    ctx.globalCompositeOperation = 'destination-out'; // …puis on efface là où la bougie brille
+    ctx.drawImage(lueur, lx, ly);
+    ctx.globalCompositeOperation = 'source-over';
+
+    // On redessine le labyrinthe ET le héros EN DESSOUS du voile.
+    // Astuce : on utilise un canvas offscreen pour composer proprement.
+    // → Voir note bas de page. Ici on utilise la technique "save/restore layers"
+    // en redessinant le jeu dans un canvas intermédiaire puis en composant.
+    // Pour simplifier et éviter la double passe, on utilise une approche différente :
+    // on peint le voile EN DERNIER avec globalCompositeOperation = 'source-atop'.
+}
+
+// Rendu complet avec composition correcte du fog of war
+function peindre_tout() {
+    const brique = tailleBrique;
+    const camX   = colHeros  * brique + brique / 2 - W / 2;
+    const camY   = rangHeros * brique + brique / 2 - H / 2;
+
+    // 1) Fond noir
+    ctx.fillStyle = NEANT;
+    ctx.fillRect(0, 0, W, H);
+
+    // 2) Labyrinthe (couloirs + murs)
+    const cMin = Math.max(0, Math.floor(camX / brique));
+    const cMax = Math.min(nbCols    - 1, Math.floor((camX + W) / brique) + 1);
+    const rMin = Math.max(0, Math.floor(camY / brique));
+    const rMax = Math.min(nbRangees - 1, Math.floor((camY + H) / brique) + 1);
+    const lw   = Math.max(1, Math.floor(brique / 8));
+
+    for (let r = rMin; r <= rMax; r++) {
+        for (let c = cMin; c <= cMax; c++) {
+            const ex = Math.round(c * brique - camX);
+            const ey = Math.round(r * brique - camY);
+            ctx.fillStyle = COULEUR_COULOIR;
+            ctx.fillRect(ex, ey, brique, brique);
+            const murs = prison[r][c];
+            ctx.strokeStyle = COULEUR_REMPART;
+            ctx.lineWidth   = lw;
+            if (murs.has('N')) { ctx.beginPath(); ctx.moveTo(ex,          ey);          ctx.lineTo(ex+brique, ey);          ctx.stroke(); }
+            if (murs.has('S')) { ctx.beginPath(); ctx.moveTo(ex,          ey+brique);   ctx.lineTo(ex+brique, ey+brique);   ctx.stroke(); }
+            if (murs.has('W')) { ctx.beginPath(); ctx.moveTo(ex,          ey);          ctx.lineTo(ex,        ey+brique);   ctx.stroke(); }
+            if (murs.has('E')) { ctx.beginPath(); ctx.moveTo(ex+brique,   ey);          ctx.lineTo(ex+brique, ey+brique);   ctx.stroke(); }
+        }
+    }
+
+    // 3) Sortie
+    const sx = Math.round(colSortie  * brique - camX);
+    const sy = Math.round(rangSortie * brique - camY);
+    const mg = Math.floor(brique / 4);
+    ctx.fillStyle = COULEUR_SALUT;
+    ctx.beginPath();
+    ctx.roundRect(sx + mg, sy + mg, brique - 2*mg, brique - 2*mg, 3);
+    ctx.fill();
+
+    // 4) Héros (toujours au centre)
+    const hx  = Math.floor(W / 2 - brique / 2);
+    const hy  = Math.floor(H / 2 - brique / 2);
+    const pad = Math.max(2, Math.floor(brique / 5));
+    ctx.fillStyle = COULEUR_HEROS;
+    ctx.beginPath();
+    ctx.roundRect(hx + pad, hy + pad, brique - 2*pad, brique - 2*pad, Math.max(2, Math.floor(brique/5)));
+    ctx.fill();
+
+    // 5) Voile des ténèbres — cercle de lumière autour du héros
+    // Le héros est toujours au centre du canvas (W/2, H/2).
+    // On remplit le fogBuffer de noir opaque, puis on creuse un trou
+    // transparent là où le joueur éclaire, avec un gradient radial doux.
+    const fogCtx = fogBuffer.getContext('2d');
+    const cx = W / 2, cy = H / 2;
+    const porteePx = canvasLueur;  // rayon de lumière en pixels
+
+    // Fond noir total
+    fogCtx.clearRect(0, 0, W, H);
+    fogCtx.fillStyle = '#000';
+    fogCtx.fillRect(0, 0, W, H);
+
+    // Creuser le cercle de lumière : destination-out avec gradient
+    // alpha 1 au centre (efface le noir = transparent = on voit)
+    // alpha 0 au bord   (garde le noir = opaque = ténèbres)
+    const grad = fogCtx.createRadialGradient(cx, cy, 0, cx, cy, porteePx);
+    grad.addColorStop(0,   'rgba(0,0,0,1)');    // centre : efface → transparent
+    grad.addColorStop(0.6, 'rgba(0,0,0,0.6)');  // transition progressive
+    grad.addColorStop(1,   'rgba(0,0,0,0)');    // bord : ne creuse plus → noir
+
+    fogCtx.globalCompositeOperation = 'destination-out';
+    fogCtx.fillStyle = grad;
+    fogCtx.beginPath();
+    fogCtx.arc(cx, cy, porteePx, 0, Math.PI * 2);
+    fogCtx.fill();
+    fogCtx.globalCompositeOperation = 'source-over';
+
+    // Plaquer le voile sur la scène principale
+    ctx.drawImage(fogBuffer, 0, 0);
+
+    // 6) HUD par-dessus tout
+    dessiner_hud();
+}
+
+// Buffer offscreen pour le fog (évite de recréer à chaque frame)
+const fogBuffer   = document.createElement('canvas');
+fogBuffer.width   = W;
+fogBuffer.height  = H;
+
+function dessiner_hud() {
+    const elapsed = (performance.now() - momentDepart) / 1000;
+    const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
+    const ss = String(Math.floor(elapsed % 60)).padStart(2, '0');
+
+    ctx.fillStyle = 'rgba(10,10,18,0.85)';
+    ctx.fillRect(0, 0, W, 28);
+
+    ctx.fillStyle = '#b4b4c8';
+    ctx.font = '14px "Consolas","Courier New",monospace';
+    ctx.textAlign    = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`  ${niveauChoisi}   |   Pas : ${nombreDePas}   |   ${mm}:${ss}   |   [↑↓←→ / WASD / ZQSD] Marcher   [ESC] Menu`, 4, 14);
+}
+
+// ── Écran Menu ────────────────────────────────────────────────────────────────
+// Rectangles des boutons (calculés au rendu, utilisés pour le clic)
+let zonesCliquables = {};
+
+function dessiner_menu(sourisX, sourisY) {
+    // Fond
+    ctx.fillStyle = NEANT;
+    ctx.fillRect(0, 0, W, H);
+    semer_les_etoiles();
+
+    // Titre avec halo
+    ctx.textAlign   = 'center';
+    ctx.textBaseline = 'middle';
+    for (const off of [6, 4, 2]) {
+        ctx.fillStyle = `rgba(80,220,120,${0.06 * off})`;
+        for (const [dx, dy] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+            ctx.font = 'bold 42px "Consolas","Courier New",monospace';
+            ctx.fillText('⚡ LABYRINTHE ⚡', W/2 + dx*off, 105 + dy*off);
+        }
+    }
+    ctx.fillStyle = COULEUR_TITRE;
+    ctx.font      = 'bold 42px "Consolas","Courier New",monospace';
+    ctx.fillText('⚡ LABYRINTHE ⚡', W/2, 105);
+
+    ctx.fillStyle = '#9696b4';
+    ctx.font      = '16px "Consolas","Courier New",monospace';
+    ctx.fillText('Choisissez votre supplice', W/2, 155);
+
+    // Mesure la largeur maximale des boutons
+    ctx.font = 'bold 22px "Consolas","Courier New",monospace';
+    const COUSSIN = 40;
+    const BH      = 54;
+    const GAP     = 14;
+    let largMax   = 0;
+    NOMS_NIVEAUX.forEach(n => {
+        const [r, c] = NIVEAUX[n];
+        const tw = ctx.measureText(`${n}  (${r}×${c})`).width;
+        if (tw + COUSSIN * 2 > largMax) largMax = tw + COUSSIN * 2;
+    });
+
+    const bx = W / 2 - largMax / 2;
+    let   by = 195;
+    zonesCliquables = {};
+
+    NOMS_NIVEAUX.forEach(n => {
+        const [r, c]  = NIVEAUX[n];
+        const label   = `${n}  (${r}×${c})`;
+        const survol  = sourisX >= bx && sourisX <= bx + largMax && sourisY >= by && sourisY <= by + BH;
+
+        // Fond du bouton
+        ctx.fillStyle   = survol ? BOUTON_EXCITE : BOUTON_REPOS;
+        ctx.strokeStyle = BOUTON_CONTOUR;
+        ctx.lineWidth   = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(bx, by, largMax, BH, 8);
+        ctx.fill();
+        ctx.stroke();
+
+        // Texte
+        ctx.fillStyle    = '#ffffff';
+        ctx.font         = 'bold 22px "Consolas","Courier New",monospace';
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, W / 2, by + BH / 2);
+
+        zonesCliquables[n] = { x: bx, y: by, w: largMax, h: BH };
+        by += BH + GAP;
+    });
+
+    // Instructions
+    ctx.fillStyle    = '#50dc78';
+    ctx.font         = 'bold 16px "Consolas","Courier New",monospace';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Cliquez sur un niveau ou appuyez sur une touche de direction pour jouer', W/2, by + 20);
+
+    ctx.fillStyle = '#5a5a80';
+    ctx.font      = '13px "Consolas","Courier New",monospace';
+    ctx.fillText('[↑↓←→ / WASD / ZQSD] pour se déplacer   [ESC] pour revenir au menu', W/2, by + 48);
+
+    ctx.textAlign    = 'left';
+    ctx.textBaseline = 'alphabetic';
+}
+
+// ── Écran de victoire ─────────────────────────────────────────────────────────
+let tempsVictoire = 0, pasVictoire = 0;
+
+function dessiner_victoire(sourisX, sourisY) {
+    ctx.fillStyle = 'rgba(8,12,8,0.97)';
+    ctx.fillRect(0, 0, W, H);
+    semer_les_etoiles();
+
+    const mm = String(Math.floor(tempsVictoire / 60)).padStart(2, '0');
+    const ss = String(Math.floor(tempsVictoire % 60)).padStart(2, '0');
+
+    const lignes = [
+        { t: '🏆  FÉLICITATIONS !',                font: 'bold 38px "Consolas","Courier New",monospace', col: COULEUR_SALUT },
+        { t: `Liberté trouvée en ${pasVictoire} pas`, font: 'bold 24px "Consolas","Courier New",monospace', col: '#ffffff' },
+        { t: `Temps de survie : ${mm}:${ss}`,       font: 'bold 24px "Consolas","Courier New",monospace', col: '#ffffff' },
+        { t: `Supplice : ${niveauChoisi}`,           font: 'bold 24px "Consolas","Courier New",monospace', col: COULEUR_TITRE },
+    ];
+
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    let cy = H / 2 - 110;
+    lignes.forEach(l => {
+        ctx.font      = l.font;
+        ctx.fillStyle = l.col;
+        ctx.fillText(l.t, W / 2, cy);
+        cy += 48;
+    });
+
+    // Boutons Rejouer / Menu
+    const btnW = 200, btnH = 50, btnGap = 20;
+    const totalBW = 2 * btnW + btnGap;
+    const bx1 = W / 2 - totalBW / 2;
+    const bx2 = bx1 + btnW + btnGap;
+    const bby = cy + 20;
+
+    zonesCliquables = {};
+    [['Rejouer', bx1], ['Menu', bx2]].forEach(([label, bx]) => {
+        const survol = sourisX >= bx && sourisX <= bx + btnW && sourisY >= bby && sourisY <= bby + btnH;
+        ctx.fillStyle   = survol ? BOUTON_EXCITE : BOUTON_REPOS;
+        ctx.strokeStyle = BOUTON_CONTOUR;
+        ctx.lineWidth   = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(bx, bby, btnW, btnH, 8);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle    = '#ffffff';
+        ctx.font         = 'bold 20px "Consolas","Courier New",monospace';
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, bx + btnW / 2, bby + btnH / 2);
+        zonesCliquables[label] = { x: bx, y: bby, w: btnW, h: btnH };
+    });
+
+    ctx.textAlign    = 'left';
+    ctx.textBaseline = 'alphabetic';
+}
+
+// ── Boucle principale ─────────────────────────────────────────────────────────
+let sourisX = -1, sourisY = -1;
+
+canvas.addEventListener('mousemove', e => {
+    const r = canvas.getBoundingClientRect();
+    sourisX = (e.clientX - r.left) * (W / r.width);
+    sourisY = (e.clientY - r.top)  * (H / r.height);
+});
+
+function loop(now) {
+    const dt = now - (lastTime || now);
+    lastTime = now;
+
+    if (etat === 'playing') {
+        bouger_le_heros(dt);
+        peindre_tout();
+
+        if (rangHeros === rangSortie && colHeros === colSortie) {
+            tempsVictoire = (performance.now() - momentDepart) / 1000;
+            pasVictoire   = nombreDePas;
+            etat = 'win';
+        }
+    } else if (etat === 'menu') {
+        dessiner_menu(sourisX, sourisY);
+    } else if (etat === 'win') {
+        dessiner_victoire(sourisX, sourisY);
+    }
+
+    requestAnimationFrame(loop);
+}
+
+// ── Entrées clavier ───────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+    touchesActives[e.key] = true;
+
+    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
+
+    if (etat === 'menu') {
+        // Lancer en Facile si on appuie sur une touche de direction (confort)
+        const dirs = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','z','Z','s','S','q','Q','a','A','d','D','w','W'];
+        if (dirs.includes(e.key)) {
+            preparer_le_supplice('Facile');
+            etat = 'playing';
+        }
+        return;
+    }
+
+    if (etat === 'playing') {
+        if (e.key === 'Escape') etat = 'menu';
+        return;
+    }
+
+    if (etat === 'win') {
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'r' || e.key === 'R') {
+            e.preventDefault();
+            preparer_le_supplice(niveauChoisi);
+            etat = 'playing';
+        }
+        if (e.key === 'Escape') etat = 'menu';
+    }
+});
+
+document.addEventListener('keyup', e => { delete touchesActives[e.key]; });
+
+// ── Clic souris ───────────────────────────────────────────────────────────────
+canvas.addEventListener('click', e => {
+    const r = canvas.getBoundingClientRect();
+    const mx = (e.clientX - r.left) * (W / r.width);
+    const my = (e.clientY - r.top)  * (H / r.height);
+
+    if (etat === 'menu') {
+        for (const [n, z] of Object.entries(zonesCliquables)) {
+            if (mx >= z.x && mx <= z.x + z.w && my >= z.y && my <= z.y + z.h) {
+                preparer_le_supplice(n);
+                etat = 'playing';
+                return;
+            }
+        }
+    }
+
+    if (etat === 'win') {
+        const zR = zonesCliquables['Rejouer'];
+        const zM = zonesCliquables['Menu'];
+        if (zR && mx >= zR.x && mx <= zR.x+zR.w && my >= zR.y && my <= zR.y+zR.h) {
+            preparer_le_supplice(niveauChoisi); etat = 'playing';
+        }
+        if (zM && mx >= zM.x && mx <= zM.x+zM.w && my >= zM.y && my <= zM.y+zM.h) {
+            etat = 'menu';
+        }
+    }
+});
+
+// ── Démarrage ─────────────────────────────────────────────────────────────────
+requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>
