@@ -278,6 +278,20 @@ function chord(l, c) {
         voisins.forEach(([vl, vc]) => { if (!drapeaux[vl][vc] && !ouvertes[vl][vc]) ouvrir(vl, vc); });
 }
 
+// Révèle tous les voisins directs d'une case ouverte, sans condition de drapeaux
+// (les cases avec drapeau sont ignorées)
+function revelerVoisins(l, c) {
+    if (!ouvertes[l][c] || compteurs[l][c] === 0) return;
+    for (let dl = -1; dl <= 1; dl++)
+        for (let dc = -1; dc <= 1; dc++) {
+            if (dl === 0 && dc === 0) continue;
+            const vl = l + dl, vc = c + dc;
+            if (vl >= 0 && vl < nbLignes && vc >= 0 && vc < nbCols)
+                if (!drapeaux[vl][vc] && !ouvertes[vl][vc])
+                    ouvrir(vl, vc);
+        }
+}
+
 function toggleDrapeau(l, c) {
     if (partieFinie || ouvertes[l][c]) return;
     drapeaux[l][c] = !drapeaux[l][c];
@@ -633,7 +647,10 @@ canvas.addEventListener('mousedown', function(e) {
                 if (ouvertes[l][c]) chord(l, c);
                 else ouvrir(l, c);
             } else {
-                if (ouvertes[l][c]) chord(l, c);
+                // Case déjà ouverte avec un chiffre → révèle tous les voisins sans drapeau
+                if (ouvertes[l][c] && compteurs[l][c] > 0) revelerVoisins(l, c);
+                // Case ouverte sans chiffre (0) → chord classique si drapeaux suffisants
+                else if (ouvertes[l][c]) chord(l, c);
                 else ouvrir(l, c);
             }
         }
