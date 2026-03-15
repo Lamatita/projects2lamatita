@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flappy Lama</title>
+<style>
+:root {
+    --fond:       #f7f3ff;
+    --principal:  #6c63ff;
+    --secondaire: #ffb703;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: "Segoe UI", sans-serif;
+    background: #f7f3ff;
+    height: 100vh;
+    overflow: hidden;
+}
+.top-bar {
+    width: 100%;
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 100;
+    position: relative;
+}
+.back-link {
+    background: transparent;
+    border: 2px solid var(--principal);
+    color: var(--principal);
+    font-family: "Segoe UI", sans-serif;
+    font-weight: 700;
+    font-size: 1em;
+    padding: 6px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .2s, color .2s;
+    text-decoration: none;
+}
+.back-link:hover { background: var(--principal); color: #fff; }
+.page-title { color: var(--principal); font-size: 1.4em; font-weight: 700; }
+.game-wrapper {
+    width: 100%;
+    height: calc(100vh - 45px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#gameCanvas {
+    border-radius: 12px;
+    cursor: default;
+    max-width: 100%;
+    max-height: 100%;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 8px 32px rgba(0,0,0,.2);
+}
+.falling { position: fixed; top: -10%; animation: fall linear infinite; pointer-events: none; z-index: 0; }
+.confetti { width: 12px; height: 12px; opacity: .8; }
+.lama { font-size: 2rem; }
+.c1 { background: var(--principal); } .c2 { background: var(--secondaire); }
+.c3 { background: #ff6f91; } .c4 { background: #00c9a7; } .c5 { background: #845ec2; }
+@keyframes fall {
+    0%   { transform: translateY(0) rotate(0deg); }
+    100% { transform: translateY(120vh) rotate(var(--rotation)); }
+}
+</style>
+</head>
+<body>
+
+<div class="falling confetti c1" style="left:5%;  animation-duration:5s;   --rotation:720deg;"></div>
+<div class="falling lama"        style="left:12%; animation-duration:7s;   --rotation:-1080deg;">🦙</div>
+<div class="falling confetti c2" style="left:18%; animation-duration:6s;   --rotation:540deg;"></div>
+<div class="falling lama"        style="left:25%; animation-duration:8s;   --rotation:900deg;">🦙</div>
+<div class="falling confetti c3" style="left:32%; animation-duration:4.5s; --rotation:-720deg;"></div>
+<div class="falling lama"        style="left:38%; animation-duration:6.5s; --rotation:1260deg;">🦙</div>
+<div class="falling confetti c4" style="left:45%; animation-duration:5.8s; --rotation:360deg;"></div>
+<div class="falling lama"        style="left:52%; animation-duration:7.2s; --rotation:-1440deg;">🦙</div>
+<div class="falling confetti c5" style="left:60%; animation-duration:6.1s; --rotation:900deg;"></div>
+<div class="falling lama"        style="left:67%; animation-duration:8.5s; --rotation:-1080deg;">🦙</div>
+<div class="falling confetti c1" style="left:74%; animation-duration:5.3s; --rotation:720deg;"></div>
+<div class="falling lama"        style="left:82%; animation-duration:7.9s; --rotation:1620deg;">🦙</div>
+<div class="falling confetti c2" style="left:90%; animation-duration:6.7s; --rotation:-900deg;"></div>
+
+<div class="top-bar">
+    <button class="back-link" onclick="history.back()">&#8592; Retour en arrière</button>
+    <h1 class="page-title">Flappy Lama</h1>
+    <div style="width:160px;"></div>
+</div>
+
+<div class="game-wrapper">
+    <canvas id="gameCanvas"></canvas>
+</div>
+
+<script>
+(function () {
+'use strict';
+
+// ════════════════════════════════════════════════════════════════
+// Canvas — format paysage large pour ordinateur
+// ════════════════════════════════════════════════════════════════
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+const W = 800, H = 580;
+canvas.width  = W;
+canvas.height = H;
+
+// ════════════════════════════════════════════════════════════════
+// Constantes de jeu
+// ════════════════════════════════════════════════════════════════
+const GRAVITY      = 0.42;
+const FLAP_FORCE   = -8.2;
+const PIPE_SPEED   = 3.2;
+const PIPE_GAP     = 180;
+const PIPE_SPACING = 290;
+const GROUND_Y     = H - 70;
+
+// Falaise : pattes du lama (centre Y + 26 px) = H/2
+const CLIFF_X      = 50;
+const CLIFF_W      = 120;
+const LAMA_START_X = CLIFF_X + CLIFF_W / 2;
+const LAMA_START_Y = H / 2 - 26;        // pattes exactement à H/2
+const CLIFF_TOP_Y  = LAMA_START_Y + 22; // sommet falaise = juste sous le ventre
+const CLIFF_H      = GROUND_Y - CLIFF_TOP_Y;
+
+// ════════════════════════════════════════════════════════════════
+// Palette
+// ════════════════════════════════════════════════════════════════
+const TITRE   = '#ffd23a';
+const SKY     = '#87CEEB';
+const SUN     = '#FFD700';
+const GRASS   = '#50B432';
+const SOIL    = '#8B5A2B';
+const SOILD   = '#654321';
+const PIPE_G  = '#3CA03C';
+const PIPE_D  = '#287828';
+const CLIFF1  = '#967050';
+const CLIFF2  = '#785030';
+const LBODY   = '#FFF0C8';
+const LDARK   = '#DCBC8C';
+const LEYE    = '#1E1408';
+const LNOSE   = '#FFA096';
+
+// ════════════════════════════════════════════════════════════════
+// État global
+// ════════════════════════════════════════════════════════════════
+let etat     = 'menu';
+let score    = 0;
+let meilleur = 0;
+let offset   = 0;
+let started  = false;
+let zones    = {};
+let sourisX  = -1, sourisY = -1;
+let lastTime = 0;
+
+// ════════════════════════════════════════════════════════════════
+// Nuages
+// ════════════════════════════════════════════════════════════════
+class Nuage {
+    constructor(x) { this.reset(x !== undefined ? x : W + 80); }
+    reset(x) {
+        this.x = x;
+        this.y = 30 + Math.random() * 140;
+        this.v = 0.35 + Math.random() * 0.5;
+        this.s = 0.7  + Math.random() * 0.6;
+    }
+    update() { this.x -= this.v; if (this.x < -110) this.reset(W + 90); }
+    draw() {
+        ctx.fillStyle = '#fff';
+        for (const [dx, dy, r] of [[0,0,22],[22,0,28],[44,0,22],[11,-15,20],[33,-15,20]]) {
+            ctx.beginPath();
+            ctx.arc(this.x + dx*this.s, this.y + dy*this.s, r*this.s, 0, Math.PI*2);
+            ctx.fill();
+        }
+    }
+}
+let nuages = Array.from({ length: 7 }, () => new Nuage(Math.random() * W));
+
+// ════════════════════════════════════════════════════════════════
+// Tuyaux
+// ════════════════════════════════════════════════════════════════
+class Tuyau {
+    constructor(x) { this.w = 58; this.passed = false; this.recycle(x, true); }
+    recycle(x, init) {
+        this.x      = x;
+        this.gap_y  = 140 + Math.random() * (GROUND_Y - 280);
+        if (!init) this.passed = false;
+    }
+    update() { this.x -= PIPE_SPEED; }
+    rects() {
+        return [
+            { x: this.x, y: 0,                        w: this.w, h: this.gap_y - PIPE_GAP/2 },
+            { x: this.x, y: this.gap_y + PIPE_GAP/2,  w: this.w, h: GROUND_Y - (this.gap_y + PIPE_GAP/2) }
+        ];
+    }
+    draw() {
+        const cap = 9;
+        for (const r of this.rects()) {
+            if (r.h <= 0) continue;
+            ctx.fillStyle = PIPE_G;
+            ctx.beginPath(); ctx.roundRect(r.x, r.y, r.w, r.h, 5); ctx.fill();
+            ctx.fillStyle = PIPE_D; ctx.fillRect(r.x, r.y, 9, r.h);
+            const isTop = r.y === 0;
+            const cy2   = isTop ? r.y + r.h - 16 : r.y;
+            ctx.fillStyle = PIPE_G;
+            ctx.beginPath(); ctx.roundRect(r.x-cap, cy2, r.w+cap*2, 16, 4); ctx.fill();
+            ctx.fillStyle = PIPE_D; ctx.fillRect(r.x-cap, cy2, 11, 16);
+        }
+    }
+    collide(lx, ly) {
+        for (const r of this.rects()) {
+            if (r.h <= 0) continue;
+            if (lx+24 > r.x && lx-24 < r.x+r.w && ly+20 > r.y && ly-20 < r.y+r.h) return true;
+        }
+        return false;
+    }
+}
+let tuyaux = [];
+
+// ════════════════════════════════════════════════════════════════
+// Dessin du lama
+//
+// Le personnage est dessiné entièrement en primitives canvas 2D,
+// dans un repère LOCAL centré sur (x, y) via ctx.translate(x,y).
+//
+// Anatomie et coordonnées locales (x+ = droite, y+ = bas) :
+//
+//   OREILLES  — deux triangles pointus, y ≈ -25 à -34
+//   TÊTE      — ellipse(10, -17, 14, 10)  (regarde vers la droite)
+//   MUSEAU    — ellipse(17, -13, 9, 6)    (zone plus foncée)
+//   NARINES   — deux cercles rosés à y ≈ -11
+//   ŒIL       — cercle sombre (7, -20) + reflet blanc
+//   COU       — polygone quadrilatère reliant corps et tête
+//   CORPS     — ellipse(-18, 4, 22, 15)   (le ventre, horizontal)
+//   JAMBES    — 4 rectangles (7×13 px) sous le corps, y de 16 à 29
+//   QUEUE     — arc de cercle vers la gauche/arrière
+//
+// Les PATTES touchent y = +29 dans le repère local.
+// Donc si le centre du lama est à LAMA_START_Y = H/2 - 26,
+// les pattes sont à H/2 - 26 + 26 = H/2  (milieu exact de l'écran).
+//
+// Pendant le vol, ctx.rotate(angle) incline tout le personnage.
+// ════════════════════════════════════════════════════════════════
+function drawLama(x, y, angle) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle * Math.PI / 180);
+
+    // Queue (derrière le corps, dessinée en premier)
+    ctx.strokeStyle = LDARK; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(-40, 2, 9, Math.PI*0.25, Math.PI*1.15); ctx.stroke();
+
+    // Jambes — 4 piliers, bout des pattes à y=+29
+    ctx.fillStyle = LDARK;
+    for (const lx of [-32, -23, -11, -2]) ctx.fillRect(lx, 16, 7, 13);
+
+    // Corps
+    ctx.fillStyle = LBODY;
+    ctx.beginPath(); ctx.ellipse(-18, 4, 22, 15, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = LDARK; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.ellipse(-18, 4, 20, 13, 0, 0, Math.PI*2); ctx.stroke();
+
+    // Cou
+    ctx.fillStyle = LBODY;
+    ctx.beginPath();
+    ctx.moveTo(-6, -3); ctx.lineTo(2, -3);
+    ctx.lineTo(6, -19); ctx.lineTo(-3, -21);
+    ctx.closePath(); ctx.fill();
+
+    // Tête
+    ctx.fillStyle = LBODY;
+    ctx.beginPath(); ctx.ellipse(10, -17, 14, 10, 0, 0, Math.PI*2); ctx.fill();
+
+    // Museau
+    ctx.fillStyle = LDARK;
+    ctx.beginPath(); ctx.ellipse(17, -13, 9, 6, 0, 0, Math.PI*2); ctx.fill();
+
+    // Narines
+    ctx.fillStyle = LNOSE;
+    ctx.beginPath(); ctx.arc(14, -11, 2.5, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(20, -11, 2.5, 0, Math.PI*2); ctx.fill();
+
+    // Oeil
+    ctx.fillStyle = LEYE;
+    ctx.beginPath(); ctx.arc(7, -20, 3.2, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(8, -21, 1.1, 0, Math.PI*2); ctx.fill();
+
+    // Oreilles
+    ctx.fillStyle = LBODY;
+    ctx.beginPath(); ctx.moveTo(3,-25); ctx.lineTo(0,-34); ctx.lineTo(8,-25); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(13,-25); ctx.lineTo(10,-34); ctx.lineTo(18,-25); ctx.closePath(); ctx.fill();
+
+    ctx.restore();
+}
+
+// ════════════════════════════════════════════════════════════════
+// Falaise
+// ════════════════════════════════════════════════════════════════
+function drawCliff() {
+    const cx = CLIFF_X, cy = CLIFF_TOP_Y, cw = CLIFF_W;
+    ctx.fillStyle = CLIFF1;
+    ctx.beginPath();
+    ctx.moveTo(cx-4,     cy);  ctx.lineTo(cx+cw+4,  cy);
+    ctx.lineTo(cx+cw+18, GROUND_Y); ctx.lineTo(cx-18, GROUND_Y);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = CLIFF2;
+    ctx.beginPath();
+    ctx.moveTo(cx+cw+4, cy); ctx.lineTo(cx+cw+18, GROUND_Y);
+    ctx.lineTo(cx+cw+8, GROUND_Y); ctx.lineTo(cx+cw-2, cy);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = CLIFF2; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx-4, cy); ctx.lineTo(cx+cw+4, cy);
+    ctx.lineTo(cx+cw+18, GROUND_Y); ctx.lineTo(cx-18, GROUND_Y);
+    ctx.closePath(); ctx.stroke();
+    for (let row = 1; row < 4; row++) {
+        const t = row/4, ry = cy + t*CLIFF_H;
+        const rl = (cx-18)*(1-t) + cx*t + 2;
+        const rr = (cx+cw+18)*(1-t) + (cx+cw+4)*t - 2;
+        ctx.strokeStyle = CLIFF2; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(rl, ry); ctx.lineTo(rr, ry); ctx.stroke();
+    }
+    ctx.fillStyle = GRASS;
+    ctx.beginPath(); ctx.roundRect(cx-4, cy, cw+8, 11, 4); ctx.fill();
+    ctx.strokeStyle = '#2A8A18'; ctx.lineWidth = 2;
+    for (let gx = cx+6; gx < cx+cw-4; gx += 13) {
+        ctx.beginPath(); ctx.moveTo(gx, cy); ctx.lineTo(gx-3, cy-8); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(gx, cy); ctx.lineTo(gx+3, cy-7); ctx.stroke();
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
+// Fond et sol
+// ════════════════════════════════════════════════════════════════
+function drawBg() {
+    ctx.fillStyle = SKY; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = SUN; ctx.beginPath(); ctx.arc(62, 60, 34, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = SUN; ctx.lineWidth = 3;
+    for (let i = 0; i < 8; i++) {
+        const a = i*Math.PI*2/8;
+        ctx.beginPath();
+        ctx.moveTo(62+40*Math.cos(a), 60+40*Math.sin(a));
+        ctx.lineTo(62+55*Math.cos(a), 60+55*Math.sin(a));
+        ctx.stroke();
+    }
+}
+function drawGround(off) {
+    ctx.fillStyle = GRASS; ctx.fillRect(0, GROUND_Y, W, 12);
+    ctx.fillStyle = SOIL;  ctx.fillRect(0, GROUND_Y+12, W, H-GROUND_Y-12);
+    ctx.strokeStyle = SOILD; ctx.lineWidth = 1;
+    const step = 32;
+    const start = -(off % step);
+    for (let xi = start; xi < W; xi += step) {
+        ctx.beginPath(); ctx.moveTo(xi, GROUND_Y+15); ctx.lineTo(xi+16, GROUND_Y+15); ctx.stroke();
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
+// Lama joueur
+// ════════════════════════════════════════════════════════════════
+let lamaX, lamaY, lamaVel;
+function resetLama() { lamaX = LAMA_START_X; lamaY = LAMA_START_Y; lamaVel = 0; }
+function lamaFlap()   { lamaVel = FLAP_FORCE; }
+function lamaStep()   { lamaVel += GRAVITY; lamaY += lamaVel; }
+
+// ════════════════════════════════════════════════════════════════
+// Boucle principale
+// ════════════════════════════════════════════════════════════════
+function loop(now) {
+    const dt = now - (lastTime || now);
+    lastTime = now;
+    if      (etat === 'menu')     dessinerMenu();
+    else if (etat === 'playing')  { updateJeu(dt); dessinerJeu(); }
+    else if (etat === 'dying')    dessinerJeu();
+    else if (etat === 'gameover') dessinerGameOver();
+    requestAnimationFrame(loop);
+}
+
+// ════════════════════════════════════════════════════════════════
+// Menu
+// ════════════════════════════════════════════════════════════════
+function dessinerMenu() {
+    drawBg();
+    for (const n of nuages) { n.update(); n.draw(); }
+    drawGround(Math.round(performance.now() * 0.05));
+    drawCliff();
+
+    const bob = Math.sin(performance.now() * 0.003) * 5;
+    drawLama(LAMA_START_X, LAMA_START_Y + bob, 0);
+
+    // Panneau — moitié droite du canvas
+    const panW = 400, panH = 215;
+    const panX = W/2, panY = H/2 - panH/2 - 10;
+    ctx.fillStyle = 'rgba(15,25,8,0.72)';
+    ctx.beginPath(); ctx.roundRect(panX, panY, panW, panH, 14); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,220,60,0.6)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.roundRect(panX, panY, panW, panH, 14); ctx.stroke();
+
+    const mx = panX + panW/2;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+
+    ctx.font = 'bold 44px "Consolas","Courier New",monospace';
+    ctx.fillStyle = 'rgba(60,40,0,0.45)';
+    ctx.fillText('FLAPPY LAMA', mx+2, panY+52+2);
+    ctx.fillStyle = TITRE;
+    ctx.fillText('FLAPPY LAMA', mx, panY+52);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.font = '15px "Consolas","Courier New",monospace';
+    ctx.fillText('Appuie sur ESPACE ou clique', mx, panY+108);
+    ctx.fillText('pour prendre ton envol !',    mx, panY+128);
+
+    if (meilleur > 0) {
+        ctx.fillStyle = TITRE;
+        ctx.font = 'bold 16px "Consolas","Courier New",monospace';
+        ctx.fillText('Meilleur score : ' + meilleur, mx, panY+162);
+    }
+
+    // Bouton Jouer
+    const bw = 195, bh = 46;
+    const bx = mx - bw/2, by = panY + panH + 18;
+    const hov = sourisX>=bx && sourisX<=bx+bw && sourisY>=by && sourisY<=by+bh;
+    ctx.fillStyle   = hov ? 'rgba(80,165,55,0.97)' : 'rgba(48,118,36,0.90)';
+    ctx.strokeStyle = '#90d850'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 10); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 22px "Consolas","Courier New",monospace';
+    ctx.fillText('Jouer', mx, by+bh/2);
+    zones = { jouer: {x:bx, y:by, w:bw, h:bh} };
+
+    ctx.fillStyle = 'rgba(20,15,0,0.75)';
+    ctx.font = '12px "Consolas","Courier New",monospace';
+    ctx.fillText('[ESPACE] ou [Clic] pour sauter', mx, by+bh+18);
+
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+}
+
+// ════════════════════════════════════════════════════════════════
+// Jeu
+// ════════════════════════════════════════════════════════════════
+function demarrerPartie() {
+    resetLama();
+    nuages  = Array.from({ length: 7 }, () => new Nuage(Math.random() * W));
+    tuyaux  = Array.from({ length: 3 }, (_, i) => new Tuyau(W + i * PIPE_SPACING));
+    score   = 0;
+    offset  = 0;
+    started = false;
+    etat    = 'playing';
+}
+
+function updateJeu() {
+    if (!started) return;
+    lamaStep();
+    offset += PIPE_SPEED;
+    for (const n of nuages) n.update();
+    for (const t of tuyaux) {
+        t.update();
+        if (!t.passed && t.x + t.w < lamaX) { t.passed = true; score++; }
+        if (t.x + t.w < 0) t.recycle(Math.max(...tuyaux.map(p => p.x)) + PIPE_SPACING);
+    }
+    let mort = lamaY + 22 >= GROUND_Y || lamaY - 22 <= 0;
+    for (const t of tuyaux) if (t.collide(lamaX, lamaY)) mort = true;
+    if (mort) {
+        if (score > meilleur) meilleur = score;
+        etat = 'dying';
+        setTimeout(() => { etat = 'gameover'; }, 700);
+    }
+}
+
+function dessinerJeu() {
+    drawBg();
+    for (const n of nuages) n.draw();
+    for (const t of tuyaux) t.draw();
+    drawGround(Math.round(offset));
+    if (!started) drawCliff();
+    drawLama(lamaX, lamaY, Math.max(-25, Math.min(35, lamaVel*3.5)));
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 38px "Consolas","Courier New",monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 7;
+    ctx.fillText(score, W/2, 16);
+    ctx.shadowBlur = 0; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    if (!started) {
+        ctx.fillStyle = 'rgba(15,12,0,0.72)';
+        ctx.beginPath(); ctx.roundRect(W/2-170, H/2+50, 340, 38, 8); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = '15px "Consolas","Courier New",monospace';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText("[ESPACE] ou [Clic] pour s'envoler !", W/2, H/2+69);
+        ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
+// Game Over
+// ════════════════════════════════════════════════════════════════
+function dessinerGameOver() {
+    drawBg();
+    for (const n of nuages) n.draw();
+    for (const t of tuyaux) t.draw();
+    drawGround(Math.round(offset));
+    drawLama(lamaX, Math.min(lamaY, GROUND_Y-24), 35);
+
+    ctx.fillStyle = 'rgba(135,206,235,0.38)';
+    ctx.fillRect(0, 0, W, H);
+
+    const panW = 360, panH = 272;
+    const panX = W/2-panW/2, panY = H/2-panH/2-20;
+    ctx.fillStyle = 'rgba(15,25,8,0.82)';
+    ctx.beginPath(); ctx.roundRect(panX, panY, panW, panH, 16); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,90,90,0.72)'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.roundRect(panX, panY, panW, panH, 16); ctx.stroke();
+
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = 'bold 42px "Consolas","Courier New",monospace';
+    ctx.fillStyle = 'rgba(80,0,0,0.45)';
+    ctx.fillText('GAME OVER', W/2+2, panY+54+2);
+    ctx.fillStyle = '#ff5a5a';
+    ctx.fillText('GAME OVER', W/2, panY+54);
+
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 26px "Consolas","Courier New",monospace';
+    ctx.fillText('Score : ' + score, W/2, panY+114);
+
+    ctx.fillStyle = TITRE;
+    ctx.font = 'bold 19px "Consolas","Courier New",monospace';
+    ctx.fillText('Meilleur : ' + meilleur, W/2, panY+152);
+
+    const btnW = 140, btnH = 46, gap = 16;
+    const bx1 = W/2 - btnW - gap/2, bx2 = W/2 + gap/2, bby = panY+192;
+    zones = {};
+    for (const [label, bx, col, bord] of [
+        ['Rejouer', bx1, 'rgba(48,118,36,0.92)', '#90d850'],
+        ['Menu',    bx2, 'rgba(35,35,75,0.92)',  '#7070b8']
+    ]) {
+        const h = sourisX>=bx && sourisX<=bx+btnW && sourisY>=bby && sourisY<=bby+btnH;
+        ctx.fillStyle = h ? 'rgba(80,165,55,0.97)' : col;
+        ctx.strokeStyle = bord; ctx.lineWidth = 1.8;
+        ctx.beginPath(); ctx.roundRect(bx, bby, btnW, btnH, 9); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 19px "Consolas","Courier New",monospace';
+        ctx.fillText(label, bx+btnW/2, bby+btnH/2);
+        zones[label] = {x:bx, y:bby, w:btnW, h:btnH};
+    }
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '12px "Consolas","Courier New",monospace';
+    ctx.fillText('[ESPACE] Rejouer   [ESC] Menu', W/2, panY+panH+18);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+}
+
+// ════════════════════════════════════════════════════════════════
+// Entrées
+// ════════════════════════════════════════════════════════════════
+function action() {
+    if (etat === 'menu')     { demarrerPartie(); }
+    else if (etat === 'playing')  { lamaFlap(); started = true; }
+    else if (etat === 'gameover') { demarrerPartie(); }
+}
+
+canvas.addEventListener('mousemove', e => {
+    const r = canvas.getBoundingClientRect();
+    sourisX = (e.clientX - r.left) * (W / r.width);
+    sourisY = (e.clientY - r.top)  * (H / r.height);
+});
+
+document.addEventListener('keydown', e => {
+    if (e.code === 'Space' || e.key === ' ' || e.key === 'ArrowUp') {
+        e.preventDefault(); action();
+    }
+    if (e.key === 'Escape' && (etat==='playing'||etat==='gameover')) etat = 'menu';
+    if ((e.key==='r'||e.key==='R') && etat==='gameover') demarrerPartie();
+});
+
+canvas.addEventListener('click', e => {
+    const r  = canvas.getBoundingClientRect();
+    const mx = (e.clientX - r.left) * (W / r.width);
+    const my = (e.clientY - r.top)  * (H / r.height);
+    if (etat === 'gameover') {
+        const zR = zones['Rejouer'], zM = zones['Menu'];
+        if (zR && mx>=zR.x && mx<=zR.x+zR.w && my>=zR.y && my<=zR.y+zR.h) { demarrerPartie(); return; }
+        if (zM && mx>=zM.x && mx<=zM.x+zM.w && my>=zM.y && my<=zM.y+zM.h) { etat='menu'; return; }
+    }
+    action();
+});
+
+// ════════════════════════════════════════════════════════════════
+// Init et démarrage
+// ════════════════════════════════════════════════════════════════
+resetLama();
+tuyaux = Array.from({ length: 3 }, (_, i) => new Tuyau(W + i * PIPE_SPACING));
+requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>
