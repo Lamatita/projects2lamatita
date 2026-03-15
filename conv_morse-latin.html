@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Convertisseur Morse / Alphabet Latin</title>
+<title>Convertisseur Morse / Alphabet Latin/Otan</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -69,7 +69,7 @@ body {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 860px;
+  max-width: 1300px;
   padding: 40px 24px;
   display: flex;
   flex-direction: column;
@@ -77,9 +77,7 @@ body {
   gap: 28px;
 }
 
-.page-title {
-  text-align: center;
-}
+.page-title { text-align: center; }
 .page-title h1 {
   font-size: 2em;
   font-weight: 800;
@@ -111,7 +109,6 @@ body {
   border-spacing: 0;
 }
 
-/* Header row */
 .converter-table thead tr th {
   padding: 14px 18px;
   background: #f7f3ff;
@@ -122,6 +119,7 @@ body {
   color: #9992bb;
   border-bottom: 2px solid #e0dce8;
   text-align: left;
+  width: 33.33%;
 }
 .converter-table thead tr th:not(:last-child) {
   border-right: 2px solid #e0dce8;
@@ -137,20 +135,16 @@ body {
   top: -1px;
 }
 
-/* Body cells */
 .converter-table tbody tr td {
   border-bottom: 2px solid #e0dce8;
   border-right: 2px solid #e0dce8;
   padding: 0;
   vertical-align: top;
   position: relative;
+  width: 33.33%;
 }
-.converter-table tbody tr td:last-child {
-  border-right: none;
-}
-.converter-table tbody tr:last-child td {
-  border-bottom: none;
-}
+.converter-table tbody tr td:last-child { border-right: none; }
+.converter-table tbody tr:last-child td { border-bottom: none; }
 
 /* Input fields */
 .base-input {
@@ -160,7 +154,7 @@ body {
   outline: none;
   resize: none;
   padding: 16px 18px;
-  font-size: 1.05em;
+  font-size: 1.02em;
   font-family: "Segoe UI", monospace;
   color: #333;
   background: #fff;
@@ -172,20 +166,13 @@ body {
   color: #c8c3de;
   font-weight: 400;
   font-family: "Segoe UI", sans-serif;
-  font-size: 0.88em;
+  font-size: 0.84em;
 }
-.base-input:focus {
-  background: #faf8ff;
-}
-.base-input.has-value {
-  color: #6c63ff;
-}
-.base-input.error {
-  color: #ff6b6b;
-  background: #fff8f8;
-}
+.base-input:focus { background: #faf8ff; }
+.base-input.has-value { color: #6c63ff; }
+.base-input.error { color: #ff6b6b; background: #fff8f8; }
 
-/* Footer row (copy buttons row) */
+/* Footer row */
 .footer-row td {
   background: #f7f3ff;
   padding: 8px 14px;
@@ -193,9 +180,7 @@ body {
   border-bottom: none !important;
   text-align: right;
 }
-.footer-row td:not(:last-child) {
-  border-right: 2px solid #e0dce8;
-}
+.footer-row td:not(:last-child) { border-right: 2px solid #e0dce8; }
 
 /* Copy button */
 .copy-btn {
@@ -215,21 +200,9 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
-.copy-btn:hover {
-  border-color: #6c63ff;
-  color: #6c63ff;
-  background: rgba(108,99,255,0.06);
-}
-.copy-btn.copied {
-  border-color: #00c9a7;
-  color: #00c9a7;
-  background: rgba(0,201,167,0.06);
-}
-.copy-btn svg {
-  width: 12px; height: 12px;
-  stroke: currentColor; fill: none; stroke-width: 2.5;
-  flex-shrink: 0;
-}
+.copy-btn:hover { border-color: #6c63ff; color: #6c63ff; background: rgba(108,99,255,0.06); }
+.copy-btn.copied { border-color: #00c9a7; color: #00c9a7; background: rgba(0,201,167,0.06); }
+.copy-btn svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2.5; flex-shrink: 0; }
 
 /* Info badges */
 .info-row {
@@ -251,10 +224,7 @@ body {
   font-weight: 700;
   color: #9992bb;
 }
-.base-badge .dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-}
+.base-badge .dot { width: 8px; height: 8px; border-radius: 50%; }
 
 /* Error message */
 .error-msg {
@@ -284,11 +254,7 @@ body {
   transition: all 0.2s ease;
   font-family: "Segoe UI", sans-serif;
 }
-.clear-btn:hover {
-  border-color: #ff6b6b;
-  color: #ff6b6b;
-  background: rgba(255,107,107,0.05);
-}
+.clear-btn:hover { border-color: #ff6b6b; color: #ff6b6b; background: rgba(255,107,107,0.05); }
 
 /* Toast */
 .toast {
@@ -307,19 +273,17 @@ body {
   opacity: 0;
   z-index: 100;
 }
-.toast.show {
-  transform: translateX(-50%) translateY(0);
-  opacity: 1;
-}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-/* Morse legend */
-.morse-legend {
-  margin-top: 24px;
+/* Reference section */
+.legend-section {
+  margin-top: 28px;
   border: 2px solid #e0dce8;
   border-radius: 16px;
   overflow: hidden;
+  width: 100%;
 }
-.morse-legend-title {
+.legend-section-title {
   background: #f7f3ff;
   padding: 10px 18px;
   font-size: 0.75em;
@@ -328,40 +292,68 @@ body {
   letter-spacing: 0.8px;
   color: #9992bb;
   border-bottom: 2px solid #e0dce8;
-}
-.morse-legend-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-  gap: 0;
-  background: #fff;
-}
-.morse-legend-item {
-  padding: 7px 12px;
-  border-right: 1px solid #f0edf5;
-  border-bottom: 1px solid #f0edf5;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
-.legend-char {
-  font-size: 0.85em;
-  font-weight: 800;
-  color: #6c63ff;
-  min-width: 16px;
-}
-.legend-code {
-  font-size: 0.78em;
-  font-weight: 600;
-  color: #9992bb;
-  font-family: monospace;
-  letter-spacing: 1px;
-}
+.legend-section-title .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 
-@media (max-width: 640px) {
-  .card { padding: 20px 14px; }
-  .base-input { font-size: 0.95em; padding: 12px 12px; min-height: 90px; }
-  .converter-table thead tr th { padding: 10px 10px; font-size: 0.7em; }
-  .morse-legend-grid { grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); }
+.ref-columns {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  background: #fff;
+}
+.ref-col { border-right: 1px solid #e0dce8; }
+.ref-col:last-child { border-right: none; }
+
+.ref-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75em;
+  table-layout: fixed;
+}
+.ref-table thead tr th {
+  padding: 6px 6px;
+  background: #faf8ff;
+  font-size: 0.68em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #b8b3cc;
+  border-bottom: 1px solid #e0dce8;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.ref-table thead tr th:not(:last-child) { border-right: 1px solid #e0dce8; }
+.ref-table tbody tr td {
+  padding: 4px 6px;
+  border-bottom: 1px solid #f0edf5;
+  border-right: 1px solid #f0edf5;
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.ref-table tbody tr td:last-child { border-right: none; }
+.ref-table tbody tr:last-child td { border-bottom: none; }
+.ref-table tbody tr:nth-child(even) td { background: #faf8ff; }
+
+.ref-char  { font-weight: 800; font-size: 1em; color: #333; }
+.ref-morse { font-family: monospace; font-weight: 700; color: #3498db; letter-spacing: 1px; font-size: 0.95em; }
+.ref-nato  { font-weight: 600; color: #e74c3c; font-size: 0.95em; }
+
+@media (max-width: 720px) {
+  .card { padding: 20px 10px; }
+  .base-input { font-size: 0.88em; padding: 10px 10px; min-height: 90px; }
+  .converter-table thead tr th { padding: 8px 8px; font-size: 0.65em; }
+  .ref-columns { grid-template-columns: repeat(5, 1fr); }
+  .ref-col:nth-child(5) { border-right: none; }
+  .ref-col:nth-child(n+6) { border-top: 1px solid #e0dce8; }
+}
+@media (max-width: 480px) {
+  .ref-columns { grid-template-columns: repeat(3, 1fr); }
+  .ref-col:nth-child(3n) { border-right: none; }
+  .ref-col:nth-child(n+4) { border-top: 1px solid #e0dce8; }
 }
 </style>
 </head>
@@ -376,34 +368,41 @@ body {
 
 <div class="page-wrapper">
   <div class="page-title">
-    <h1>Convertisseur Morse / Latin</h1>
-    <p>Saisissez du texte ou du code Morse pour le convertir automatiquement</p>
+    <h1>Convertisseur Morse / Latin / OTAN</h1>
+    <p>Saisissez du texte dans n'importe quelle colonne pour le convertir automatiquement</p>
   </div>
 
   <div class="card">
 
     <div class="info-row">
-      <div class="base-badge"><div class="dot" style="background:#6c63ff"></div> Code Morse — . et -</div>
-      <div class="base-badge"><div class="dot" style="background:#00c9a7"></div> Alphabet Latin — A-Z, 0-9</div>
+      <div class="base-badge"><div class="dot" style="background:#3498db"></div> Alphabet Latin (A-Z, 0-9)</div>
+      <div class="base-badge"><div class="dot" style="background:#ffffff; border: 1.5px solid #c8c3de;"></div> Code Morse ( . et -)</div>
+      <div class="base-badge"><div class="dot" style="background:#e74c3c"></div> Alphabet OTAN — radiotéléphonique</div>
     </div>
 
     <table class="converter-table">
       <thead>
         <tr>
-          <th><span class="col-dot-inline" style="background:#6c63ff"></span>Code Morse</th>
-          <th><span class="col-dot-inline" style="background:#00c9a7"></span>Alphabet Latin</th>
+          <th><span class="col-dot-inline" style="background:#3498db"></span>Alphabet Latin</th>
+          <th><span class="col-dot-inline" style="background:#ffffff; border:1.5px solid #c8c3de; box-sizing:border-box;"></span>Code Morse</th>
+          <th><span class="col-dot-inline" style="background:#e74c3c"></span>Alphabet OTAN</th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <td>
-            <textarea class="base-input" id="morseInput"
-              placeholder="ex: -- --- .-. ... . / . - / .-.. ..- -. .."
+            <textarea class="base-input" id="latinInput"
+              placeholder="ex: Hello World"
               spellcheck="false" rows="5"></textarea>
           </td>
           <td>
-            <textarea class="base-input" id="latinInput"
-              placeholder="ex: Bonjour le monde"
+            <textarea class="base-input" id="morseInput"
+              placeholder="ex: .... . .-.. .-.. --- / .-- --- .-. .-.. -.."
+              spellcheck="false" rows="5"></textarea>
+          </td>
+          <td>
+            <textarea class="base-input" id="natoInput"
+              placeholder="ex: Hotel Echo Lima Lima Oscar / Whiskey Oscar Romeo Lima Delta"
               spellcheck="false" rows="5"></textarea>
           </td>
         </tr>
@@ -411,13 +410,19 @@ body {
       <tfoot>
         <tr class="footer-row">
           <td>
-            <button class="copy-btn" id="copyMorse" title="Copier le Morse">
+            <button class="copy-btn" id="copyLatin">
               <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
               Copier
             </button>
           </td>
           <td>
-            <button class="copy-btn" id="copyLatin" title="Copier le Latin">
+            <button class="copy-btn" id="copyMorse">
+              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copier
+            </button>
+          </td>
+          <td>
+            <button class="copy-btn" id="copyNato">
               <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
               Copier
             </button>
@@ -435,10 +440,14 @@ body {
       </button>
     </div>
 
-    <!-- Morse reference table -->
-    <div class="morse-legend">
-      <div class="morse-legend-title">Table de reference Morse</div>
-      <div class="morse-legend-grid" id="legendGrid"></div>
+    <!-- Reference table -->
+    <div class="legend-section">
+      <div class="legend-section-title">
+        <span class="dot" style="background:#3498db"></span>Latin /
+        <span class="dot" style="background:#ffffff; border:1.5px solid #b0aac4; margin-left:4px;"></span>Morse /
+        <span class="dot" style="background:#e74c3c; margin-left:4px;"></span>OTAN — Table de reference
+      </div>
+      <div class="ref-columns" id="refColumns"></div>
     </div>
 
   </div>
@@ -449,19 +458,19 @@ body {
 <script>
 // ── Morse dictionary ──────────────────────────────────────────
 const MORSE_TO_LATIN = {
-  '.-': 'A', '-...': 'B', '-.-.': 'C', '-..': 'D', '.': 'E',
-  '..-.': 'F', '--.': 'G', '....': 'H', '..': 'I', '.---': 'J',
-  '-.-': 'K', '.-..': 'L', '--': 'M', '-.': 'N', '---': 'O',
-  '.--.': 'P', '--.-': 'Q', '.-.': 'R', '...': 'S', '-': 'T',
-  '..-': 'U', '...-': 'V', '.--': 'W', '-..-': 'X', '-.--': 'Y',
-  '--..': 'Z',
-  '.----': '1', '..---': '2', '...--': '3', '....-': '4', '.....': '5',
-  '-....': '6', '--...': '7', '---..': '8', '----.': '9', '-----': '0',
-  '.-.-.-': '.', '--..--': ',', '..--..': '?', '.----.': "'",
-  '-.-.--': '!', '-..-.': '/', '-.--.': '(', '-.--.-': ')',
-  '.-...': '&', '---...': ':', '-.-.-.': ';', '-...-': '=',
-  '.-.-.': '+', '-....-': '-', '..--.-': '_', '.-..-.': '"',
-  '...-..-': '$', '.--.-.': '@'
+  '.-':'A', '-...':'B', '-.-.':'C', '-..':'D', '.':'E',
+  '..-.':'F', '--.':'G', '....':'H', '..':'I', '.---':'J',
+  '-.-':'K', '.-..':'L', '--':'M', '-.':'N', '---':'O',
+  '.--.':'P', '--.-':'Q', '.-.':'R', '...':'S', '-':'T',
+  '..-':'U', '...-':'V', '.--':'W', '-..-':'X', '-.--':'Y',
+  '--..':'Z',
+  '.----':'1', '..---':'2', '...--':'3', '....-':'4', '.....':'5',
+  '-....':'6', '--...':'7', '---..':'8', '----.':'9', '-----':'0',
+  '.-.-.-':'.', '--..--':',', '..--..':'?', ".----.":"'",
+  '-.-.--':'!', '-..-.':'/', '-.--.':'(', '-.--.-':')',
+  '.-...':'&', '---...':':', '-.-.-.':';', '-...-':'=',
+  '.-.-.':'+', '-....-':'-', '..--.-':'_', '.-..-.':'"',
+  '...-..-':'$', '.--.-.':'@'
 };
 
 const LATIN_TO_MORSE = {};
@@ -469,115 +478,156 @@ for (const [morse, char] of Object.entries(MORSE_TO_LATIN)) {
   LATIN_TO_MORSE[char] = morse;
 }
 
+// ── NATO phonetic alphabet ────────────────────────────────────
+const LATIN_TO_NATO = {
+  'A':'Alpha',   'B':'Bravo',    'C':'Charlie', 'D':'Delta',    'E':'Echo',
+  'F':'Foxtrot', 'G':'Golf',     'H':'Hotel',   'I':'India',    'J':'Juliet',
+  'K':'Kilo',    'L':'Lima',     'M':'Mike',    'N':'November', 'O':'Oscar',
+  'P':'Papa',    'Q':'Quebec',   'R':'Romeo',   'S':'Sierra',   'T':'Tango',
+  'U':'Uniform', 'V':'Victor',   'W':'Whiskey', 'X':'X-ray',    'Y':'Yankee',
+  'Z':'Zulu',
+  '0':'Zero',    '1':'One',      '2':'Two',     '3':'Three',    '4':'Four',
+  '5':'Five',    '6':'Six',      '7':'Seven',   '8':'Eight',    '9':'Nine'
+};
+
+const NATO_TO_LATIN = {};
+for (const [char, word] of Object.entries(LATIN_TO_NATO)) {
+  NATO_TO_LATIN[word.toLowerCase()] = char;
+}
+
 // ── DOM refs ──────────────────────────────────────────────────
 const morseInput = document.getElementById('morseInput');
 const latinInput = document.getElementById('latinInput');
+const natoInput  = document.getElementById('natoInput');
 const errorMsg   = document.getElementById('errorMsg');
 const clearBtn   = document.getElementById('clearBtn');
-const copyMorse  = document.getElementById('copyMorse');
-const copyLatin  = document.getElementById('copyLatin');
 
 let activeField = null;
 
-// ── Conversion: Latin -> Morse ────────────────────────────────
+// ── Conversion functions ──────────────────────────────────────
 function latinToMorse(text) {
-  const lines = text.split('\n');
-  return lines.map(line => {
-    const words = line.trim().split(/\s+/);
-    return words.map(word => {
-      if (word === '') return '';
+  return text.split('\n').map(line => {
+    return line.trim().split(/\s+/).filter(w => w).map(word => {
       return word.toUpperCase().split('').map(ch => {
-        if (ch === ' ') return '/';
         const code = LATIN_TO_MORSE[ch];
-        if (!code) throw new Error(`Caractere non reconnu : "${ch}"`);
+        if (!code) throw new Error('Caractere non reconnu : "' + ch + '"');
         return code;
       }).join(' ');
-    }).filter(w => w !== '').join(' / ');
+    }).join(' / ');
   }).join('\n');
 }
 
-// ── Conversion: Morse -> Latin ────────────────────────────────
 function morseToLatin(morse) {
-  if (morse.trim() === '') return '';
-  const lines = morse.split('\n');
-  return lines.map(line => {
-    const words = line.trim().split(/\s*\/\s*/);
-    return words.map(word => {
-      const w = word.trim();
-      if (w === '') return ' ';
-      const codes = w.split(/\s+/);
-      return codes.map(code => {
-        if (code === '') return '';
+  if (!morse.trim()) return '';
+  return morse.split('\n').map(line => {
+    return line.trim().split(/\s*\/\s*/).map(seg => {
+      const s = seg.trim();
+      if (!s) return ' ';
+      return s.split(/\s+/).map(code => {
+        if (!code) return '';
         const ch = MORSE_TO_LATIN[code];
-        if (!ch) throw new Error(`Code Morse non reconnu : "${code}"`);
+        if (!ch) throw new Error('Code Morse non reconnu : "' + code + '"');
         return ch;
       }).join('');
     }).join(' ');
   }).join('\n');
 }
 
-// ── Update handlers ───────────────────────────────────────────
-function updateFromLatin() {
-  activeField = 'latin';
+function latinToNato(text) {
+  return text.split('\n').map(line => {
+    return line.trim().split(/\s+/).filter(w => w).map(word => {
+      return word.toUpperCase().split('').map(ch => {
+        const nato = LATIN_TO_NATO[ch];
+        if (!nato) throw new Error('Caractere non reconnu : "' + ch + '"');
+        return nato;
+      }).join(' ');
+    }).join(' / ');
+  }).join('\n');
+}
+
+function natoToLatin(natoText) {
+  if (!natoText.trim()) return '';
+  return natoText.split('\n').map(line => {
+    return line.trim().split(/\s*\/\s*/).map(seg => {
+      const s = seg.trim();
+      if (!s) return ' ';
+      return s.split(/\s+/).map(word => {
+        if (!word) return '';
+        const ch = NATO_TO_LATIN[word.toLowerCase()];
+        if (!ch) throw new Error('Mot OTAN non reconnu : "' + word + '"');
+        return ch;
+      }).join('');
+    }).join(' ');
+  }).join('\n');
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function setOk(el, val) {
+  el.value = val;
+  el.classList.toggle('has-value', val.trim() !== '');
+  el.classList.remove('error');
+}
+
+function setErr(el) {
+  el.value = '';
+  el.classList.remove('has-value');
+  el.classList.add('error');
+}
+
+function clearOthers(except) {
+  const all = { morse: morseInput, latin: latinInput, nato: natoInput };
+  for (const [id, el] of Object.entries(all)) {
+    if (id !== except) { el.value = ''; el.classList.remove('has-value','error'); }
+  }
+}
+
+// ── Update logic ──────────────────────────────────────────────
+function updateFrom(source) {
+  activeField = source;
   errorMsg.textContent = '';
-  const val = latinInput.value;
-  if (val.trim() === '') {
-    morseInput.value = '';
-    morseInput.classList.remove('has-value', 'error');
-    latinInput.classList.remove('has-value', 'error');
+  const srcEl = { morse: morseInput, latin: latinInput, nato: natoInput }[source];
+  const val = srcEl.value;
+
+  if (!val.trim()) {
+    clearOthers(source);
+    srcEl.classList.remove('has-value','error');
     return;
   }
+
   try {
-    const result = latinToMorse(val);
-    morseInput.value = result;
-    morseInput.classList.toggle('has-value', result !== '');
-    morseInput.classList.remove('error');
-    latinInput.classList.add('has-value');
-    latinInput.classList.remove('error');
-  } catch (e) {
-    morseInput.value = '';
-    morseInput.classList.remove('has-value');
-    latinInput.classList.add('error');
-    latinInput.classList.remove('has-value');
+    let latin = '';
+    if (source === 'latin') {
+      latin = val;
+      setOk(morseInput, latinToMorse(val));
+      setOk(natoInput,  latinToNato(val));
+    } else if (source === 'morse') {
+      latin = morseToLatin(val);
+      setOk(latinInput, latin);
+      setOk(natoInput,  latinToNato(latin));
+    } else if (source === 'nato') {
+      latin = natoToLatin(val);
+      setOk(latinInput, latin);
+      setOk(morseInput, latinToMorse(latin));
+    }
+    srcEl.classList.add('has-value');
+    srcEl.classList.remove('error');
+  } catch(e) {
+    clearOthers(source);
+    srcEl.classList.add('error');
+    srcEl.classList.remove('has-value');
     errorMsg.textContent = e.message;
   }
 }
 
-function updateFromMorse() {
-  activeField = 'morse';
-  errorMsg.textContent = '';
-  const val = morseInput.value;
-  if (val.trim() === '') {
-    latinInput.value = '';
-    latinInput.classList.remove('has-value', 'error');
-    morseInput.classList.remove('has-value', 'error');
-    return;
-  }
-  try {
-    const result = morseToLatin(val);
-    latinInput.value = result;
-    latinInput.classList.toggle('has-value', result.trim() !== '');
-    latinInput.classList.remove('error');
-    morseInput.classList.add('has-value');
-    morseInput.classList.remove('error');
-  } catch (e) {
-    latinInput.value = '';
-    latinInput.classList.remove('has-value');
-    morseInput.classList.add('error');
-    morseInput.classList.remove('has-value');
-    errorMsg.textContent = e.message;
-  }
-}
+latinInput.addEventListener('input', () => updateFrom('latin'));
+morseInput.addEventListener('input', () => updateFrom('morse'));
+natoInput.addEventListener('input',  () => updateFrom('nato'));
 
-latinInput.addEventListener('input', updateFromLatin);
-morseInput.addEventListener('input', updateFromMorse);
-
-// ── Clear button ──────────────────────────────────────────────
+// ── Clear ─────────────────────────────────────────────────────
 clearBtn.addEventListener('click', () => {
-  morseInput.value = '';
-  latinInput.value = '';
-  morseInput.classList.remove('has-value', 'error');
-  latinInput.classList.remove('has-value', 'error');
+  [morseInput, latinInput, natoInput].forEach(el => {
+    el.value = ''; el.classList.remove('has-value','error');
+  });
   errorMsg.textContent = '';
   activeField = null;
 });
@@ -593,34 +643,66 @@ function showToast(msg) {
 }
 
 // ── Copy buttons ──────────────────────────────────────────────
-function setupCopy(btn, getTarget) {
+const COPY_SVG  = '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>';
+const CHECK_SVG = '<polyline points="20 6 9 17 4 12"/>';
+
+function setupCopy(btnId, getEl) {
+  const btn = document.getElementById(btnId);
   btn.addEventListener('click', () => {
-    const val = getTarget().value;
+    const val = getEl().value;
     if (!val.trim()) { showToast('Rien a copier'); return; }
     navigator.clipboard.writeText(val).then(() => {
       btn.classList.add('copied');
-      btn.querySelector('svg').innerHTML = '<polyline points="20 6 9 17 4 12"/>';
+      btn.querySelector('svg').innerHTML = CHECK_SVG;
       showToast('Copie dans le presse-papiers');
       setTimeout(() => {
         btn.classList.remove('copied');
-        btn.querySelector('svg').innerHTML = '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>';
+        btn.querySelector('svg').innerHTML = COPY_SVG;
       }, 2000);
     }).catch(() => showToast('Echec de la copie'));
   });
 }
 
-setupCopy(copyMorse, () => morseInput);
-setupCopy(copyLatin, () => latinInput);
+setupCopy('copyMorse', () => morseInput);
+setupCopy('copyLatin', () => latinInput);
+setupCopy('copyNato',  () => natoInput);
 
-// ── Build legend ──────────────────────────────────────────────
-(function buildLegend() {
-  const grid = document.getElementById('legendGrid');
-  const entries = Object.entries(LATIN_TO_MORSE);
-  entries.forEach(([char, code]) => {
-    const item = document.createElement('div');
-    item.className = 'morse-legend-item';
-    item.innerHTML = `<span class="legend-char">${char}</span><span class="legend-code">${code}</span>`;
-    grid.appendChild(item);
+// ── Reference table ───────────────────────────────────────────
+(function buildRef() {
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const digits  = '0123456789'.split('');
+  const all = [...letters, ...digits];
+  const colSize = Math.ceil(all.length / 9);
+  const cols = Array.from({length: 9}, (_, i) => all.slice(i*colSize, (i+1)*colSize));
+  const container = document.getElementById('refColumns');
+
+  cols.forEach(col => {
+    const colDiv = document.createElement('div');
+    colDiv.className = 'ref-col';
+
+    const table = document.createElement('table');
+    table.className = 'ref-table';
+
+    const thead = document.createElement('thead');
+    thead.innerHTML = `<tr>
+      <th>Lettre</th>
+      <th style="color:#3498db">Morse</th>
+      <th style="color:#e74c3c">OTAN</th>
+    </tr>`;
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    col.forEach(ch => {
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        `<td><span class="ref-char">${ch}</span></td>` +
+        `<td><span class="ref-morse">${LATIN_TO_MORSE[ch] || '—'}</span></td>` +
+        `<td><span class="ref-nato">${LATIN_TO_NATO[ch]  || '—'}</span></td>`;
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    colDiv.appendChild(table);
+    container.appendChild(colDiv);
   });
 })();
 
@@ -633,16 +715,15 @@ setupCopy(copyLatin, () => latinInput);
     el.className = 'confetti-piece';
     const size = 6 + Math.random() * 8;
     const color = colors[Math.floor(Math.random() * colors.length)];
-    el.style.cssText = `
-      left: ${Math.random() * 100}vw;
-      width: ${size}px; height: ${size}px;
-      background: ${color};
-      border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
-      --dur: ${4 + Math.random() * 8}s;
-      --delay: -${Math.random() * 10}s;
-      --rot: ${Math.random() > 0.5 ? '' : '-'}${180 + Math.random() * 360}deg;
-      opacity: 0.4;
-    `;
+    el.style.cssText =
+      `left:${Math.random()*100}vw;` +
+      `width:${size}px;height:${size}px;` +
+      `background:${color};` +
+      `border-radius:${Math.random()>0.5?'50%':'2px'};` +
+      `--dur:${4+Math.random()*8}s;` +
+      `--delay:-${Math.random()*10}s;` +
+      `--rot:${Math.random()>0.5?'':'-'}${180+Math.random()*360}deg;` +
+      `opacity:0.4;`;
     container.appendChild(el);
   }
 })();
