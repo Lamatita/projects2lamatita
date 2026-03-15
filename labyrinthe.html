@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Labyrinthe</title>
+<title>Labyrinthe - Jeu en ligne</title>
 <style>
 :root {
     --fond: #f7f3ff;
@@ -695,6 +695,83 @@ canvas.addEventListener('click', e => {
         }
     }
 });
+
+// ── Contrôles tactiles (swipe + tap) ─────────────────────────────────────────
+let touchDepart = null;  // point de départ du doigt
+const SEUIL_SWIPE = 30;  // distance minimale en px pour déclencher un swipe
+
+canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    const touche = e.changedTouches[0];
+    const rect   = canvas.getBoundingClientRect();
+    touchDepart  = {
+        x: (touche.clientX - rect.left) * (W / rect.width),
+        y: (touche.clientY - rect.top)  * (H / rect.height),
+    };
+}, { passive: false });
+
+canvas.addEventListener('touchend', e => {
+    e.preventDefault();
+    if (!touchDepart) return;
+
+    const touche = e.changedTouches[0];
+    const rect   = canvas.getBoundingClientRect();
+    const fx = (touche.clientX - rect.left) * (W / rect.width);
+    const fy = (touche.clientY - rect.top)  * (H / rect.height);
+    const dx = fx - touchDepart.x;
+    const dy = fy - touchDepart.y;
+    const dist = Math.hypot(dx, dy);
+
+    // ── Tap (pas de déplacement) → même effet qu'un clic ─────────────────
+    if (dist < SEUIL_SWIPE) {
+        const mx = fx, my = fy;
+        if (etat === 'menu') {
+            for (const [n, z] of Object.entries(zonesCliquables)) {
+                if (mx >= z.x && mx <= z.x + z.w && my >= z.y && my <= z.y + z.h) {
+                    preparer_le_supplice(n);
+                    etat = 'playing';
+                    touchDepart = null;
+                    return;
+                }
+            }
+        }
+        if (etat === 'win') {
+            const zR = zonesCliquables['Rejouer'];
+            const zM = zonesCliquables['Menu'];
+            if (zR && mx >= zR.x && mx <= zR.x+zR.w && my >= zR.y && my <= zR.y+zR.h) {
+                preparer_le_supplice(niveauChoisi); etat = 'playing';
+            }
+            if (zM && mx >= zM.x && mx <= zM.x+zM.w && my >= zM.y && my <= zM.y+zM.h) {
+                etat = 'menu';
+            }
+        }
+        touchDepart = null;
+        return;
+    }
+
+    // ── Swipe → déplacement du héros ──────────────────────────────────────
+    if (etat === 'menu') {
+        // Un swipe depuis le menu lance en Facile
+        preparer_le_supplice('Facile');
+        etat = 'playing';
+    }
+
+    if (etat === 'playing') {
+        const murs = prison[rangHeros][colHeros];
+        if (Math.abs(dx) > Math.abs(dy)) {
+            if (dx > 0 && !murs.has('E'))      { colHeros++;  nombreDePas++; fatigue = COOLDOWN_PAS; }
+            else if (dx < 0 && !murs.has('W')) { colHeros--;  nombreDePas++; fatigue = COOLDOWN_PAS; }
+        } else {
+            if (dy > 0 && !murs.has('S'))      { rangHeros++; nombreDePas++; fatigue = COOLDOWN_PAS; }
+            else if (dy < 0 && !murs.has('N')) { rangHeros--; nombreDePas++; fatigue = COOLDOWN_PAS; }
+        }
+    }
+
+    touchDepart = null;
+}, { passive: false });
+
+// Empêcher le scroll de la page pendant le jeu
+canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
 
 // ── Démarrage ─────────────────────────────────────────────────────────────────
 requestAnimationFrame(loop);
