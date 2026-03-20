@@ -129,6 +129,7 @@ const W = 820, H = 820;
 canvas.width  = W;
 canvas.height = H;
 
+// palette sombre, meme esprit que le demineur
 const C = {
     fond:        '#1e1e28',
     entete:      '#14141c',
@@ -145,7 +146,7 @@ const C = {
     or:          '#ffd700',
 };
 
-// couleurs arc-en-ciel des 8 notes, we love the gaaaaaaaaaaaaaaaaaaayyyyyyyyyyyyyyyyyyyyyyyys hihihi
+// couleurs arc-en-ciel des 8 notes, chacune en sombre et clair
 const NOTES  = ['Do','Re','Mi','Fa','Sol','La','Si','Do'];
 const TEINTES = [
     { base:'#dc3232', lit:'#ff6464', dark:'#6e1616' },
@@ -170,7 +171,7 @@ function btnPos(i) {
 }
 const POSITIONS = Array.from({length: 8}, (_, i) => btnPos(i));
 
-// sons generes par aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaah synthese (Web Audio)
+// sons generes par synthese (Web Audio)
 const actx   = new (window.AudioContext || window.webkitAudioContext)();
 const FREQS  = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25];
 
@@ -209,7 +210,7 @@ function jouerNote(idx, dur=0.42) {
     [osc1, osc2, osc3].forEach(o => { o.start(now); o.stop(now + dur); });
 }
 
-// etats (unis LOL)
+// etats
 const MENU   = 'menu';
 const ORDI   = 'ordi';
 const JOUEUR = 'joueur';
@@ -234,6 +235,254 @@ let sourisX = -1, sourisY = -1;
 let surBouton = -1;
 let surCentre = false;
 
+// helpers notation : N(note, octave) -> [note, octave]
+// Do=0 Re=1 Mi=2 Fa=3 Sol=4 La=5 Si=6
+const Do=0,Re=1,Mi=2,Fa=3,Sol=4,La=5,Si=6;
+function N(n,o=3){return [n,o];}
+
+// Queen 1975
+const boheme = [
+    N(Do,4),N(Sol,4),N(Mi,4),N(Do,4),N(Sol,3),N(Mi,3),N(Do,3),N(Sol,2),
+    N(Re,4),N(Sol,4),N(Re,4),N(Si,3),N(Sol,3),N(Re,3),N(Si,2),N(Sol,2),
+    N(Mi,4),N(Sol,4),N(Mi,4),N(Do,4),N(Sol,3),N(Mi,3),N(Do,3),N(Sol,2),
+    N(Fa,4),N(La,4),N(Fa,4),N(Re,4),N(La,3),N(Fa,3),N(Re,3),N(La,2),
+    N(Sol,3),N(Sol,3),N(Fa,3),N(Sol,3),N(La,3),
+    N(Sol,3),N(Fa,3),N(Mi,3),N(Fa,3),N(Sol,3),
+    N(La,3),N(La,3),N(Sol,3),N(Fa,3),N(Sol,3),N(La,3),
+    N(Sol,3),N(Fa,3),N(Mi,3),N(Re,3),N(Mi,3),N(Fa,3),
+    N(Sol,3),N(La,3),N(Si,3),N(La,3),
+    N(Sol,3),N(Fa,3),N(Sol,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),
+    N(Re,3),N(Mi,3),N(Fa,3),N(Sol,3),N(Fa,3),
+    N(Mi,3),N(Fa,3),N(Sol,3),N(La,3),N(Sol,3),N(Fa,3),
+    N(Sol,3),N(Sol,3),N(Fa,3),N(Mi,3),N(Fa,3),N(Sol,3),N(La,3),
+    N(La,3),N(Sol,3),N(Fa,3),N(Sol,3),N(Fa,3),
+    N(Mi,3),N(Fa,3),N(Sol,3),N(Fa,3),N(Mi,3),N(Re,3),
+    N(Do,3),N(Re,3),N(Mi,3),N(Fa,3),N(Mi,3),N(Re,3),N(Do,3),
+    N(La,3),N(La,3),N(Si,3),N(Do,4),N(Si,3),N(La,3),
+    N(Sol,3),N(La,3),N(Si,3),N(La,3),N(Sol,3),N(Fa,3),
+    N(Sol,3),N(Sol,3),N(La,3),N(Si,3),N(La,3),N(Sol,3),N(Fa,3),
+    N(La,3),N(La,3),N(Si,3),N(Do,4),N(Si,3),N(La,3),N(Sol,3),
+    N(Fa,3),N(Sol,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),N(Re,3),N(Do,3),
+    N(La,3),N(La,3),N(Sol,3),N(Fa,3),N(Sol,3),
+    N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),N(Fa,3),N(Sol,3),N(La,3),
+    N(Sol,3),N(La,3),N(Si,3),N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(Fa,3),
+    N(Sol,3),N(Fa,3),N(Mi,3),N(Fa,3),N(Sol,3),N(Fa,3),
+    N(Mi,3),N(Fa,3),N(Sol,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),
+    N(Do,3),N(Re,3),N(Mi,3),N(Fa,3),N(Mi,3),N(Re,3),
+    N(Mi,3),N(Fa,3),N(Sol,3),N(Fa,3),N(Mi,3),N(Re,3),N(Do,3),
+    N(Sol,3),N(La,3),N(Si,3),N(La,3),N(Sol,3),N(Fa,3),
+    N(Sol,3),N(La,3),N(Si,3),N(Do,4),N(Si,3),N(La,3),N(Sol,3),
+    N(Fa,3),N(Sol,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),N(Re,3),N(Do,3),
+    N(Re,3),N(Mi,3),N(Fa,3),N(Sol,3),N(Fa,3),N(Mi,3),
+    N(Re,3),N(Mi,3),N(Fa,3),N(Sol,3),N(La,3),N(Sol,3),N(Fa,3),
+    N(La,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),
+    N(Fa,3),N(Sol,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),N(Re,3),N(Do,3),
+    N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(La,3),
+    N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(Fa,3),
+    N(Mi,4),N(Re,4),N(Do,4),N(Si,3),N(Do,4),
+    N(Mi,4),N(Re,4),N(Do,4),N(Si,3),N(La,3),
+    N(La,4),N(Sol,4),N(Fa,4),N(Mi,4),N(Re,4),N(Do,4),
+    N(Do,4),N(Re,4),N(Mi,4),N(Fa,4),N(Sol,4),N(La,4),N(Si,4),N(Do,5),
+    N(Si,4),N(La,4),N(Sol,4),N(Fa,4),N(Mi,4),N(Re,4),
+    N(Do,4),N(Mi,4),N(Sol,4),N(Do,5),N(Do,4),N(Mi,4),N(Sol,4),N(Do,5),
+    N(La,4),N(Sol,4),N(Fa,4),N(Mi,4),N(Re,4),N(Do,4),N(Si,3),
+    N(Re,3),N(Mi,3),N(Fa,3),N(Sol,3),N(Fa,3),N(Mi,3),
+    N(Re,3),N(Mi,3),N(Fa,3),N(Sol,3),N(La,3),N(Sol,3),
+    N(Fa,3),N(Sol,3),N(La,3),N(Si,3),N(La,3),N(Sol,3),N(Fa,3),
+    N(Sol,3),N(La,3),N(Si,3),N(Do,4),N(Si,3),N(La,3),N(Sol,3),
+    N(Mi,3),N(Fa,3),N(Sol,3),N(La,3),N(Sol,3),N(Fa,3),
+    N(Mi,3),N(Fa,3),N(Sol,3),N(La,3),N(Si,3),N(Do,4),N(Si,3),
+    N(Sol,3),N(Sol,3),N(Fa,3),N(Mi,3),N(Fa,3),N(Sol,3),N(La,3),
+    N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),N(Re,3),N(Do,3),
+    N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(Fa,3),N(Sol,3),N(Fa,3),N(Mi,3),N(Re,3),N(Do,3),
+    N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(Fa,3),N(Sol,3),N(Fa,3),N(Mi,3),N(Re,3),N(Do,3),
+    N(Mi,3),N(Fa,3),N(Sol,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),
+    N(Do,4),N(Do,4),N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(Fa,3),
+    N(Sol,3),N(La,3),N(Si,3),N(Do,4),N(Re,4),N(Mi,4),N(Fa,4),
+    N(La,3),N(La,3),N(Sol,3),N(La,3),N(Si,3),N(La,3),N(La,3),N(Sol,3),N(La,3),N(Si,3),
+    N(La,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),N(Re,3),N(Do,3),
+    N(Si,2),N(Do,3),N(Re,3),N(Mi,3),N(Fa,3),
+    N(Sol,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),N(Re,3),N(Do,3),
+    N(Do,3),N(Sol,3),N(Do,4),N(Si,2),N(Sol,3),N(Si,3),
+    N(La,2),N(Mi,3),N(La,3),N(Sol,2),N(Re,3),N(Sol,3),
+    N(Sol,3),N(Sol,3),N(La,3),N(Si,3),N(Do,4),N(Si,3),N(La,3),
+    N(Sol,3),N(La,3),N(Si,3),N(Do,4),N(Re,4),N(Do,4),N(Si,3),
+    N(Sol,3),N(Sol,3),N(La,3),N(Si,3),N(Do,4),N(Si,3),N(La,3),
+    N(Sol,3),N(La,3),N(Si,3),N(Do,4),N(Re,4),N(Mi,4),N(Fa,4),
+    N(Sol,4),N(Fa,4),N(Mi,4),N(Re,4),N(Do,4),
+    N(Si,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),
+    N(Sol,3),N(La,3),N(Si,3),N(Do,4),N(Re,4),N(Mi,4),
+    N(Fa,4),N(Mi,4),N(Re,4),N(Do,4),N(Si,3),N(La,3),N(Sol,3),
+    N(Do,3),N(Re,3),N(Mi,3),N(Fa,3),N(Mi,3),N(Re,3),N(Do,3),
+    N(Mi,3),N(Fa,3),N(Sol,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),
+    N(Re,3),N(Mi,3),N(Fa,3),N(Sol,3),N(Fa,3),N(Mi,3),
+    N(Do,3),N(Re,3),N(Mi,3),N(Fa,3),N(Mi,3),N(Re,3),N(Do,3),
+    N(Mi,3),N(Fa,3),N(Sol,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),N(Re,3),
+    N(Do,3),N(Sol,2),N(Do,3),N(Sol,2),N(Do,3),
+];
+
+// Tame Impala 2015, Fa# mineur
+const eventualmente = [
+    N(Do,3),N(Mi,3),N(Sol,3),N(Do,4),N(Do,3),N(Mi,3),N(Sol,3),N(Do,4),
+    N(Mi,3),N(Sol,3),N(Si,3),N(Mi,4),N(Mi,3),N(Sol,3),N(Si,3),N(Mi,4),
+    N(Fa,3),N(La,3),N(Do,4),N(Fa,4),N(Fa,3),N(La,3),N(Do,4),N(Fa,4),
+    N(Do,3),N(Mi,3),N(Sol,3),N(Do,4),N(Do,3),N(Mi,3),N(Sol,3),N(Do,4),
+    N(Do,4),N(Re,4),N(Mi,4),N(Re,4),N(Do,4),N(Si,3),N(La,3),N(Sol,3),
+    N(Do,4),N(Re,4),N(Mi,4),N(Re,4),N(Mi,4),N(Sol,4),
+    N(Fa,4),N(Mi,4),N(Re,4),N(Do,4),N(Si,3),
+    N(La,3),N(Sol,3),N(La,3),N(Si,3),N(Do,4),N(Re,4),N(Do,4),N(Si,3),N(La,3),
+    N(Sol,3),N(La,3),N(Si,3),N(Do,4),N(Re,4),N(Mi,4),N(Re,4),N(Do,4),N(Si,3),N(La,3),
+    N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),
+    N(Sol,3),N(La,3),N(Si,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),N(Re,3),
+    N(Do,3),N(Mi,3),N(Sol,3),N(La,3),N(Sol,3),
+    N(Mi,3),N(Re,3),N(Do,3),N(Re,3),N(Mi,3),N(Sol,3),N(La,3),
+    N(Do,4),N(Re,4),N(Mi,4),N(Sol,4),N(Fa,4),N(Mi,4),N(Re,4),
+    N(Do,4),N(Si,3),N(La,3),N(Sol,3),
+    N(La,3),N(Si,3),N(Do,4),N(Re,4),N(Mi,4),N(Fa,4),
+    N(Mi,4),N(Re,4),N(Do,4),N(Si,3),N(La,3),N(Sol,3),
+    N(Do,4),N(Mi,4),N(Sol,4),N(La,4),N(Sol,4),N(Mi,4),
+    N(Re,4),N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(Fa,3),
+    N(Do,4),N(Mi,4),N(Sol,4),N(La,4),N(Sol,4),N(Mi,4),
+    N(Re,4),N(Do,4),N(Si,3),N(La,3),N(Sol,3),
+    N(Mi,4),N(Re,4),N(Do,4),N(Si,3),
+    N(La,3),N(Si,3),N(Do,4),N(Re,4),N(Mi,4),N(Sol,4),N(Fa,4),N(Mi,4),
+    N(Do,4),N(Mi,4),N(Sol,4),N(La,4),N(Sol,4),N(Mi,4),
+    N(Re,4),N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),
+    N(Do,4),N(Re,4),N(Mi,4),N(Re,4),N(Do,4),N(Si,3),N(La,3),
+    N(Sol,3),N(La,3),N(Si,3),N(Do,4),N(Re,4),N(Mi,4),N(Re,4),N(Do,4),
+    N(Si,3),N(La,3),N(Sol,3),N(La,3),N(Si,3),N(Do,4),N(Re,4),
+    N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),
+    N(Do,4),N(Re,4),N(Mi,4),N(Sol,4),N(Fa,4),N(Mi,4),N(Re,4),N(Do,4),
+    N(Si,3),N(La,3),N(Sol,3),N(La,3),N(Si,3),N(Do,4),N(Si,3),N(La,3),
+    N(Sol,3),N(La,3),N(Si,3),N(Do,4),N(Re,4),N(Mi,4),
+    N(Fa,4),N(Mi,4),N(Re,4),N(Do,4),N(Si,3),N(La,3),N(Sol,3),
+    N(Do,4),N(Re,4),N(Mi,4),N(Sol,4),N(Fa,4),N(Mi,4),N(Re,4),
+    N(Do,4),N(Si,3),N(La,3),N(Sol,3),
+    N(La,3),N(Si,3),N(Do,4),N(Re,4),N(Mi,4),N(Fa,4),
+    N(Mi,4),N(Re,4),N(Do,4),N(Si,3),N(La,3),N(Sol,3),
+    N(Do,4),N(Mi,4),N(Sol,4),N(La,4),N(Sol,4),N(Mi,4),
+    N(Re,4),N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(Fa,3),
+    N(Do,4),N(Mi,4),N(Sol,4),N(La,4),N(Sol,4),N(Mi,4),
+    N(Re,4),N(Do,4),N(Si,3),N(La,3),N(Sol,3),
+    N(Mi,4),N(Re,4),N(Do,4),N(Si,3),
+    N(La,3),N(Si,3),N(Do,4),N(Re,4),N(Mi,4),N(Sol,4),N(Fa,4),N(Mi,4),
+    N(Do,4),N(Mi,4),N(Sol,4),N(La,4),N(Sol,4),N(Mi,4),
+    N(Re,4),N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),
+    N(Do,4),N(Sol,3),N(Mi,3),N(Do,3),N(La,3),N(Fa,3),N(Re,3),N(La,2),
+    N(Mi,3),N(Do,3),N(La,2),N(Mi,2),N(Si,3),N(Sol,3),N(Re,3),N(Si,2),
+    N(Do,3),N(Mi,3),N(Sol,3),N(Do,4),N(Re,3),N(Fa,3),N(La,3),N(Re,4),
+    N(Mi,3),N(Sol,3),N(Si,3),N(Mi,4),N(Sol,3),N(Si,3),N(Re,4),N(Sol,4),
+    N(Do,4),N(Mi,4),N(Sol,4),N(Mi,4),N(Do,4),N(Mi,4),N(Sol,4),N(Mi,4),
+    N(Si,3),N(Re,4),N(Sol,4),N(Re,4),N(Si,3),N(Re,4),N(Sol,4),N(Re,4),
+    N(La,3),N(Do,4),N(Mi,4),N(Do,4),N(La,3),N(Do,4),N(Mi,4),N(Do,4),
+    N(Fa,3),N(La,3),N(Do,4),N(La,3),N(Fa,3),N(La,3),N(Do,4),N(La,3),
+    N(Do,4),N(Mi,4),N(Sol,4),N(La,4),N(Sol,4),N(Mi,4),
+    N(Re,4),N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(Fa,3),
+    N(Do,4),N(Mi,4),N(Sol,4),N(La,4),N(Sol,4),N(Mi,4),
+    N(Re,4),N(Do,4),N(Si,3),N(La,3),N(Sol,3),
+    N(Mi,4),N(Re,4),N(Do,4),N(Si,3),
+    N(La,3),N(Si,3),N(Do,4),N(Re,4),N(Mi,4),N(Sol,4),N(Fa,4),N(Mi,4),
+    N(Do,4),N(Mi,4),N(Sol,4),N(La,4),N(Sol,4),N(Mi,4),
+    N(Re,4),N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),
+    N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(Mi,3),
+    N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(Mi,3),
+    N(Do,4),N(Mi,4),N(Sol,3),N(Mi,3),N(Do,4),N(Mi,4),N(Sol,3),N(Mi,3),
+    N(Do,3),N(Mi,3),N(Sol,3),N(Do,4),N(La,2),N(Mi,3),N(La,3),N(Mi,3),
+    N(Do,3),N(Sol,3),N(Do,4),N(Sol,3),N(Fa,3),N(La,3),N(Do,4),N(La,3),
+    N(Do,3),N(Mi,3),N(Sol,3),N(Mi,3),N(Do,3),N(Sol,2),N(Do,3),
+];
+
+// The Clash 1980, La mineur
+const magnifico = [
+    N(Do,3),N(Mi,3),N(Sol,3),N(Si,3),N(Do,4),
+    N(Do,3),N(Mi,3),N(Sol,3),N(Si,3),N(Do,4),
+    N(Do,3),N(Mi,3),N(Sol,3),N(Si,3),N(Do,4),
+    N(Do,3),N(Mi,3),N(Sol,3),N(Si,3),N(Do,4),
+    N(Do,3),N(Mi,3),N(Sol,3),N(Do,4),N(Si,3),
+    N(Sol,3),N(Mi,3),N(Re,3),N(Do,3),N(Si,2),
+    N(Do,3),N(Mi,3),N(Sol,3),N(Do,4),N(Si,3),
+    N(Sol,3),N(Mi,3),N(Re,3),N(Do,3),
+    N(Do,4),N(Do,4),N(Re,4),N(Do,4),N(Si,3),N(Do,4),
+    N(Si,3),N(La,3),N(Sol,3),N(La,3),N(Si,3),N(Do,4),N(Do,4),N(Si,3),N(La,3),N(Sol,3),
+    N(Sol,3),N(La,3),N(Si,3),N(Do,4),N(Si,3),N(La,3),N(Sol,3),
+    N(Mi,3),N(Sol,3),N(La,3),N(Si,3),N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(Mi,3),N(Re,3),N(Do,3),
+    N(Do,4),N(Re,4),N(Mi,4),N(Re,4),N(Do,4),N(Si,3),N(La,3),
+    N(Sol,3),N(La,3),N(Si,3),N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(Mi,3),N(Re,3),N(Do,3),N(Si,2),N(Do,3),
+    N(Do,3),N(Mi,3),N(Sol,3),N(La,3),N(Sol,3),N(Mi,3),
+    N(Re,3),N(Mi,3),N(Sol,3),N(La,3),N(Si,3),N(La,3),N(Sol,3),N(Mi,3),N(Re,3),N(Do,3),
+    N(Do,3),N(Mi,3),N(Sol,3),N(Do,4),N(Mi,4),
+    N(Do,4),N(Sol,3),N(Do,4),N(Sol,3),N(Do,4),N(Si,3),N(Sol,3),N(Si,3),N(Sol,3),
+    N(Mi,3),N(Sol,3),N(Do,4),N(Mi,4),N(Sol,4),
+    N(Mi,4),N(Do,4),N(Mi,4),N(Do,4),N(Si,3),N(Sol,3),N(Mi,3),N(Do,3),
+    N(Do,3),N(Mi,3),N(Sol,3),N(La,3),N(Sol,3),N(Mi,3),N(Do,3),
+    N(Do,4),N(Re,4),N(Mi,4),N(Re,4),N(Do,4),N(Si,3),
+    N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),N(Re,3),N(Do,3),
+    N(Sol,3),N(La,3),N(Sol,3),N(Mi,3),N(Sol,3),N(La,3),N(Sol,3),N(Mi,3),
+    N(Do,4),N(Re,4),N(Mi,4),N(Sol,4),N(La,4),N(Sol,4),N(Mi,4),
+    N(Re,4),N(Do,4),N(Si,3),N(La,3),N(Sol,3),
+    N(Do,3),N(Mi,3),N(Sol,3),N(Do,4),N(Do,3),N(Mi,3),N(Sol,3),N(Do,4),N(Do,3),N(Mi,3),N(Sol,3),N(Do,4),
+    N(La,3),N(Si,3),N(Do,4),N(Re,4),N(Mi,4),N(Sol,4),
+    N(Do,3),N(Mi,3),N(Sol,3),N(Do,4),N(Mi,4),
+    N(Do,4),N(Sol,3),N(Do,4),N(Sol,3),N(Do,4),N(Si,3),N(Sol,3),N(Si,3),N(Sol,3),
+    N(Mi,3),N(Sol,3),N(Do,4),N(Mi,4),N(Sol,4),
+    N(Mi,4),N(Do,4),N(Mi,4),N(Do,4),N(Si,3),N(Sol,3),N(Mi,3),N(Do,3),
+    N(Do,3),N(Mi,3),N(Sol,3),N(La,3),N(Sol,3),N(Mi,3),N(Do,3),
+    N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(La,3),N(Si,3),
+    N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(La,3),N(Si,3),N(Do,4),
+    N(Mi,4),N(Re,4),N(Do,4),N(Si,3),N(La,3),
+    N(Sol,3),N(La,3),N(Si,3),N(Do,4),N(Re,4),N(Mi,4),
+    N(Fa,4),N(Mi,4),N(Re,4),N(Do,4),
+    N(Do,3),N(Mi,3),N(Sol,3),N(Do,3),N(Mi,3),N(Sol,3),
+    N(Do,3),N(Re,3),N(Mi,3),N(Sol,3),N(La,3),
+    N(Do,3),N(Re,3),N(Mi,3),N(Sol,3),N(La,3),N(Si,3),N(Do,4),
+    N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),N(Re,3),N(Do,3),
+    N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),N(Re,3),N(Do,3),
+    N(Do,3),N(Mi,3),N(Sol,3),N(Si,3),N(Do,4),N(Si,3),N(Sol,3),N(Mi,3),
+    N(La,2),N(Do,3),N(Mi,3),N(La,3),N(Si,2),N(Re,3),N(Sol,3),N(Si,3),
+    N(Do,3),N(Mi,3),N(Sol,3),N(Do,4),
+    N(Do,3),N(Mi,3),N(Sol,3),N(Si,3),N(Do,4),N(Si,3),N(Sol,3),N(Mi,3),N(Re,3),N(Do,3),
+    N(Do,3),N(Mi,3),N(Sol,3),N(Si,3),N(Do,4),N(Si,3),N(Sol,3),N(Mi,3),N(Re,3),N(Do,3),
+    N(Do,3),N(Si,2),N(La,2),N(Sol,2),N(La,2),N(Si,2),
+    N(Do,3),N(Re,3),N(Mi,3),N(Sol,3),N(La,3),N(Do,4),
+    N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),N(Re,3),
+    N(Mi,3),N(Fa,3),N(Sol,3),N(La,3),N(Si,3),N(Do,4),
+    N(Mi,4),N(Re,4),N(Do,4),N(Si,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),N(Re,3),N(Do,3),
+    N(Do,3),N(Re,3),N(Mi,3),N(Sol,3),N(La,3),N(Si,3),N(Do,4),N(Re,4),
+    N(Mi,4),N(Re,4),N(Do,4),N(Si,3),N(La,3),
+    N(Do,3),N(Mi,3),N(Sol,3),N(Do,4),N(Mi,4),
+    N(Do,4),N(Sol,3),N(Do,4),N(Sol,3),N(Do,4),N(Si,3),N(Sol,3),N(Si,3),N(Sol,3),
+    N(Mi,3),N(Sol,3),N(Do,4),N(Mi,4),N(Sol,4),
+    N(Mi,4),N(Do,4),N(Mi,4),N(Do,4),N(Si,3),N(Sol,3),N(Mi,3),N(Do,3),
+    N(Do,4),N(Mi,4),N(Sol,4),N(La,4),N(Sol,4),N(Mi,4),N(Do,4),
+    N(Si,3),N(La,3),N(Sol,3),N(Mi,3),N(Do,3),
+    N(Do,3),N(Mi,3),N(Sol,3),N(Si,3),N(Do,4),
+    N(Do,3),N(Mi,3),N(Sol,3),N(Si,3),N(Do,4),
+    N(Do,3),N(Mi,3),N(Sol,3),N(Si,3),N(Do,4),
+    N(Do,4),N(Si,3),N(Sol,3),N(Mi,3),N(La,3),N(Sol,3),N(Fa,3),N(Mi,3),
+    N(Re,3),N(Do,3),N(Si,2),N(La,2),N(Do,3),N(Sol,2),N(Do,3),
+];
+
+// modes speciaux : 0=classique 1=boheme 2=eventually 3=magnifico
+const modos = {
+    1: { seq: boheme,         nom: 'Bohemian Rhapsody (Queen)' },
+    2: { seq: eventualmente,  nom: 'Eventually (Tame Impala)'  },
+    3: { seq: magnifico,      nom: 'The Magnificent Seven (The Clash)' },
+};
+let modoActual  = 0;
+let posSeq      = 0;
+let partidas    = 0;
+let proxModo    = 0;
+
+function tirarModo() {
+    // 70% classique, 10% chaque special
+    const r = Math.random();
+    if (r < 0.70) return 0;
+    if (r < 0.80) return 1;
+    if (r < 0.90) return 2;
+    return 3;
+}
+
+// helpers dessin
 function roundRect(x, y, w, h, r, fill, stroke, sw) {
     ctx.beginPath();
     ctx.moveTo(x+r, y);
@@ -270,8 +519,13 @@ function dessinerEntete() {
     ctx.strokeStyle = C.bordure; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(0, HEADER_H); ctx.lineTo(W, HEADER_H); ctx.stroke();
 
-    // score centré
-    txt('Niveau : '+niveau, W/2, HEADER_H/2, 16, C.or, true);
+    const m = modos[modoActual];
+    if (m) {
+        txt('Niveau : '+niveau, W/2, HEADER_H/2 - 12, 16, C.or, true);
+        txt(m.nom+'  --  '+posSeq+'/'+m.seq.length+' notes', W/2, HEADER_H/2 + 14, 12, '#8890b0', false);
+    } else {
+        txt('Niveau : '+niveau, W/2, HEADER_H/2, 16, C.or, true);
+    }
 }
 
 // dessin cercle central
@@ -279,6 +533,7 @@ function dessinerCentre() {
     const p = 0.5 + 0.5*Math.sin(pulso);
     const r = CTR_R + p*4;
 
+    // halo doux
     const g = ctx.createRadialGradient(CX,CY,r*0.3,CX,CY,r*1.8);
     g.addColorStop(0, `rgba(108,99,255,${0.12+0.06*p})`);
     g.addColorStop(1, 'rgba(0,0,0,0)');
@@ -287,7 +542,7 @@ function dessinerCentre() {
 
     roundRect(CX-r, CY-r, r*2, r*2, r, C.entete, C.panelBord, 2);
 
-    // reflection spontanée
+    // reflet
     ctx.save();
     ctx.beginPath(); ctx.arc(CX,CY,r,0,Math.PI*2); ctx.clip();
     const hl = ctx.createLinearGradient(CX-r,CY-r,CX+r,CY);
@@ -298,10 +553,10 @@ function dessinerCentre() {
 
     let lignes;
     if      (etat===MENU)   lignes = ['Cliquez pour','commencer'];
-    else if (etat===ORDI)   lignes = ['Mémorisez !'];
+    else if (etat===ORDI)   lignes = ['Memorisez !'];
     else if (etat===JOUEUR) lignes = ['A votre','tour !'];
     else if (etat===GAGNE)  lignes = ['Bravo !'];
-    else                    lignes = ['Raté...'];
+    else                    lignes = ['Rate...'];
 
     const col = etat===GAGNE ? C.victoire : etat===PERDU ? C.defaite : C.texte;
     const dy  = lignes.length === 1 ? 0 : -14;
@@ -411,25 +666,39 @@ const configs = [
 let niveauIdx = 1;
 
 function reinit() {
-    sequence  = [];
-    idxJoueur = 0;
-    niveau    = 0;
-    aceso     = -1;
-    erreur    = -1;
-    etat      = MENU;
+    sequence   = [];
+    idxJoueur  = 0;
+    niveau     = 0;
+    aceso      = -1;
+    erreur     = -1;
+    modoActual = proxModo;
+    posSeq     = 0;
+    partidas++;
+    proxModo   = tirarModo();
+    etat       = MENU;
 }
 
 function nouvellePartie() {
-    sequence  = [];
-    idxJoueur = 0;
-    niveau    = 0;
-    aceso     = -1;
-    erreur    = -1;
+    sequence   = [];
+    idxJoueur  = 0;
+    niveau     = 0;
+    aceso      = -1;
+    erreur     = -1;
+    modoActual = proxModo;
+    posSeq     = 0;
+    partidas++;
+    proxModo   = tirarModo();
     prochainNiveau();
 }
 
 function prochainNiveau() {
-    sequence.push(Math.floor(Math.random()*8));
+    const m = modos[modoActual];
+    if (m) {
+        sequence.push(m.seq[posSeq % m.seq.length]);
+        posSeq++;
+    } else {
+        sequence.push(Math.floor(Math.random()*8));
+    }
     niveau++;
     idxJoueur = 0;
     pasOrdi   = 0;
