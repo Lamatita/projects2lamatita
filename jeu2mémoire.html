@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jeu de Memoire</title>
+<style>
+:root {
+    --fond:       #f7f3ff;
+    --principal:  #6c63ff;
+    --secondaire: #ffb703;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, var(--fond), #e6e1ff);
+    height: 100vh;
+    overflow: hidden;
+}
+.top-bar {
+    width: 100%;
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 100;
+    position: relative;
+}
+.back-link {
+    color: #6c63ff;
+    background: #ffffff;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 13px;
+    height: 42px;
+    padding: 0 18px 0 12px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    box-shadow: 0 4px 16px rgba(108,99,255,0.2);
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.back-link:hover {
+    background: #6c63ff;
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(108,99,255,0.4);
+    transform: translateY(-1px);
+}
+.page-title {
+    color: var(--principal);
+    font-size: 1.4em;
+    font-weight: 700;
+}
+.game-wrapper {
+    width: 100%;
+    height: calc(100vh - 45px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#gameCanvas {
+    border-radius: 12px;
+    cursor: default;
+    max-width: 100%;
+    max-height: 100%;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 8px 32px rgba(0,0,0,.2);
+}
+.falling {
+    position: fixed;
+    top: -10%;
+    animation: fall linear infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+.confetti { width: 12px; height: 12px; opacity: .8; }
+.lama     { font-size: 2rem; }
+.c1 { background: var(--principal); }
+.c2 { background: var(--secondaire); }
+.c3 { background: #ff6f91; }
+.c4 { background: #00c9a7; }
+.c5 { background: #845ec2; }
+@keyframes fall {
+    0%   { transform: translateY(0) rotate(0deg); }
+    100% { transform: translateY(120vh) rotate(var(--rotation)); }
+}
+</style>
+</head>
+<body>
+
+<div class="falling confetti c1" style="left:5%;  animation-duration:5s;   --rotation:720deg;"></div>
+<div class="falling lama"        style="left:12%; animation-duration:7s;   --rotation:-1080deg;">🦙</div>
+<div class="falling confetti c2" style="left:18%; animation-duration:6s;   --rotation:540deg;"></div>
+<div class="falling lama"        style="left:25%; animation-duration:8s;   --rotation:900deg;">🦙</div>
+<div class="falling confetti c3" style="left:32%; animation-duration:4.5s; --rotation:-720deg;"></div>
+<div class="falling lama"        style="left:38%; animation-duration:6.5s; --rotation:1260deg;">🦙</div>
+<div class="falling confetti c4" style="left:45%; animation-duration:5.8s; --rotation:360deg;"></div>
+<div class="falling lama"        style="left:52%; animation-duration:7.2s; --rotation:-1440deg;">🦙</div>
+<div class="falling confetti c5" style="left:60%; animation-duration:6.1s; --rotation:900deg;"></div>
+<div class="falling lama"        style="left:67%; animation-duration:8.5s; --rotation:-1080deg;">🦙</div>
+<div class="falling confetti c1" style="left:74%; animation-duration:5.3s; --rotation:720deg;"></div>
+<div class="falling lama"        style="left:82%; animation-duration:7.9s; --rotation:1620deg;">🦙</div>
+<div class="falling confetti c2" style="left:90%; animation-duration:6.7s; --rotation:-900deg;"></div>
+
+<div class="top-bar">
+    <a href="index.html" class="back-link">&#8592; Retour en arrière</a>
+    <div style="text-align:center;">
+        <h1 class="page-title">Jeu de Mémoire Musical</h1>
+        <p style="color:#9c95d4; font-size:0.78em; margin-top:2px;">Inspiré du jeu "Pou Sounds" (j'y jouais beaucoup quand j'étais petite)</p>
+    </div>
+    <div style="width:160px;"></div>
+</div>
+
+<div class="game-wrapper">
+    <canvas id="gameCanvas"></canvas>
+</div>
+
+<script>
+(function () {
+'use strict';
+
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+
+const W = 820, H = 820;
+canvas.width  = W;
+canvas.height = H;
+
+// palette sombre, meme esprit que le demineur
+const C = {
+    fond:        '#1e1e28',
+    entete:      '#14141c',
+    texte:       '#dcddee',
+    sous:        '#8890b0',
+    bouton:      '#3282dc',
+    boutonSurv:  '#4696ff',
+    boutonActif: '#6c63ff',
+    bordure:     '#505878',
+    panelBg:     '#0e0e18',
+    panelBord:   '#3c3c6e',
+    victoire:    '#32c878',
+    defaite:     '#c83232',
+    or:          '#ffd700',
+};
+
+// couleurs arc-en-ciel des 8 notes, chacune en sombre et clair
+const NOTES  = ['Do','Re','Mi','Fa','Sol','La','Si','Do'];
+const TEINTES = [
+    { base:'#dc3232', lit:'#ff6464', dark:'#6e1616' },
+    { base:'#eb8214', lit:'#ffaa3c', dark:'#7a420a' },
+    { base:'#e6d214', lit:'#ffe84a', dark:'#736a0a' },
+    { base:'#3cb43c', lit:'#64e664', dark:'#1e5a1e' },
+    { base:'#1eb4c8', lit:'#50dcf0', dark:'#0e5a64' },
+    { base:'#3250d2', lit:'#6478ff', dark:'#19286a' },
+    { base:'#8232c8', lit:'#b464ff', dark:'#411964' },
+    { base:'#d23282', lit:'#ff64b4', dark:'#691940' },
+];
+
+const HEADER_H = 90;
+const CX = W / 2, CY = (H - HEADER_H) / 2 + HEADER_H;
+const RING_R   = 240;
+const BTN_R    = 46;
+const CTR_R    = 88;
+
+function btnPos(i) {
+    const a = (i * 45 - 90) * Math.PI / 180;
+    return { x: CX + RING_R * Math.cos(a), y: CY + RING_R * Math.sin(a) };
+}
+const POSITIONS = Array.from({length: 8}, (_, i) => btnPos(i));
+
+// sons generes par synthese (Web Audio)
+const actx   = new (window.AudioContext || window.webkitAudioContext)();
+const FREQS  = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25];
+
+function jouerNote(idx, dur=0.42) {
+    if (actx.state === 'suspended') actx.resume();
+    const f    = FREQS[idx];
+    const ref  = 440;
+    const gain = Math.min(0.48 * Math.pow(ref / f, 0.55), 0.92);
+
+    const osc1 = actx.createOscillator();
+    const osc2 = actx.createOscillator();
+    const osc3 = actx.createOscillator();
+    const env  = actx.createGain();
+
+    osc1.frequency.value = f;
+    osc2.frequency.value = f * 2;
+    osc3.frequency.value = f * 3;
+    osc2.type = osc3.type = 'sine';
+
+    const mix = actx.createGain();
+    const m2  = actx.createGain();
+    const m3  = actx.createGain();
+    m2.gain.value = 0.28;
+    m3.gain.value = 0.10;
+
+    osc1.connect(mix); osc2.connect(m2); osc3.connect(m3);
+    m2.connect(mix); m3.connect(mix);
+    mix.connect(env); env.connect(actx.destination);
+
+    const now = actx.currentTime;
+    env.gain.setValueAtTime(0, now);
+    env.gain.linearRampToValueAtTime(gain, now + 0.012);
+    env.gain.setValueAtTime(gain, now + dur - 0.16);
+    env.gain.linearRampToValueAtTime(0, now + dur);
+
+    [osc1, osc2, osc3].forEach(o => { o.start(now); o.stop(now + dur); });
+}
+
+// etats
+const MENU   = 'menu';
+const ORDI   = 'ordi';
+const JOUEUR = 'joueur';
+const GAGNE  = 'gagne';
+const PERDU  = 'perdu';
+
+let etat      = MENU;
+let sequence  = [];
+let idxJoueur = 0;
+let niveau    = 0;
+let aceso     = -1;
+let tAceso    = 0;
+let durAceso  = 420;
+let pasOrdi   = 0;
+let tPas      = 0;
+let delai     = 650;
+let erreur    = -1;
+let tErreur   = 0;
+let pulso     = 0;
+
+let sourisX = -1, sourisY = -1;
+let surBouton = -1;
+let surCentre = false;
+
+// helpers dessin
+function roundRect(x, y, w, h, r, fill, stroke, sw) {
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y,   x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x,   y+h, r);
+    ctx.arcTo(x,   y+h, x,   y,   r);
+    ctx.arcTo(x,   y,   x+w, y,   r);
+    ctx.closePath();
+    if (fill)   { ctx.fillStyle   = fill;          ctx.fill(); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = sw||1; ctx.stroke(); }
+}
+
+function txt(s, x, y, sz, col, bold, align) {
+    ctx.fillStyle    = col;
+    ctx.font         = (bold?'bold ':'')+sz+'px "Courier New", monospace';
+    ctx.textAlign    = align || 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(s, x, y);
+}
+
+function lueur(x, y, r, col, alpha) {
+    const g = ctx.createRadialGradient(x,y,0,x,y,r);
+    g.addColorStop(0, col.replace(')', `,${alpha})`).replace('rgb','rgba'));
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI*2);
+    ctx.fillStyle = g;
+    ctx.fill();
+}
+
+// dessin entete
+function dessinerEntete() {
+    roundRect(0, 0, W, HEADER_H, 0, C.entete, null);
+    ctx.strokeStyle = C.bordure; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, HEADER_H); ctx.lineTo(W, HEADER_H); ctx.stroke();
+
+    // score centré
+    txt('Niveau : '+niveau, W/2, HEADER_H/2, 16, C.or, true);
+}
+
+// dessin cercle central
+function dessinerCentre() {
+    const p = 0.5 + 0.5*Math.sin(pulso);
+    const r = CTR_R + p*4;
+
+    // halo doux
+    const g = ctx.createRadialGradient(CX,CY,r*0.3,CX,CY,r*1.8);
+    g.addColorStop(0, `rgba(108,99,255,${0.12+0.06*p})`);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath(); ctx.arc(CX,CY,r*1.8,0,Math.PI*2);
+    ctx.fillStyle = g; ctx.fill();
+
+    roundRect(CX-r, CY-r, r*2, r*2, r, C.entete, C.panelBord, 2);
+
+    // reflet
+    ctx.save();
+    ctx.beginPath(); ctx.arc(CX,CY,r,0,Math.PI*2); ctx.clip();
+    const hl = ctx.createLinearGradient(CX-r,CY-r,CX+r,CY);
+    hl.addColorStop(0,'rgba(255,255,255,0.07)');
+    hl.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle = hl; ctx.fillRect(CX-r,CY-r,r*2,r*2);
+    ctx.restore();
+
+    let lignes;
+    if      (etat===MENU)   lignes = ['Cliquez pour','commencer'];
+    else if (etat===ORDI)   lignes = ['Mémorisez !'];
+    else if (etat===JOUEUR) lignes = ['A votre','tour !'];
+    else if (etat===GAGNE)  lignes = ['Bravo !'];
+    else                    lignes = ['Raté...'];
+
+    const col = etat===GAGNE ? C.victoire : etat===PERDU ? C.defaite : C.texte;
+    const dy  = lignes.length === 1 ? 0 : -14;
+    lignes.forEach((l,i) => txt(l, CX, CY+dy+i*28, 17, col, true));
+}
+
+// dessin boutons notes
+function dessinerBoutons() {
+    for (let i = 0; i < 8; i++) {
+        const p   = POSITIONS[i];
+        const t   = TEINTES[i];
+        const lit = (i === aceso);
+        const err = (i === erreur);
+
+        if (lit) {
+            lueur(p.x, p.y, BTN_R*2.2, t.lit, 0.45);
+        }
+
+        // ombre
+        ctx.beginPath(); ctx.arc(p.x+2, p.y+3, BTN_R, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fill();
+
+        // corps
+        const fill = err ? '#ff3c3c' : lit ? t.lit : t.dark;
+        ctx.beginPath(); ctx.arc(p.x, p.y, BTN_R, 0, Math.PI*2);
+        ctx.fillStyle = fill; ctx.fill();
+
+        // anneau couleur
+        ctx.beginPath(); ctx.arc(p.x, p.y, BTN_R, 0, Math.PI*2);
+        ctx.strokeStyle = err ? '#ff8080' : lit ? '#ffffff' : t.base;
+        ctx.lineWidth = 3; ctx.stroke();
+
+        // survol
+        if (i === surBouton && etat === JOUEUR && !lit) {
+            ctx.beginPath(); ctx.arc(p.x, p.y, BTN_R, 0, Math.PI*2);
+            ctx.fillStyle = 'rgba(255,255,255,0.07)'; ctx.fill();
+        }
+
+        // reflet
+        ctx.save();
+        ctx.beginPath(); ctx.arc(p.x, p.y, BTN_R, 0, Math.PI*2); ctx.clip();
+        const rf = ctx.createLinearGradient(p.x-BTN_R, p.y-BTN_R, p.x+BTN_R, p.y);
+        rf.addColorStop(0, lit ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.10)');
+        rf.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = rf; ctx.fillRect(p.x-BTN_R, p.y-BTN_R, BTN_R*2, BTN_R*2);
+        ctx.restore();
+
+        // label note
+        txt(NOTES[i], p.x, p.y, 14, lit ? '#fff' : 'rgba(220,220,238,0.8)', true);
+    }
+
+    // connecteurs vers le centre
+    for (let i=0; i<8; i++) {
+        const p = POSITIONS[i];
+        ctx.beginPath(); ctx.moveTo(CX,CY); ctx.lineTo(p.x,p.y);
+        ctx.strokeStyle = 'rgba(60,60,110,0.5)'; ctx.lineWidth = 1; ctx.stroke();
+    }
+}
+
+// footer
+function dessinerFooter() {
+    txt('Se joue avec du son', W/2, H-16, 13, 'rgba(136,144,176,0.7)', false);
+}
+
+// boucle dessin
+function draw(ts) {
+    pulso = ts * 0.0024;
+
+    ctx.fillStyle = C.fond;
+    ctx.fillRect(0, 0, W, H);
+
+    // cercles deco fond
+    for (const r of [310,280,240,190,140,95]) {
+        ctx.beginPath(); ctx.arc(CX,CY,r,0,Math.PI*2);
+        ctx.strokeStyle = 'rgba(40,40,70,0.6)'; ctx.lineWidth = 1; ctx.stroke();
+    }
+
+    dessinerEntete();
+    dessinerBoutons();
+    dessinerCentre();
+    dessinerFooter();
+
+    if (etat===PERDU) dessinerOverlay();
+
+    requestAnimationFrame(draw);
+}
+
+// overlay game over
+function dessinerOverlay() {
+    ctx.fillStyle = 'rgba(0,0,0,0.65)';
+    ctx.fillRect(0, HEADER_H, W, H-HEADER_H);
+
+    const pw=400, ph=200;
+    const px=W/2-pw/2, py=H/2-ph/2;
+    roundRect(px,py,pw,ph,14,C.panelBg,C.defaite,2);
+    txt('Perdu !', W/2, py+54, 28, C.defaite, true);
+    txt('Niveau atteint : '+niveau, W/2, py+102, 17, '#fff', false);
+    txt('Cliquez pour rejouer', W/2, py+148, 13, C.sous, false);
+}
+
+// logique
+const configs = [
+    { delaiOrdi:800, delaiNotes:700 },
+    { delaiOrdi:650, delaiNotes:580 },
+    { delaiOrdi:480, delaiNotes:420 },
+];
+let niveauIdx = 1;
+
+function reinit() {
+    sequence  = [];
+    idxJoueur = 0;
+    niveau    = 0;
+    aceso     = -1;
+    erreur    = -1;
+    etat      = MENU;
+}
+
+function nouvellePartie() {
+    sequence  = [];
+    idxJoueur = 0;
+    niveau    = 0;
+    aceso     = -1;
+    erreur    = -1;
+    prochainNiveau();
+}
+
+function prochainNiveau() {
+    sequence.push(Math.floor(Math.random()*8));
+    niveau++;
+    idxJoueur = 0;
+    pasOrdi   = 0;
+    delai     = configs[niveauIdx].delaiOrdi;
+    durAceso  = configs[niveauIdx].delaiNotes;
+    tPas      = performance.now() + 600;
+    etat      = ORDI;
+}
+
+function allumer(i) {
+    aceso  = i;
+    tAceso = performance.now() + durAceso;
+    jouerNote(i, durAceso/1000);
+}
+
+// tick logique (appele dans la boucle via rAF)
+let dernierTick = 0;
+function tick(ts) {
+    if (ts - dernierTick < 16) { requestAnimationFrame(tick); return; }
+    dernierTick = ts;
+
+    if (aceso !== -1 && performance.now() > tAceso)   aceso  = -1;
+    if (erreur !== -1 && performance.now() > tErreur) erreur = -1;
+
+    if (etat === ORDI && aceso === -1) {
+        if (pasOrdi < sequence.length) {
+            if (performance.now() >= tPas) {
+                allumer(sequence[pasOrdi]);
+                pasOrdi++;
+                tPas = performance.now() + delai;
+            }
+        } else {
+            if (performance.now() >= tPas) etat = JOUEUR;
+        }
+    }
+
+    requestAnimationFrame(tick);
+}
+
+// souris
+function posCanvas(e) {
+    const r  = canvas.getBoundingClientRect();
+    const sx = W / r.width, sy = H / r.height;
+    return { x:(e.clientX-r.left)*sx, y:(e.clientY-r.top)*sy };
+}
+
+canvas.addEventListener('mousemove', function(e) {
+    const {x,y} = posCanvas(e);
+    sourisX = x; sourisY = y;
+    surBouton = -1;
+    surCentre = false;
+    const dx = x-CX, dy = y-CY;
+    if (dx*dx+dy*dy <= CTR_R*CTR_R) { surCentre = true; return; }
+    for (let i=0; i<8; i++) {
+        const p = POSITIONS[i];
+        const ddx=x-p.x, ddy=y-p.y;
+        if (ddx*ddx+ddy*ddy <= BTN_R*BTN_R) { surBouton=i; break; }
+    }
+});
+
+canvas.addEventListener('mouseleave', function() {
+    sourisX=-1; sourisY=-1; surBouton=-1; surCentre=false;
+});
+
+canvas.addEventListener('mousedown', function(e) {
+    const {x,y} = posCanvas(e);
+
+    // centre
+    const dx=x-CX, dy=y-CY;
+    if (dx*dx+dy*dy<=CTR_R*CTR_R) {
+        if (etat===MENU || etat===PERDU) nouvellePartie();
+        return;
+    }
+
+    // boutons notes
+    if (etat===JOUEUR) {
+        for (let i=0; i<8; i++) {
+            const p=POSITIONS[i];
+            const ddx=x-p.x, ddy=y-p.y;
+            if (ddx*ddx+ddy*ddy<=BTN_R*BTN_R) {
+                allumer(i);
+                if (i===sequence[idxJoueur]) {
+                    idxJoueur++;
+                    if (idxJoueur===sequence.length) {
+                        etat=GAGNE;
+                        setTimeout(()=>{ etat===GAGNE && prochainNiveau(); }, 900);
+                    }
+                } else {
+                    erreur=i; tErreur=performance.now()+700;
+                    etat=PERDU;
+                }
+                break;
+            }
+        }
+    }
+});
+
+reinit();
+requestAnimationFrame(draw);
+requestAnimationFrame(tick);
+
+})();
+</script>
+</body>
+</html>
