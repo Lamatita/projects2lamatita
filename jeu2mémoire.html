@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jeu de Memoire</title>
+<title>Jeu de Mémoire</title>
 <style>
 :root {
     --fond:       #f7f3ff;
@@ -129,7 +129,6 @@ const W = 820, H = 820;
 canvas.width  = W;
 canvas.height = H;
 
-// palette sombre, meme esprit que le demineur
 const C = {
     fond:        '#1e1e28',
     entete:      '#14141c',
@@ -146,7 +145,7 @@ const C = {
     or:          '#ffd700',
 };
 
-// couleurs arc-en-ciel des 8 notes, chacune en sombre et clair
+// couleurs arc-en-ciel des 8 notes, we love the gaaaaaaaaaaaaaaaaaaayyyyyyyyyyyyyyyyyyyyyyyys hihihi
 const NOTES  = ['Do','Re','Mi','Fa','Sol','La','Si','Do'];
 const TEINTES = [
     { base:'#dc3232', lit:'#ff6464', dark:'#6e1616' },
@@ -171,7 +170,7 @@ function btnPos(i) {
 }
 const POSITIONS = Array.from({length: 8}, (_, i) => btnPos(i));
 
-// sons generes par synthese (Web Audio)
+// sons generes par aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaah synthese (Web Audio)
 const actx   = new (window.AudioContext || window.webkitAudioContext)();
 const FREQS  = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25];
 
@@ -210,7 +209,7 @@ function jouerNote(idx, dur=0.42) {
     [osc1, osc2, osc3].forEach(o => { o.start(now); o.stop(now + dur); });
 }
 
-// etats
+// etats (unis LOL)
 const MENU   = 'menu';
 const ORDI   = 'ordi';
 const JOUEUR = 'joueur';
@@ -235,7 +234,6 @@ let sourisX = -1, sourisY = -1;
 let surBouton = -1;
 let surCentre = false;
 
-// helpers dessin
 function roundRect(x, y, w, h, r, fill, stroke, sw) {
     ctx.beginPath();
     ctx.moveTo(x+r, y);
@@ -281,7 +279,6 @@ function dessinerCentre() {
     const p = 0.5 + 0.5*Math.sin(pulso);
     const r = CTR_R + p*4;
 
-    // halo doux
     const g = ctx.createRadialGradient(CX,CY,r*0.3,CX,CY,r*1.8);
     g.addColorStop(0, `rgba(108,99,255,${0.12+0.06*p})`);
     g.addColorStop(1, 'rgba(0,0,0,0)');
@@ -290,7 +287,7 @@ function dessinerCentre() {
 
     roundRect(CX-r, CY-r, r*2, r*2, r, C.entete, C.panelBord, 2);
 
-    // reflet
+    // reflection spontanée
     ctx.save();
     ctx.beginPath(); ctx.arc(CX,CY,r,0,Math.PI*2); ctx.clip();
     const hl = ctx.createLinearGradient(CX-r,CY-r,CX+r,CY);
