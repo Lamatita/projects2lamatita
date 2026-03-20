@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quel âge avez-vous réellement ?</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: "Segoe UI", sans-serif;
+  background: linear-gradient(135deg, #f7f3ff, #e6e1ff);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-10vh) rotate(0deg); opacity: 0.9; }
+  100% { transform: translateY(115vh) rotate(var(--rot)); opacity: 0.5; }
+}
+.confetti-piece {
+  position: fixed;
+  top: -30px;
+  animation: confetti-fall var(--dur) linear infinite;
+  animation-delay: var(--delay);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Back button ── */
+.back-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 10;
+  height: 42px;
+  padding: 0 18px 0 12px;
+  border: none;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #6c63ff;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: "Segoe UI", sans-serif;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 7px;
+  box-shadow: 0 4px 16px rgba(108,99,255,0.2);
+  transition: all 0.2s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.back-btn:hover {
+  background: #6c63ff;
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(108,99,255,0.4);
+  transform: translateY(-1px);
+}
+.back-btn svg {
+  width: 16px; height: 16px;
+  stroke: currentColor; fill: none; stroke-width: 2.5;
+  flex-shrink: 0;
+}
+
+.page-wrapper {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 900px;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+.page-title {
+  text-align: center;
+}
+.page-title h1 {
+  font-size: 2em;
+  font-weight: 800;
+  color: #6c63ff;
+  letter-spacing: -0.5px;
+}
+.page-title p {
+  color: #9992bb;
+  font-size: 0.95em;
+  margin-top: 6px;
+}
+
+/* ── Card ── */
+.card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 32px 24px;
+  box-shadow: 0 15px 45px rgba(0,0,0,0.12);
+  width: 100%;
+  min-width: 0;
+}
+
+/* ── Date input bar ── */
+.input-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+  background: #f7f3ff;
+  border: 2px solid #e0dce8;
+  border-radius: 16px;
+  padding: 18px 24px;
+}
+
+.input-bar label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #9992bb;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.date-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.date-field input {
+  border: 2px solid #e0dce8;
+  border-radius: 10px;
+  background: #fff;
+  color: #6c63ff;
+  font-family: "Segoe UI", sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 7px 10px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.date-field input:focus {
+  border-color: #6c63ff;
+  box-shadow: 0 0 0 3px rgba(108,99,255,0.12);
+}
+.date-field input[type="number"] {
+  -moz-appearance: textfield;
+}
+.date-field input[type="number"]::-webkit-inner-spin-button,
+.date-field input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+
+#inp-jour   { width: 60px; text-align: center; }
+#inp-mois   { width: 60px; text-align: center; }
+#inp-annee  { width: 80px; text-align: center; }
+#inp-heure  { width: 60px; text-align: center; }
+#inp-minute { width: 60px; text-align: center; }
+
+.sep {
+  font-size: 18px;
+  font-weight: 800;
+  color: #c8c3de;
+  line-height: 1;
+}
+
+.input-hint {
+  font-size: 10px;
+  font-weight: 700;
+  color: #c8c3de;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: center;
+  display: block;
+}
+
+.field-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+/* ── Age table ── */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 16px;
+  margin-bottom: 20px;
+}
+
+.age-table {
+  width: 100%;
+  min-width: 480px;
+  border: 2px solid #e0dce8;
+  border-radius: 16px;
+  overflow: hidden;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+.age-table thead tr th {
+  padding: 11px 8px;
+  background: #f7f3ff;
+  font-size: 0.7em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9992bb;
+  border-bottom: 2px solid #e0dce8;
+  text-align: center;
+  white-space: nowrap;
+}
+.age-table thead tr th:not(:last-child) {
+  border-right: 2px solid #e0dce8;
+}
+
+.col-dot-inline {
+  display: inline-block;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  margin-right: 7px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+
+.age-table tbody tr td {
+  border-right: 2px solid #e0dce8;
+  padding: 18px 8px;
+  vertical-align: middle;
+  text-align: center;
+}
+.age-table tbody tr td:last-child {
+  border-right: none;
+}
+
+.age-value {
+  font-size: 1.6em;
+  font-weight: 800;
+  color: #6c63ff;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+  display: block;
+  font-variant-numeric: tabular-nums;
+}
+
+.age-unit {
+  font-size: 0.7em;
+  font-weight: 600;
+  color: #c8c3de;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 3px;
+  display: block;
+}
+
+.age-table tfoot .footer-row td {
+  background: #f7f3ff;
+  padding: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #c8c3de;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-top: 2px solid #e0dce8;
+  border-right: 2px solid #e0dce8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+.age-table tfoot .footer-row td:last-child {
+  border-right: none;
+}
+
+/* ── Prochain anniversaire ── */
+.anniv-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: #f7f3ff;
+  border: 2px solid #e0dce8;
+  border-radius: 16px;
+  padding: 18px 24px;
+  margin-top: 4px;
+}
+
+.anniv-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.anniv-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.anniv-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #9992bb;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.anniv-value {
+  font-size: 1.1em;
+  font-weight: 800;
+  color: #6c63ff;
+  font-variant-numeric: tabular-nums;
+}
+
+.anniv-sep {
+  width: 1px;
+  height: 40px;
+  background: #e0dce8;
+  flex-shrink: 0;
+}
+
+/* ── Empty state ── */
+.empty-state {
+  text-align: center;
+  color: #c8c3de;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 30px 0;
+}
+.empty-state .emoji {
+  font-size: 36px;
+  display: block;
+  margin-bottom: 10px;
+}
+
+/* ── Error msg ── */
+.error-msg {
+  text-align: center;
+  font-size: 12px;
+  color: #ff6b6b;
+  font-weight: 600;
+  min-height: 18px;
+  margin-bottom: 10px;
+}
+
+/* ── Clear button ── */
+.clear-btn {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  border: 2px solid #e0dce8;
+  border-radius: 999px;
+  background: transparent;
+  color: #9992bb;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: "Segoe UI", sans-serif;
+}
+.clear-btn:hover {
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+  background: rgba(255,107,107,0.05);
+}
+
+/* ── Hidden helper ── */
+.hidden { display: none !important; }
+
+@media (max-width: 640px) {
+  .card { padding: 20px 14px; }
+  .page-title h1 { font-size: 1.5em; }
+  .age-value { font-size: 1.2em; }
+  .input-bar { padding: 14px 12px; gap: 8px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Confetti background -->
+<div id="confetti-container"></div>
+
+<!-- Back button -->
+<button class="back-btn" onclick="history.back()" title="Retour">
+  <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+  Retour en arrière
+</button>
+
+<div class="page-wrapper">
+
+  <div class="page-title">
+    <h1>Quel âge avez-vous réellement ?&nbsp;🎂</h1>
+    <p>Entrez votre date de naissance pour découvrir votre âge précis à la seconde près</p>
+  </div>
+
+  <div class="card">
+
+    <!-- Date de naissance input bar -->
+    <div class="input-bar">
+      <label>Date de naissance&nbsp;:</label>
+      <div class="date-field">
+        <div class="field-wrap">
+          <input type="number" id="inp-jour" min="1" max="31" placeholder="JJ">
+          <span class="input-hint">Jour</span>
+        </div>
+        <span class="sep">/</span>
+        <div class="field-wrap">
+          <input type="number" id="inp-mois" min="1" max="12" placeholder="MM">
+          <span class="input-hint">Mois</span>
+        </div>
+        <span class="sep">/</span>
+        <div class="field-wrap">
+          <input type="number" id="inp-annee" min="1900" max="2099" placeholder="AAAA">
+          <span class="input-hint">Année</span>
+        </div>
+        <span class="sep" style="margin-left:8px; margin-right:2px;">à</span>
+        <div class="field-wrap">
+          <input type="number" id="inp-heure" min="0" max="23" placeholder="HH">
+          <span class="input-hint">Heure</span>
+        </div>
+        <span class="sep">:</span>
+        <div class="field-wrap">
+          <input type="number" id="inp-minute" min="0" max="59" placeholder="MM">
+          <span class="input-hint">Minute</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <!-- Age display — shown only when a valid date is entered -->
+    <div id="age-display">
+      <div class="empty-state" id="empty-state">
+        <span class="emoji">🎈</span>
+        Entrez votre date de naissance ci-dessus…
+      </div>
+
+      <div id="age-content" class="hidden">
+        <!-- Age table -->
+        <div class="table-wrapper">
+          <table class="age-table">
+            <thead>
+              <tr>
+                <th><span class="col-dot-inline" style="background:#6c63ff"></span>Années</th>
+                <th><span class="col-dot-inline" style="background:#00c9a7"></span>Mois</th>
+                <th><span class="col-dot-inline" style="background:#ffb703"></span>Jours</th>
+                <th><span class="col-dot-inline" style="background:#ff6b6b"></span>Heures</th>
+                <th><span class="col-dot-inline" style="background:#a18cd1"></span>Minutes</th>
+                <th><span class="col-dot-inline" style="background:#ffd93d"></span>Secondes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <span class="age-value" id="v-annees">—</span>
+                  <span class="age-unit">ans</span>
+                </td>
+                <td>
+                  <span class="age-value" id="v-mois" style="color:#00c9a7">—</span>
+                  <span class="age-unit">mois</span>
+                </td>
+                <td>
+                  <span class="age-value" id="v-jours" style="color:#ffb703">—</span>
+                  <span class="age-unit">jours</span>
+                </td>
+                <td>
+                  <span class="age-value" id="v-heures" style="color:#ff6b6b">—</span>
+                  <span class="age-unit">heures</span>
+                </td>
+                <td>
+                  <span class="age-value" id="v-minutes" style="color:#a18cd1">—</span>
+                  <span class="age-unit">minutes</span>
+                </td>
+                <td>
+                  <span class="age-value" id="v-secondes" style="color:#e8b700">—</span>
+                  <span class="age-unit">secondes</span>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="footer-row">
+                <td>Depuis la naissance</td>
+                <td>Total des mois</td>
+                <td>Total des jours</td>
+                <td>Total des heures</td>
+                <td>Total des minutes</td>
+                <td>Total des secondes</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- Prochain anniversaire -->
+        <div class="anniv-bar" id="anniv-bar">
+          <span class="anniv-icon">🎉</span>
+          <div class="anniv-text">
+            <span class="anniv-label">Prochain anniversaire</span>
+            <span class="anniv-value" id="v-anniv-date">—</span>
+          </div>
+          <div class="anniv-sep"></div>
+          <div class="anniv-text">
+            <span class="anniv-label">Dans</span>
+            <span class="anniv-value" id="v-anniv-dans">—</span>
+          </div>
+          <div class="anniv-sep"></div>
+          <div class="anniv-text">
+            <span class="anniv-label">Numéro</span>
+            <span class="anniv-value" id="v-anniv-num">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:center;">
+      <button class="clear-btn" id="clearBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14H6L5 6"/>
+          <path d="M10 11v6M14 11v6"/>
+        </svg>
+        Effacer
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── DOM refs ──────────────────────────────────────────────────
+const inpJour    = document.getElementById('inp-jour');
+const inpMois    = document.getElementById('inp-mois');
+const inpAnnee   = document.getElementById('inp-annee');
+const inpHeure   = document.getElementById('inp-heure');
+const inpMinute  = document.getElementById('inp-minute');
+const errorMsg   = document.getElementById('errorMsg');
+const emptyState = document.getElementById('empty-state');
+const ageContent = document.getElementById('age-content');
+const clearBtn   = document.getElementById('clearBtn');
+
+const vAnnees   = document.getElementById('v-annees');
+const vMois     = document.getElementById('v-mois');
+const vJours    = document.getElementById('v-jours');
+const vHeures   = document.getElementById('v-heures');
+const vMinutes  = document.getElementById('v-minutes');
+const vSecondes = document.getElementById('v-secondes');
+const vAnnivDate= document.getElementById('v-anniv-date');
+const vAnnivDans= document.getElementById('v-anniv-dans');
+const vAnnivNum = document.getElementById('v-anniv-num');
+
+let birthDate = null;
+let tickInterval = null;
+
+// ── Parse & validate ──────────────────────────────────────────
+function parseBirth() {
+  const j = parseInt(inpJour.value, 10);
+  const m = parseInt(inpMois.value, 10);
+  const a = parseInt(inpAnnee.value, 10);
+  const h = inpHeure.value  !== '' ? parseInt(inpHeure.value, 10)  : 0;
+  const mn= inpMinute.value !== '' ? parseInt(inpMinute.value, 10) : 0;
+
+  if (isNaN(j) || isNaN(m) || isNaN(a)) return null;
+
+  if (j < 1 || j > 31)   throw new Error('Le jour doit être compris entre 1 et 31');
+  if (m < 1 || m > 12)   throw new Error('Le mois doit être compris entre 1 et 12');
+  if (a < 1900 || a > new Date().getFullYear()) throw new Error('Année invalide');
+  if (h < 0 || h > 23)   throw new Error('L\'heure doit être comprise entre 0 et 23');
+  if (mn < 0 || mn > 59) throw new Error('Les minutes doivent être comprises entre 0 et 59');
+
+  // Month is 0-indexed in JS
+  const d = new Date(a, m - 1, j, h, mn, 0);
+  if (d.getFullYear() !== a || d.getMonth() !== m - 1 || d.getDate() !== j) {
+    throw new Error('Date invalide (ex : le 31 février n\'existe pas)');
+  }
+  if (d > new Date()) throw new Error('La date de naissance doit être dans le passé');
+
+  return d;
+}
+
+// ── Format large numbers with spaces ─────────────────────────
+function fmt(n) {
+  return Math.floor(n).toLocaleString('fr-FR');
+}
+
+// ── Compute & display age ─────────────────────────────────────
+function computeAge(birth, now) {
+  const diffMs = now - birth;
+
+  // Total values
+  const totalSec  = diffMs / 1000;
+  const totalMin  = totalSec / 60;
+  const totalHr   = totalMin / 60;
+  const totalDays = totalHr / 24;
+  const totalMois = totalDays / 30.436875;
+
+  // Calendar-accurate years/months/days
+  let annees = now.getFullYear() - birth.getFullYear();
+  let mois   = now.getMonth()    - birth.getMonth();
+  let jours  = now.getDate()     - birth.getDate();
+
+  if (jours < 0) {
+    mois--;
+    // Days in previous month
+    const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+    jours += prevMonth.getDate();
+  }
+  if (mois < 0) {
+    annees--;
+    mois += 12;
+  }
+
+  return {
+    annees, mois, jours,
+    totalHr, totalMin, totalSec,
+    totalDays, totalMois
+  };
+}
+
+// ── Next birthday ─────────────────────────────────────────────
+function nextBirthday(birth, now) {
+  let next = new Date(now.getFullYear(), birth.getMonth(), birth.getDate(), birth.getHours(), birth.getMinutes(), 0);
+  if (next <= now) {
+    next.setFullYear(now.getFullYear() + 1);
+  }
+  const diffMs = next - now;
+  const totalSec  = Math.floor(diffMs / 1000);
+  const jours     = Math.floor(totalSec / 86400);
+  const reste     = totalSec % 86400;
+  const h         = Math.floor(reste / 3600);
+  const mn        = Math.floor((reste % 3600) / 60);
+  const s         = reste % 60;
+
+  const annivNum  = now.getFullYear() - birth.getFullYear() + (next.getFullYear() > now.getFullYear() ? 1 : 0);
+
+  const moisNoms  = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  const dateStr   = `${next.getDate()} ${moisNoms[next.getMonth()]} ${next.getFullYear()}`;
+
+  let countdown;
+  if (jours > 0) {
+    countdown = `${jours} j ${pad(h)}h ${pad(mn)}min ${pad(s)}s`;
+  } else {
+    countdown = `${pad(h)}h ${pad(mn)}min ${pad(s)}s`;
+  }
+
+  return { dateStr, countdown, annivNum };
+}
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function tick() {
+  if (!birthDate) return;
+  const now = new Date();
+  const age = computeAge(birthDate, now);
+
+  vAnnees.textContent   = fmt(age.annees);
+  vMois.textContent     = fmt(age.totalMois);
+  vJours.textContent    = fmt(age.totalDays);
+  vHeures.textContent   = fmt(age.totalHr);
+  vMinutes.textContent  = fmt(age.totalMin);
+  vSecondes.textContent = fmt(age.totalSec);
+
+  const anniv = nextBirthday(birthDate, now);
+  vAnnivDate.textContent = anniv.dateStr;
+  vAnnivDans.textContent = anniv.countdown;
+  vAnnivNum.textContent  = anniv.annivNum + 'e anniversaire';
+}
+
+// ── Update on input ───────────────────────────────────────────
+function onInput() {
+  errorMsg.textContent = '';
+
+  // If all main fields empty → reset
+  if (!inpJour.value && !inpMois.value && !inpAnnee.value) {
+    birthDate = null;
+    clearInterval(tickInterval);
+    emptyState.classList.remove('hidden');
+    ageContent.classList.add('hidden');
+    return;
+  }
+
+  try {
+    birthDate = parseBirth();
+    if (!birthDate) return;
+  } catch (e) {
+    birthDate = null;
+    clearInterval(tickInterval);
+    emptyState.classList.remove('hidden');
+    ageContent.classList.add('hidden');
+    errorMsg.textContent = '⚠ ' + e.message;
+    return;
+  }
+
+  emptyState.classList.add('hidden');
+  ageContent.classList.remove('hidden');
+
+  tick(); // immediate refresh
+  clearInterval(tickInterval);
+  tickInterval = setInterval(tick, 1000);
+}
+
+[inpJour, inpMois, inpAnnee, inpHeure, inpMinute].forEach(el => {
+  el.addEventListener('input', onInput);
+});
+
+// ── Clear ─────────────────────────────────────────────────────
+clearBtn.addEventListener('click', () => {
+  [inpJour, inpMois, inpAnnee, inpHeure, inpMinute].forEach(el => el.value = '');
+  birthDate = null;
+  clearInterval(tickInterval);
+  errorMsg.textContent = '';
+  emptyState.classList.remove('hidden');
+  ageContent.classList.add('hidden');
+});
+
+// ── Confetti ──────────────────────────────────────────────────
+(function generateConfetti() {
+  const colors = ['#6c63ff','#ffb703','#00c9a7','#ff6b6b','#a18cd1','#ffd93d'];
+  const container = document.getElementById('confetti-container');
+
+  for (let i = 0; i < 30; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    const size = 6 + Math.random() * 8;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    el.style.cssText = `
+      left: ${Math.random() * 100}vw;
+      width: ${size}px; height: ${size}px;
+      background: ${color};
+      border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+      --dur: ${4 + Math.random() * 8}s;
+      --delay: -${Math.random() * 10}s;
+      --rot: ${Math.random() > 0.5 ? '' : '-'}${180 + Math.random() * 360}deg;
+      opacity: 0.4;
+    `;
+    container.appendChild(el);
+  }
+
+  const emojis = ['🎂','🎈','🎉','🥳','🎁'];
+  for (let i = 0; i < 8; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    const size = 20 + Math.random() * 16;
+    el.style.cssText = `
+      left: ${Math.random() * 100}vw;
+      width: ${size}px; height: ${size}px;
+      font-size: ${size}px;
+      line-height: 1;
+      background: none;
+      display: flex; align-items: center; justify-content: center;
+      --dur: ${6 + Math.random() * 8}s;
+      --delay: -${Math.random() * 12}s;
+      --rot: ${Math.random() > 0.5 ? '' : '-'}${20 + Math.random() * 40}deg;
+      opacity: 0.75;
+    `;
+    el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    container.appendChild(el);
+  }
+})();
+</script>
+</body>
+</html>
