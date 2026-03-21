@@ -137,9 +137,8 @@ body {
   border-bottom: 1px solid #d4cff5;
   user-select: none;
 }
-/* Groooooosses bordures des blocs 3x3 */
 .cell[data-c="2"], .cell[data-c="5"] { border-right: 2.5px solid var(--principal); }
-.cell[data-r="2"] .cell-inner, .cell[data-r="5"] .cell-inner { display: none; }
+.cell[data-r="2"] .cell-inner, .cell[data-r="5"] .cell-inner { display: none; } 
 .cell[data-rb="1"] { border-bottom: 2.5px solid var(--principal); }
 .cell[data-cb="1"] { border-right: 2.5px solid var(--principal); }
 .cell:last-child { border-right: none; }
@@ -199,7 +198,6 @@ body {
   box-shadow: 0 4px 14px rgba(108,99,255,0.28);
 }
 
-/* ── Sélecteur2diff  ── */
 .diff-row {
   display: flex;
   gap: 8px;
@@ -215,7 +213,55 @@ body {
 }
 .diff-btn.active, .diff-btn:hover { background: var(--principal); color: #fff; border-color: var(--principal); }
 
-/* ── Overlay victoire ── */
+.timer-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pause-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(108,99,255,0.4);
+  background: rgba(255,255,255,0.6);
+  color: var(--principal);
+  cursor: pointer;
+  transition: all .15s;
+  padding: 0;
+  flex-shrink: 0;
+}
+.pause-btn:hover { background: var(--principal); color: #fff; border-color: var(--principal); }
+
+.pause-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 40;
+  background: rgba(108,99,255,0.15);
+  backdrop-filter: blur(12px);
+  align-items: center; justify-content: center;
+}
+.pause-overlay.show { display: flex; }
+.pause-card {
+  background: white;
+  border-radius: 24px;
+  padding: 44px 60px;
+  text-align: center;
+  box-shadow: 0 20px 80px rgba(108,99,255,0.25);
+  border: 2px solid rgba(108,99,255,0.2);
+  animation: popIn .3s cubic-bezier(.175,.885,.32,1.275);
+}
+.pause-title { font-size: 1.6em; font-weight: 800; color: var(--principal); margin-bottom: 6px; }
+.pause-info  { font-size: 1em; color: #9490c0; margin-bottom: 6px; }
+.pause-time  { font-size: 2.6em; font-weight: 800; color: var(--principal); margin-bottom: 6px; }
+.pause-level { font-size: .9em; color: #b0acdc; margin-bottom: 28px; }
+.resume-btn {
+  padding: 12px 40px; border-radius: 40px;
+  background: var(--principal); color: #fff;
+  border: none; font-size: 1em; font-weight: 700; cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+  box-shadow: 0 4px 18px rgba(108,99,255,0.35);
+}
+.resume-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(108,99,255,0.4); }
+
 .overlay {
   display: none;
   position: fixed; inset: 0; z-index: 50;
@@ -237,9 +283,9 @@ body {
   from { transform: scale(.7); opacity:0; }
   to   { transform: scale(1);  opacity:1; }
 }
-.win-emoji { font-size: 4em; margin-bottom: 12px; }
 .win-title { font-size: 2.2em; font-weight: 800; color: var(--principal); margin-bottom: 8px; }
-.win-sub   { color: #9490c0; margin-bottom: 28px; }
+.win-sub   { color: #9490c0; margin-bottom: 6px; }
+.win-hint-count { font-size: .85em; color: #b0acdc; margin-bottom: 24px; }
 .win-btn {
   padding: 12px 36px; border-radius: 40px;
   background: var(--principal); color: #fff;
@@ -248,6 +294,7 @@ body {
   box-shadow: 0 4px 18px rgba(108,99,255,0.35);
 }
 .win-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(108,99,255,0.4); }
+.win-lazy { font-size: 1.3em; font-weight: 800; color: #ff6f91; margin-bottom: 28px; }
 </style>
 </head>
 <body>
@@ -278,7 +325,12 @@ body {
   <div class="info-bar">
     <div class="info-item">
       <span class="info-label">Temps</span>
-      <span class="info-value" id="timer">00:00</span>
+      <div class="timer-wrap">
+        <span class="info-value" id="timer">00:00</span>
+        <button class="pause-btn" id="btn-pause" title="Pause">
+          <svg id="pause-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="3" width="4" height="18"/><rect x="15" y="3" width="4" height="18"/></svg>
+        </button>
+      </div>
     </div>
     <div class="info-item">
       <span class="info-label">Erreurs</span>
@@ -311,10 +363,22 @@ body {
   </div>
 </div>
 
+<div class="pause-overlay" id="pause-overlay">
+  <div class="pause-card">
+    <div class="pause-title">Pause</div>
+    <div class="pause-info">Temps écoulé</div>
+    <div class="pause-time" id="pause-time-display">00:00</div>
+    <div class="pause-level" id="pause-level-display">Niveau : Moyen</div>
+    <button class="resume-btn" id="btn-resume">Reprendre</button>
+  </div>
+</div>
+
 <div class="overlay" id="overlay">
   <div class="win-card">
-    <div class="win-title">Bravo !</div>
-    <div class="win-sub" id="win-time">Tu as terminé en 00:00 avec 0 erreur(s).</div>
+    <div class="win-title" id="win-title">Bravo !</div>
+    <div class="win-sub" id="win-sub"></div>
+    <div class="win-hint-count" id="win-hint-count"></div>
+    <div class="win-lazy" id="win-lazy" style="display:none;"></div>
     <button class="win-btn" id="win-new">Nouvelle partie</button>
   </div>
 </div>
@@ -367,7 +431,8 @@ body {
   const DIFFS={Facile:42,Moyen:32,Difficile:25};
   let difficulty='Moyen';
   let solution, board, given, notes, selected, errors, mistakes, won, noteMode;
-  let startTime, timerInterval, elapsed=0;
+  let startTime, timerInterval, elapsed=0, paused=false, pausedAt=0;
+  let hintCount=0, playerPlacedAny=false;
 
   function newGame() {
     solution=genFull();
@@ -376,16 +441,33 @@ body {
     given=puzzle.map(r=>r.map(v=>v!==0));
     notes=Array.from({length:9},()=>Array.from({length:9},()=>new Set()));
     selected=null; errors=new Set(); mistakes=0; won=false; noteMode=false;
+    paused=false; hintCount=0; playerPlacedAny=false;
     clearInterval(timerInterval);
     startTime=Date.now(); elapsed=0;
     timerInterval=setInterval(()=>{
-      if (!won) { elapsed=Math.floor((Date.now()-startTime)/1000); updateTimer(); }
+      if (!won&&!paused) { elapsed=Math.floor((Date.now()-startTime)/1000); updateTimer(); }
     },500);
     document.getElementById('errcnt').textContent='0';
     document.getElementById('lvldisp').textContent=difficulty;
     document.getElementById('btn-note').classList.remove('active');
     document.getElementById('overlay').classList.remove('show');
+    document.getElementById('pause-overlay').classList.remove('show');
     renderGrid(); renderNumpad();
+  }
+
+  function togglePause() {
+    if (won) return;
+    paused=!paused;
+    if (paused) {
+      pausedAt=elapsed;
+      let m=Math.floor(elapsed/60), s=elapsed%60;
+      document.getElementById('pause-time-display').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      document.getElementById('pause-level-display').textContent=`Niveau : ${difficulty}`;
+      document.getElementById('pause-overlay').classList.add('show');
+    } else {
+      startTime=Date.now()-elapsed*1000;
+      document.getElementById('pause-overlay').classList.remove('show');
+    }
   }
 
   function checkErrors() {
@@ -400,14 +482,36 @@ body {
     showWin(); return true;
   }
   function showWin() {
-    let m=Math.floor(elapsed/60), s=elapsed%60;
-    document.getElementById('win-time').textContent=
-      `Tu as terminé en ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} avec ${mistakes} erreur(s).`;
+    let lazyMode=!playerPlacedAny&&hintCount>0;
+    let titleEl=document.getElementById('win-title');
+    let subEl=document.getElementById('win-sub');
+    let hintEl=document.getElementById('win-hint-count');
+    let lazyEl=document.getElementById('win-lazy');
+    if (lazyMode) {
+      titleEl.style.display='none';
+      subEl.style.display='none';
+      hintEl.style.display='none';
+      lazyEl.style.display='block';
+      lazyEl.textContent='Sérieusement ? Espèce de flemmarde va 🙄';
+    } else {
+      titleEl.style.display='block';
+      titleEl.textContent='Bravo !';
+      let m=Math.floor(elapsed/60), s=elapsed%60;
+      subEl.style.display='block';
+      subEl.textContent=`Terminé en ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} avec ${mistakes} erreur(s).`;
+      if (hintCount>0) {
+        hintEl.style.display='block';
+        hintEl.textContent=`${hintCount} indice(s) utilisé(s)`;
+      } else {
+        hintEl.style.display='none';
+      }
+      lazyEl.style.display='none';
+    }
     document.getElementById('overlay').classList.add('show');
   }
 
   function placeNum(n) {
-    if (!selected||won) return;
+    if (!selected||won||paused) return;
     const [r,c]=selected;
     if (given[r][c]) return;
     if (noteMode) {
@@ -415,17 +519,23 @@ body {
       else { if(notes[r][c].has(n)) notes[r][c].delete(n); else notes[r][c].add(n); }
     } else {
       let prev=board[r][c]; board[r][c]=n;
-      if (n!==0) { notes[r][c].clear(); if(n!==solution[r][c]&&prev!==n) { mistakes++; document.getElementById('errcnt').textContent=mistakes; } }
+      if (n!==0) {
+        notes[r][c].clear();
+        playerPlacedAny=true;
+        if(n!==solution[r][c]&&prev!==n) { mistakes++; document.getElementById('errcnt').textContent=mistakes; }
+      }
       checkErrors(); checkWin();
     }
     renderGrid(); renderNumpad();
   }
   function giveHint() {
+    if (won||paused) return;
     let empties=[];
     for(let r=0;r<9;r++) for(let c=0;c<9;c++) if(board[r][c]===0) empties.push([r,c]);
     if(!empties.length) return;
     let [r,c]=empties[Math.floor(Math.random()*empties.length)];
-    board[r][c]=solution[r][c]; given[r][c]=true; checkErrors(); checkWin();
+    board[r][c]=solution[r][c]; given[r][c]=true; hintCount++;
+    checkErrors(); checkWin();
     renderGrid(); renderNumpad();
   }
 
@@ -437,7 +547,6 @@ body {
         let cell=document.createElement('div');
         cell.className='cell';
         cell.dataset.r=r; cell.dataset.c=c;
-        // Bordures bloc
         if (c===2||c===5) cell.dataset.cb=1;
         if (r===2||r===5) cell.dataset.rb=1;
 
@@ -490,6 +599,8 @@ body {
   }
 
   document.getElementById('btn-new').addEventListener('click',newGame);
+  document.getElementById('btn-pause').addEventListener('click',togglePause);
+  document.getElementById('btn-resume').addEventListener('click',togglePause);
   document.getElementById('btn-note').addEventListener('click',()=>{
     noteMode=!noteMode;
     document.getElementById('btn-note').classList.toggle('active',noteMode);
