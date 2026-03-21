@@ -21,7 +21,6 @@ body {
   overflow-x: hidden;
 }
 
-/* ── Éléments flottants ── */
 .falling {
   position: fixed;
   top: -10%;
@@ -41,15 +40,22 @@ body {
   100% { transform: translateY(110vh) rotate(var(--rotation)); }
 }
 
-/* ── Top bar ── */
 .top-bar {
   width: 100%;
   padding: 10px 24px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   position: relative;
   z-index: 10;
+}
+.page-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  color: var(--principal);
+  font-size: 1.4em;
+  font-weight: 700;
 }
 .back-btn {
   display: flex;
@@ -75,11 +81,8 @@ body {
   box-shadow: 0 4px 16px rgba(108,99,255,0.28);
   transform: translateX(-2px);
 }
-.back-btn svg { flex-shrink: 0; transition: transform .18s; }
-.back-btn:hover svg { transform: translateX(-2px); }
 .page-title { color: var(--principal); font-size: 1.4em; font-weight: 700; }
 
-/* ── Zone de jeu ── */
 .game-zone {
   position: relative;
   z-index: 2;
@@ -90,7 +93,6 @@ body {
   padding: 6px 0 30px;
 }
 
-/* ── Infos en-tête ── */
 .info-bar {
   display: flex;
   gap: 28px;
@@ -106,7 +108,6 @@ body {
 .info-value { font-size: 1.15em; font-weight: 700; color: var(--principal); }
 .info-value.err { color: #ff6f91; }
 
-/* ── Grille Sudoku ── */
 .grid-wrapper {
   background: rgba(255,255,255,0.72);
   border-radius: 16px;
@@ -136,10 +137,9 @@ body {
   border-bottom: 1px solid #d4cff5;
   user-select: none;
 }
-/* Bordures épaisses des blocs 3x3 */
+/* Groooooosses bordures des blocs 3x3 */
 .cell[data-c="2"], .cell[data-c="5"] { border-right: 2.5px solid var(--principal); }
-.cell[data-r="2"] .cell-inner, .cell[data-r="5"] .cell-inner { display: none; } /* trick below */
-/* On utilise box-shadow pour les bords inférieurs de blocs */
+.cell[data-r="2"] .cell-inner, .cell[data-r="5"] .cell-inner { display: none; }
 .cell[data-rb="1"] { border-bottom: 2.5px solid var(--principal); }
 .cell[data-cb="1"] { border-right: 2.5px solid var(--principal); }
 .cell:last-child { border-right: none; }
@@ -157,7 +157,6 @@ body {
 }
 .note-cell { font-size: .52em; color: #888; display: flex; align-items: center; justify-content: center; font-weight: 600; }
 
-/* ── Pavé numérique ── */
 .numpad {
   display: flex;
   gap: 8px;
@@ -178,7 +177,6 @@ body {
 .num-btn:hover { background: var(--principal); color: #fff; border-color: var(--principal); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(108,99,255,0.3); }
 .num-btn.exhausted { opacity: 0.28; pointer-events: none; }
 
-/* ── Boutons d'action ── */
 .actions {
   display: flex;
   gap: 10px;
@@ -201,7 +199,7 @@ body {
   box-shadow: 0 4px 14px rgba(108,99,255,0.28);
 }
 
-/* ── Sélecteur difficulté ── */
+/* ── Sélecteur2diff  ── */
 .diff-row {
   display: flex;
   gap: 8px;
@@ -254,7 +252,6 @@ body {
 </head>
 <body>
 
-<!-- Décorations flottantes -->
 <div class="falling confetti c1" style="left:5%;  animation-duration:5s;   --rotation:720deg;"></div>
 <div class="falling lama"        style="left:12%; animation-duration:7s;   --rotation:-1080deg;">🦙</div>
 <div class="falling confetti c2" style="left:18%; animation-duration:6s;   --rotation:540deg;"></div>
@@ -269,19 +266,15 @@ body {
 <div class="falling lama"        style="left:82%; animation-duration:7.9s; --rotation:1620deg;">🦙</div>
 <div class="falling confetti c2" style="left:90%; animation-duration:6.7s; --rotation:-900deg;"></div>
 
-<!-- Top bar -->
 <div class="top-bar">
   <button class="back-btn" onclick="history.back()">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-    <- Retour en arrière
+    Retour en arrière
   </button>
   <h1 class="page-title">Sudoku</h1>
-  <div style="width:160px;"></div>
 </div>
 
-<!-- Zone de jeu intégrée au fond -->
 <div class="game-zone">
-  <!-- Infos -->
   <div class="info-bar">
     <div class="info-item">
       <span class="info-label">Temps</span>
@@ -297,15 +290,12 @@ body {
     </div>
   </div>
 
-  <!-- Grille -->
   <div class="grid-wrapper">
     <div class="sudoku-grid" id="grid"></div>
   </div>
 
-  <!-- Pavé numérique -->
   <div class="numpad" id="numpad"></div>
 
-  <!-- Actions -->
   <div class="actions">
     <button class="act-btn" id="btn-new">Nouvelle partie</button>
     <button class="act-btn" id="btn-note">Notes</button>
@@ -313,7 +303,6 @@ body {
     <button class="act-btn" id="btn-hint">Aide</button>
   </div>
 
-  <!-- Difficulté -->
   <div class="diff-row">
     <span class="diff-label">Difficulté :</span>
     <button class="diff-btn" data-d="Facile">Facile</button>
@@ -322,7 +311,6 @@ body {
   </div>
 </div>
 
-<!-- Overlay victoire -->
 <div class="overlay" id="overlay">
   <div class="win-card">
     <div class="win-title">Bravo !</div>
@@ -333,7 +321,6 @@ body {
 
 <script>
 (function() {
-  // ── Génération ─────────────────────────────────────────────────────────
   function isValid(b,r,c,n) {
     if (b[r].includes(n)) return false;
     for (let i=0;i<9;i++) if (b[i][c]===n) return false;
@@ -442,7 +429,6 @@ body {
     renderGrid(); renderNumpad();
   }
 
-  // ── Rendu grille DOM ─────────────────────────────────────────────────────
   function renderGrid() {
     const grid=document.getElementById('grid');
     grid.innerHTML='';
@@ -503,7 +489,6 @@ body {
     document.getElementById('timer').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   }
 
-  // ── Boutons ──────────────────────────────────────────────────────────────
   document.getElementById('btn-new').addEventListener('click',newGame);
   document.getElementById('btn-note').addEventListener('click',()=>{
     noteMode=!noteMode;
