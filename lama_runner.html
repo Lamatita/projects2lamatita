@@ -35,13 +35,27 @@ body {
     position: relative;
 }
 .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     color: var(--principal);
     text-decoration: none;
     font-weight: 600;
-    font-size: 1.1em;
-    transition: opacity 0.2s;
+    font-size: 1em;
+    padding: 8px 18px;
+    border: 2px solid var(--principal);
+    border-radius: 30px;
+    background: var(--blanc);
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(108,99,255,0.12);
 }
-.back-link:hover { opacity: 0.7; }
+.back-link:hover {
+    background: var(--principal);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(108,99,255,0.25);
+}
 .page-title {
     color: var(--principal);
     font-size: 1.8em;
@@ -56,7 +70,6 @@ body {
     z-index: 2;
 }
 
-/* ── GAME CARD ── */
 .game-card {
     background: var(--blanc);
     border-radius: 24px;
@@ -67,8 +80,7 @@ body {
     overflow: hidden;
 }
 
-/* ── CANVAS WRAPPER ── */
-.canvas-wrapper:focus { outline: none; }
+.canvas-wrapper {
     position: relative;
     border-radius: 16px;
     overflow: hidden;
@@ -76,6 +88,59 @@ body {
     touch-action: none;
     border: 2px solid #e0deff;
     background: #fafafe;
+}
+.canvas-wrapper:focus { outline: none; }
+
+#btnFullscreen {
+    display: none;
+    margin: 0 auto 14px;
+    background: var(--secondaire);
+    color: white;
+    border: none;
+    border-radius: 30px;
+    padding: 10px 24px;
+    font-size: 1em;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 4px 14px rgba(255,183,3,0.3);
+    transition: transform 0.2s;
+}
+#btnFullscreen:hover { transform: scale(1.04); }
+
+@media (max-width: 700px) {
+    #btnFullscreen { display: block; }
+}
+
+body.landscape-mode {
+    overflow: hidden;
+}
+body.landscape-mode .falling,
+body.landscape-mode .top-bar,
+body.landscape-mode .controls-hint,
+body.landscape-mode .hud,
+body.landscape-mode #btnFullscreen {
+    display: none !important;
+}
+body.landscape-mode .container {
+    padding: 0;
+    max-width: 100%;
+}
+body.landscape-mode .game-card {
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f7f3ff;
+}
+body.landscape-mode .canvas-wrapper {
+    border-radius: 0;
+    border: none;
+    width: 100%;
 }
 
 #gameCanvas {
@@ -85,7 +150,6 @@ body {
     image-rendering: pixelated;
 }
 
-/* ── OVERLAY ── */
 .overlay {
     position: absolute;
     inset: 0;
@@ -139,7 +203,6 @@ body {
     box-shadow: 0 10px 28px rgba(108,99,255,0.35);
 }
 
-/* ── HUD ── */
 .hud {
     display: flex;
     justify-content: space-between;
@@ -161,7 +224,6 @@ body {
 }
 .hud-item .label { color: #999; font-weight: 500; font-size: 0.85em; }
 
-/* ── CONTROLS HINT ── */
 .controls-hint {
     display: flex;
     gap: 10px;
@@ -179,9 +241,6 @@ body {
     border: 1px solid #d0c9ff;
 }
 
-
-
-/* ── FALLING DECO ── */
 .falling {
     position: fixed; top: -10%;
     animation: fall linear infinite;
@@ -195,7 +254,6 @@ body {
     100% { transform: translateY(120vh) rotate(var(--rotation)); }
 }
 
-/* ── responsive ── */
 @media (max-width: 500px) {
     .top-bar { padding: 12px 16px; }
     .page-title { font-size: 1.3em; }
@@ -206,7 +264,6 @@ body {
 </head>
 <body>
 
-<!-- falling deco -->
 <div class="falling confetti c1" style="left:4%;  animation-duration:5s;   --rotation:720deg;"></div>
 <div class="falling lama"        style="left:11%; animation-duration:7.2s; --rotation:-1080deg;">🦙</div>
 <div class="falling confetti c2" style="left:19%; animation-duration:6.1s; --rotation:540deg;"></div>
@@ -220,26 +277,27 @@ body {
 <div class="falling confetti c1" style="left:88%; animation-duration:5.4s; --rotation:720deg;"></div>
 
 <div class="top-bar">
-    <a href="index.html" class="back-button">← Retour en arrière</a>
+    <button class="back-link" onclick="history.back()">← Retour en arrière</button>
     <h1 class="page-title">🦙 Lama Runner</h1>
     <div style="width:160px"></div>
 </div>
 
 <div class="container">
 
-    <!-- GAME CARD -->
+    
+    <button id="btnFullscreen">🔄 Passer en plein écran</button>
     <div class="game-card">
         <div class="canvas-wrapper" id="canvasWrapper" tabindex="0">
             <canvas id="gameCanvas" width="860" height="220"></canvas>
 
-            <!-- START OVERLAY -->
+            
             <div class="overlay" id="overlayStart">
                 <div class="overlay-title">Lama Runner</div>
                 <div class="overlay-sub">Appuie sur l'espace, Z, ↑ ou touche l'écran pour démarrer&nbsp;!</div>
                 <button class="btn-start" id="btnStart">Jouer</button>
             </div>
 
-            <!-- GAME OVER OVERLAY -->
+            
             <div class="overlay hidden" id="overlayGameover">
                 <div class="overlay-emoji">💀</div>
                 <div class="overlay-title">Aïe&nbsp;!</div>
@@ -260,28 +318,26 @@ body {
             <span class="ctrl-badge">↑ / Z / Espace = Sauter</span>
             <span class="ctrl-badge">↓ / S = Se baisser</span>
             <span class="ctrl-badge">X = Cracher 💦</span>
-            <span class="ctrl-badge">Swipe haut/bas sur mobile</span>
+            <span class="ctrl-badge">📱 Swipe haut = sauter</span>
+            <span class="ctrl-badge">📱 Swipe bas = se baisser</span>
+            <span class="ctrl-badge">📱 Tap / Swipe droite = cracher</span>
         </div>
     </div>
 
 </div>
 
 <script>
-/* ════════════════════════════════════════════════════════════════
-   LAMA RUNNER — Full game engine
-   ════════════════════════════════════════════════════════════════ */
+
 (function(){
 
-/* ── CANVAS SETUP ── */
 var canvas  = document.getElementById('gameCanvas');
 var ctx     = canvas.getContext('2d');
-var W = canvas.width;   // 860
-var H = canvas.height;  // 220
+var W = canvas.width;   
+var H = canvas.height;  
 
 var GROUND = H - 40;
-var SCALE  = 1; // logical scale (canvas is 860 wide)
+var SCALE  = 1; 
 
-/* ── COLOURS ── */
 var COL = {
     sky1: '#f7f3ff', sky2: '#e6e1ff',
     ground: '#c8c0f0',
@@ -297,34 +353,29 @@ var COL = {
     hud: '#6c63ff',
 };
 
-/* ── GAME STATE ── */
-var state = 'idle'; // idle | playing | dead
+var state = 'idle'; 
 var score = { dist: 0, birds: 0 };
 var speed, baseSpeed, spawnTimer, frameCount;
 var obstacles = [], birds = [], clouds = [], spits = [];
 
-/* ── LLAMA ── */
 var llama = {
     x: 90, y: GROUND,
     w: 44, h: 50,
     vy: 0,
     jumping: false,
     ducking: false,
-    frame: 0, // 0=stand,1=run1,2=run2,3=duck
+    frame: 0, 
     frameTimer: 0
 };
 
-/* ── SPIT COOLDOWN ── */
 var SPIT_MAX = 3;
 var spitCharges = SPIT_MAX;
 var spitRechargeTimer = 0;
-var SPIT_RECHARGE_FRAMES = 180; // ~3s at 60fps
+var SPIT_RECHARGE_FRAMES = 180; 
 
-/* ── GRAVITY ── */
 var GRAVITY = 0.55;
 var JUMP_FORCE = -11.5;
 
-/* ── RESET ── */
 function resetGame(){
     state = 'playing';
     score.dist  = 0;
@@ -345,12 +396,11 @@ function resetGame(){
     llama.ducking = false;
     llama.frame   = 0;
     llama.frameTimer = 0;
-    // seed some clouds
+    
     for(var i=0;i<3;i++) clouds.push({ x: 100+i*300, y: 20+Math.random()*40, w: 70+Math.random()*50, speed: 0.5+Math.random()*0.5 });
     updateHUD();
 }
 
-/* ── INPUT ── */
 var keys = {};
 var duckPressed = false;
 
@@ -375,46 +425,63 @@ function handleKeyUp(e){
     if(['ArrowDown','KeyS'].indexOf(e.code) !== -1) duckPressed = false;
 }
 
-// Écouter sur le wrapper ET sur document pour maximiser la compatibilité
 var wrapper = document.getElementById('canvasWrapper');
 wrapper.addEventListener('keydown', handleKeyDown);
 wrapper.addEventListener('keyup',   handleKeyUp);
 document.addEventListener('keydown', handleKeyDown);
 document.addEventListener('keyup',   handleKeyUp);
 
-/* touch */
 var touchStartY = null;
 var touchStartX = null;
+var touchMoved  = false;
+var justStarted = false;
+
 wrapper.addEventListener('touchstart', function(e){
     e.preventDefault();
     var t = e.touches[0];
     touchStartY = t.clientY;
     touchStartX = t.clientX;
-    if(state === 'idle' || state === 'dead'){ startOrRestart(); return; }
+    touchMoved  = false;
+    justStarted = false;
+    if(state === 'idle' || state === 'dead'){ startOrRestart(); justStarted = true; return; }
 }, {passive:false});
+
+wrapper.addEventListener('touchmove', function(e){
+    e.preventDefault();
+    if(touchStartY === null) return;
+    var t = e.touches[0];
+    var dy = t.clientY - touchStartY;
+    var dx = t.clientX - touchStartX;
+    if(Math.abs(dy) > 10 || Math.abs(dx) > 10) touchMoved = true;
+    
+    if(dy > 20) duckPressed = true;
+    else duckPressed = false;
+}, {passive:false});
+
 wrapper.addEventListener('touchend', function(e){
     e.preventDefault();
     if(touchStartY === null) return;
     var t = e.changedTouches[0];
     var dy = t.clientY - touchStartY;
     var dx = t.clientX - touchStartX;
-    if(Math.abs(dy) > Math.abs(dx)){
-        if(dy < -20) onJump();
-        else if(dy > 20) { /* duck already applied in touchmove */ }
+
+    if(!justStarted){
+        if(!touchMoved){
+            onSpit();
+        } else if(Math.abs(dx) > Math.abs(dy)){
+            if(dx > 20) onSpit();
+        } else {
+            if(dy < -20) onJump();
+        }
     }
+
     duckPressed = false;
     touchStartY = null;
-}, {passive:false});
-wrapper.addEventListener('touchmove', function(e){
-    e.preventDefault();
-    if(touchStartY === null) return;
-    var t = e.touches[0];
-    var dy = t.clientY - touchStartY;
-    if(dy > 20) duckPressed = true;
-    else duckPressed = false;
+    touchStartX = null;
+    touchMoved  = false;
+    justStarted = false;
 }, {passive:false});
 
-// click on canvas (desktop) to start/restart et donner le focus
 wrapper.addEventListener('click', function(){
     wrapper.focus();
     if(state === 'idle') startOrRestart();
@@ -445,18 +512,16 @@ function onSpit(){
     if(state !== 'playing') return;
     if(spitCharges <= 0) return;
     spitCharges--;
-    // La bouche du lama est à droite (x + largeur) et à mi-hauteur
+    
     var mouthX = llama.x + 54;
     var mouthY = llama.y - 30;
     spits.push({ x: mouthX, y: mouthY, r: 7, vx: speed + 9, vy: 0, life: 100 });
     updateHUD();
 }
 
-/* ── OVERLAYS ── */
 function showOverlay(id){ document.getElementById(id).classList.remove('hidden'); }
 function hideOverlay(id){ document.getElementById(id).classList.add('hidden'); }
 
-/* ── HUD ── */
 function updateHUD(){
     document.getElementById('hudDist').textContent   = Math.floor(score.dist);
     document.getElementById('hudBirds').textContent  = score.birds;
@@ -465,7 +530,6 @@ function updateHUD(){
     document.getElementById('hudSpit').textContent = spit;
 }
 
-/* ── SPAWN ── */
 function spawnObstacle(){
     var type = Math.random() < 0.3 ? 'big' : 'small';
     var w = type === 'big' ? 22 : 16;
@@ -485,13 +549,11 @@ function spawnCloud(){
     clouds.push({ x: W+80, y: 15+Math.random()*50, w: 60+Math.random()*60, speed: 0.4+Math.random()*0.6 });
 }
 
-/* ── COLLISION ── */
 function rectOverlap(ax,ay,aw,ah, bx,by,bw,bh){
     return ax < bx+bw && ax+aw > bx &&
            ay < by+bh && ay+ah > by;
 }
 
-/* ── EMOJI SPRITES via SVG data URI (rendu fiable et coloré) ── */
 var sprites = {};
 
 function makeEmojiSprite(emoji, size, cb) {
@@ -512,13 +574,11 @@ sprites.llamaDuck  = makeEmojiSprite('🦙', 38, onSpriteReady);
 sprites.eagle      = makeEmojiSprite('🦅', 36, onSpriteReady);
 sprites.eagleDead  = makeEmojiSprite('🦅', 30, onSpriteReady);
 
-/* ── DRAWING HELPERS ── */
-
 function drawLlama(x, y, pose){
     ctx.save();
     if(pose === 'duck'){
         var sw = 36, sh = 36;
-        // pattes au sol : y est la base, on place le bas de l'emoji dessus
+        
         ctx.translate(x + sw, y - sh);
         ctx.scale(-1, 1);
         ctx.drawImage(sprites.llamaDuck, 0, 0, sw, sh);
@@ -535,9 +595,9 @@ function drawCactus(obs){
     ctx.save();
     var x=obs.x, y=obs.y, w=obs.w, h=obs.h;
     ctx.fillStyle = COL.cactus;
-    // main stem
+    
     ctx.beginPath(); ctx.roundRect(x+w/2-5, y, 10, h, 4); ctx.fill();
-    // arms
+    
     var armH = Math.floor(h*0.35);
     ctx.fillStyle = COL.cactusDark;
     ctx.beginPath(); ctx.roundRect(x, y+armH, w/2-3, 8, 4); ctx.fill();
@@ -545,7 +605,7 @@ function drawCactus(obs){
     ctx.fillStyle = COL.cactus;
     ctx.beginPath(); ctx.roundRect(x+w/2+3, y+armH+4, w/2-3, 8, 4); ctx.fill();
     ctx.beginPath(); ctx.roundRect(x+w-8, y+armH+4, 8, h*0.22, 4); ctx.fill();
-    // spines
+    
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 1;
     [[x+w/2, y+8],[x+w/2, y+20],[x+4, y+armH-2],[x+w-4, y+armH+2]].forEach(function(p){
@@ -572,7 +632,7 @@ function drawSpit(s){
     ctx.fillStyle = COL.spit;
     ctx.globalAlpha = Math.min(1, s.life/20);
     ctx.beginPath(); ctx.ellipse(s.x, s.y, s.r*1.8, s.r*0.9, 0, 0, Math.PI*2); ctx.fill();
-    // trail
+    
     ctx.fillStyle = '#b0f0e8';
     ctx.beginPath(); ctx.ellipse(s.x - s.r*2, s.y, s.r*0.8, s.r*0.5, 0, 0, Math.PI*2); ctx.fill();
     ctx.restore();
@@ -606,7 +666,6 @@ function drawBackground(){
     ctx.fillRect(0, 0, W, GROUND);
 }
 
-/* ── MAIN LOOP ── */
 var lastTime = 0;
 var animId;
 function loop(ts){
@@ -616,7 +675,7 @@ function loop(ts){
     ctx.clearRect(0, 0, W, H);
     drawBackground();
 
-    // Clouds
+    
     clouds.forEach(function(c){ c.x -= c.speed; });
     clouds = clouds.filter(function(c){ return c.x > -150; });
     if(Math.random() < 0.004) spawnCloud();
@@ -628,17 +687,17 @@ function loop(ts){
         frameCount++;
         score.dist += speed * 0.04;
 
-        // Speed ramp : augmentation progressive et continue
+        
         speed = baseSpeed + score.dist * 0.003;
         if(speed > 18) speed = 18;
 
-        // Spit recharge
+        
         if(spitCharges < SPIT_MAX){
             spitRechargeTimer++;
             if(spitRechargeTimer >= SPIT_RECHARGE_FRAMES){ spitCharges++; spitRechargeTimer=0; }
         }
 
-        // Spawn
+        
         spawnTimer--;
         if(spawnTimer <= 0){
             var minGap = Math.max(35, 80 - Math.floor(score.dist/100)*3);
@@ -647,10 +706,10 @@ function loop(ts){
             else spawnObstacle();
         }
 
-        // Llama physics
+        
         if(duckPressed){
             if(llama.jumping){
-                // Se baisser en l'air = atterrissage immédiat au sol
+                
                 llama.y = GROUND;
                 llama.vy = 0;
                 llama.jumping = false;
@@ -666,22 +725,22 @@ function loop(ts){
             if(llama.y >= GROUND){ llama.y = GROUND; llama.vy=0; llama.jumping=false; }
         }
 
-        // Llama animation
+        
         if(!llama.ducking && !llama.jumping){
             llama.frameTimer++;
             if(llama.frameTimer > 8){ llama.frameTimer=0; llama.frame = llama.frame===1?2:1; }
         } else if(llama.jumping){ llama.frame=1; }
 
-        // Move obstacles
+        
         obstacles.forEach(function(o){ o.x -= speed; });
         obstacles = obstacles.filter(function(o){ return o.x > -60; });
 
-        // Move birds
+        
         birds.forEach(function(b){
             if(!b.dead){
                 b.x -= speed * 1.1;
             } else {
-                b.vy = (b.vy || 0) + 0.4;  // gravité
+                b.vy = (b.vy || 0) + 0.4;  
                 b.x -= speed * 0.2;
                 b.y += b.vy;
                 b.deadTimer++;
@@ -689,7 +748,7 @@ function loop(ts){
         });
         birds = birds.filter(function(b){ return b.x > -80 && b.deadTimer < 80; });
 
-        // Move spits
+        
         spits.forEach(function(s){
             s.x += s.vx;
             s.y += s.vy;
@@ -697,11 +756,11 @@ function loop(ts){
         });
         spits = spits.filter(function(s){ return s.life > 0 && s.x < W+30; });
 
-        // Crachat vs oiseau
+        
         spits.forEach(function(s){
             birds.forEach(function(b){
                 if(b.dead) return;
-                // spit hitbox : carré centré sur s.x, s.y
+                
                 if(rectOverlap(s.x - s.r, s.y - s.r, s.r*2, s.r*2,
                                b.x, b.y, b.w, b.h)){
                     b.dead = true;
@@ -712,8 +771,8 @@ function loop(ts){
             });
         });
 
-        // Collision avec obstacles et oiseaux vivants
-        // Lama : dessiné de (llama.x) à (llama.x+sw), de (llama.y-sh) à (llama.y)
+        
+        
         var lx, ly, lw, lh;
         if(llama.ducking){
             lw=36; lh=36; lx=llama.x+4; ly=llama.y-lh;
@@ -732,20 +791,20 @@ function loop(ts){
         updateHUD();
     }
 
-    // Draw spits
+    
     spits.forEach(drawSpit);
 
-    // Draw obstacles
+    
     obstacles.forEach(drawCactus);
 
-    // Draw birds
+    
     birds.forEach(drawBird);
 
-    // Draw llama
+    
     var pose = llama.ducking ? 'duck' : (llama.frame===2 ? 'run2' : 'run1');
     drawLlama(llama.x, llama.y, pose);
 
-    // Idle state — draw static llama
+    
     if(state === 'idle'){
         drawLlama(llama.x, llama.y, 'run1');
     }
@@ -760,7 +819,39 @@ function gameOver(){
     showOverlay('overlayGameover');
 }
 
-/* ── INIT ── */
+var isLandscape = false;
+document.getElementById('btnFullscreen').addEventListener('click', function(){
+    if(!isLandscape){
+        
+        var el = document.documentElement;
+        if(el.requestFullscreen) el.requestFullscreen();
+        else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        if(screen.orientation && screen.orientation.lock){
+            screen.orientation.lock('landscape').catch(function(){});
+        }
+        document.body.classList.add('landscape-mode');
+        document.getElementById('btnFullscreen').textContent = '✕ Quitter le plein écran';
+        isLandscape = true;
+    } else {
+        if(document.exitFullscreen) document.exitFullscreen();
+        else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+        if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+        document.body.classList.remove('landscape-mode');
+        document.getElementById('btnFullscreen').textContent = '🔄 Passer en plein écran';
+        isLandscape = false;
+    }
+    
+    setTimeout(function(){ wrapper.focus(); }, 200);
+});
+
+document.addEventListener('fullscreenchange', function(){
+    if(!document.fullscreenElement && isLandscape){
+        document.body.classList.remove('landscape-mode');
+        document.getElementById('btnFullscreen').textContent = '🔄 Passer en plein écran';
+        isLandscape = false;
+    }
+});
+
 animId = requestAnimationFrame(loop);
 
 })();
