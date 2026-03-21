@@ -401,7 +401,7 @@ body {
 <div class="page-wrapper">
 
   <div class="page-title">
-    <h1>Quel âge avez-vous réellement ?&nbsp;🎂</h1>
+    <h1>Quel âge avez-vous réellement ?</h1>
     <p>Entrez votre date de naissance pour découvrir votre âge précis à la seconde près</p>
   </div>
 
@@ -443,7 +443,6 @@ body {
     <!-- Age display — shown only when a valid date is entered -->
     <div id="age-display">
       <div class="empty-state" id="empty-state">
-        <span class="emoji">🎈</span>
         Entrez votre date de naissance ci-dessus…
       </div>
 
@@ -504,7 +503,6 @@ body {
 
         <!-- Prochain anniversaire -->
         <div class="anniv-bar" id="anniv-bar">
-          <span class="anniv-icon">🎉</span>
           <div class="anniv-text">
             <span class="anniv-label">Prochain anniversaire</span>
             <span class="anniv-value" id="v-anniv-date">—</span>
@@ -746,7 +744,7 @@ clearBtn.addEventListener('click', () => {
     container.appendChild(el);
   }
 
-  const emojis = ['🎂','🎈','🎉','🥳','🎁'];
+  const emojis = ['🦙'];
   for (let i = 0; i < 8; i++) {
     const el = document.createElement('div');
     el.className = 'confetti-piece';
