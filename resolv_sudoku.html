@@ -161,7 +161,7 @@ body {
 }
 #preview-img {
   position: absolute; inset: 0; width: 100%; height: 100%;
-  object-fit: contain; background: #1a1830; display: none;
+  object-fit: contain; background: #1a1830; display: none; cursor: zoom-in;
 }
 .cam-ph {
   position: absolute; inset: 0;
@@ -210,8 +210,43 @@ body {
 #file-input { display: none; }
 
 .hint-text { font-size: .8em; color: #b0acdc; text-align: center; max-width: 400px; }
+
 .photo-result { display: none; flex-direction: column; align-items: center; gap: 16px; }
 .photo-result.show { display: flex; }
+
+/* Layout côte-à-côte : photo + grille */
+.photo-and-grid {
+  display: none; gap: 24px; align-items: flex-start; flex-wrap: wrap; justify-content: center;
+}
+.photo-and-grid.show { display: flex; }
+
+.photo-side {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.photo-side-label {
+  font-size: .78em; font-weight: 600; color: #9490c0; text-transform: uppercase; letter-spacing: .06em;
+}
+.photo-thumb {
+  width: 250px; height: 250px;
+  border-radius: 12px; overflow: hidden;
+  border: 2px solid rgba(108,99,255,0.25);
+  background: #1a1830;
+  box-shadow: 0 4px 20px rgba(108,99,255,0.15);
+  cursor: zoom-in;
+  flex-shrink: 0;
+}
+.photo-thumb img {
+  width: 100%; height: 100%; object-fit: contain; display: block;
+}
+
+/* Lightbox zoom */
+.lightbox {
+  display: none; position: fixed; inset: 0; z-index: 100;
+  background: rgba(10,8,30,0.9); align-items: center; justify-content: center;
+  cursor: zoom-out;
+}
+.lightbox.show { display: flex; }
+.lightbox img { max-width: 92vw; max-height: 92vh; border-radius: 8px; object-fit: contain; }
 </style>
 </head>
 <body>
@@ -265,10 +300,7 @@ body {
       <img id="preview-img" alt="Aperçu">
       <canvas id="snap-canvas" style="display:none;"></canvas>
       <div class="guide" id="guide"></div>
-      <div class="proc" id="proc">
-        <div class="spinner"></div>
-        <p>Analyse en cours…</p>
-      </div>
+      <div class="proc" id="proc"><div class="spinner"></div><p>Traitement…</p></div>
     </div>
 
     <div class="btn-row">
@@ -283,18 +315,32 @@ body {
 
     <p class="hint-text">Place la grille dans le cadre, bien éclairée et à plat, puis prends la photo.</p>
 
-    <div class="photo-result" id="photo-result">
-      <div class="grid-wrapper">
-        <div class="sudoku-grid" id="photo-grid"></div>
+    <div class="photo-and-grid" id="photo-and-grid">
+      <div class="photo-side">
+        <span class="photo-side-label">Ta photo</span>
+        <div class="photo-thumb" id="photo-thumb">
+          <img id="thumb-img" alt="Aperçu sudoku">
+        </div>
+        <span class="hint-text" style="max-width:250px; margin-top:4px;">Clique pour agrandir</span>
       </div>
-      <div class="btn-row">
-        <button class="act-btn"         id="btn-clear-photo">Effacer</button>
-        <button class="act-btn"         id="btn-retake">Reprendre</button>
-        <button class="act-btn primary" id="btn-solve-photo">Résoudre</button>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:12px;">
+        <span class="photo-side-label">Saisis les chiffres</span>
+        <div class="grid-wrapper">
+          <div class="sudoku-grid" id="photo-grid"></div>
+        </div>
+        <div class="btn-row">
+          <button class="act-btn"         id="btn-clear-photo">Effacer</button>
+          <button class="act-btn"         id="btn-retake">Reprendre</button>
+          <button class="act-btn primary" id="btn-solve-photo">Résoudre</button>
+        </div>
+        <div class="status-msg inf" id="status-photo"></div>
       </div>
-      <div class="status-msg inf" id="status-photo"></div>
     </div>
   </div>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <img id="lightbox-img" alt="Sudoku agrandi">
 </div>
 
 <script>
@@ -472,338 +518,36 @@ body {
     reader.readAsDataURL(file); e.target.value = '';
   });
   document.getElementById('btn-retake').addEventListener('click', () => {
-    photores.classList.remove('show'); prevImg.style.display = 'none'; prevImg.src = ''; camPh.style.display = 'flex';
+    document.getElementById('photo-and-grid').classList.remove('show');
+    prevImg.style.display = 'none'; prevImg.src = '';
+    camPh.style.display = 'flex';
   });
   document.getElementById('btn-clear-photo').addEventListener('click', () => { clearGrid('photo-grid'); status('status-photo', 'Grille effacée.', 'inf'); });
   document.getElementById('btn-solve-photo').addEventListener('click', () => runSolver('photo-grid', 'status-photo'));
 
-  /* ══════════════════════════════════════════════════════════════
-   *  TRAITEMENT IMAGE
-   *
-   *  Pipeline :
-   *   1. Binarisation adaptative (seuil local) — gère l'éclairage inégal
-   *   2. Détection des 10 lignes H et 10 lignes V par projection de pixels noirs
-   *   3. Découpe des 81 cellules aux intersections détectées
-   *   4. Chaque cellule non vide → redimensionnée en 28×28 px, normalisée,
-   *      passée dans un réseau de neurones convolutif (CNN) chargé depuis
-   *      TensorFlow.js. Le modèle est entraîné sur MNIST + chiffres imprimés.
-   *
-   *  TensorFlow.js tourne entièrement dans le navigateur — aucun serveur,
-   *  aucune donnée n'est envoyée nulle part.
-   * ══════════════════════════════════════════════════════════════ */
+  const thumbImg    = document.getElementById('thumb-img');
+  const photoThumb  = document.getElementById('photo-thumb');
+  const lightbox    = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
 
-  /* ── Chargement de TF.js et du modèle ── */
-  let tfModel = null;
+  photoThumb.addEventListener('click', () => {
+    lightboxImg.src = thumbImg.src;
+    lightbox.classList.add('show');
+  });
+  lightbox.addEventListener('click', () => lightbox.classList.remove('show'));
 
-  function loadTFScript() {
-    return new Promise((resolve, reject) => {
-      if (window.tf) { resolve(); return; }
-      const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js';
-      s.onload = resolve;
-      s.onerror = reject;
-      document.head.appendChild(s);
-    });
-  }
+  /* ══ AFFICHAGE PHOTO + SAISIE MANUELLE ══ */
 
-  /*
-   *  On construit et entraîne le modèle directement dans le navigateur
-   *  sur des données synthétiques générées à partir des chiffres Canvas.
-   *
-   *  POURQUOI ce choix :
-   *  - Les modèles MNIST hébergés publiquement changent d'URL régulièrement
-   *    et cassent les pages après quelques mois.
-   *  - On génère ici ~270 exemples (30 par chiffre) en rendant chaque chiffre
-   *    1-9 dans des polices, tailles, positions et rotations variées sur Canvas,
-   *    puis on entraîne un petit CNN dessus (~5 secondes).
-   *  - Le modèle résultant reconnaît bien les chiffres imprimés de sudoku
-   *    car ils ressemblent à ces rendus Canvas (serif, sans-serif, bold).
-   */
-  async function buildAndTrainModel() {
-    await loadTFScript();
-    const tf = window.tf;
+  function processImage(dataUrl) {
+    prevImg.src            = dataUrl;
+    prevImg.style.display  = 'block';
+    camPh.style.display    = 'none';
+    guide.style.display    = 'none';
 
-    const SIZE = 28;
-    const SAMPLES_PER_DIGIT = 40;
-    const fonts = [
-      'bold 22px Arial',
-      'bold 22px Georgia',
-      'bold 20px "Times New Roman"',
-      '22px Arial',
-      'bold 24px Verdana',
-      'bold 20px Courier',
-    ];
-
-    const xs = [], ys = [];
-
-    for (let digit = 1; digit <= 9; digit++) {
-      for (let s = 0; s < SAMPLES_PER_DIGIT; s++) {
-        const cv = document.createElement('canvas');
-        cv.width = cv.height = SIZE;
-        const ctx = cv.getContext('2d');
-
-        /* Fond blanc */
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(0, 0, SIZE, SIZE);
-
-        /* Légère rotation aléatoire ±10° et translation ±2px */
-        const angle  = (Math.random() - 0.5) * 0.35;
-        const dx     = (Math.random() - 0.5) * 4;
-        const dy     = (Math.random() - 0.5) * 4;
-        ctx.save();
-        ctx.translate(SIZE/2 + dx, SIZE/2 + dy);
-        ctx.rotate(angle);
-
-        ctx.fillStyle = '#000';
-        ctx.font      = fonts[s % fonts.length];
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(String(digit), 0, 0);
-        ctx.restore();
-
-        /* Convertir en niveaux de gris normalisés [0,1], fond=0, encre=1 */
-        const imgData = ctx.getImageData(0, 0, SIZE, SIZE).data;
-        const tensor  = new Float32Array(SIZE * SIZE);
-        for (let i = 0; i < SIZE * SIZE; i++) {
-          /* Inverser : fond blanc → 0, encre noire → 1 */
-          const gray = (imgData[i*4] + imgData[i*4+1] + imgData[i*4+2]) / 3;
-          tensor[i]  = 1 - gray / 255;
-        }
-        xs.push(tensor);
-        ys.push(digit - 1); /* classes 0–8 pour chiffres 1–9 */
-      }
-    }
-
-    const xTensor = tf.tensor4d(
-      xs.flat(),
-      [xs.length, SIZE, SIZE, 1]
-    );
-    const yTensor = tf.oneHot(tf.tensor1d(ys, 'int32'), 9);
-
-    /* Architecture CNN légère */
-    const model = tf.sequential();
-    model.add(tf.layers.conv2d({ inputShape:[SIZE,SIZE,1], filters:16, kernelSize:3, activation:'relu', padding:'same' }));
-    model.add(tf.layers.maxPooling2d({ poolSize:2 }));
-    model.add(tf.layers.conv2d({ filters:32, kernelSize:3, activation:'relu', padding:'same' }));
-    model.add(tf.layers.maxPooling2d({ poolSize:2 }));
-    model.add(tf.layers.flatten());
-    model.add(tf.layers.dense({ units:64, activation:'relu' }));
-    model.add(tf.layers.dropout({ rate:0.3 }));
-    model.add(tf.layers.dense({ units:9,  activation:'softmax' }));
-
-    model.compile({ optimizer:'adam', loss:'categoricalCrossentropy', metrics:['accuracy'] });
-
-    await model.fit(xTensor, yTensor, {
-      epochs: 25,
-      batchSize: 32,
-      shuffle: true,
-      verbose: 0,
-    });
-
-    xTensor.dispose();
-    yTensor.dispose();
-    return model;
-  }
-
-  /* ── Binarisation adaptative ── */
-  function toGray(data, W, H) {
-    const g = new Uint8Array(W * H);
-    for (let i = 0; i < W * H; i++)
-      g[i] = (77*data[i*4] + 150*data[i*4+1] + 29*data[i*4+2]) >> 8;
-    return g;
-  }
-
-  function adaptiveThreshold(gray, W, H) {
-    const S = new Int32Array((W+1)*(H+1));
-    for (let y = 1; y <= H; y++)
-      for (let x = 1; x <= W; x++)
-        S[y*(W+1)+x] = gray[(y-1)*W+(x-1)] + S[(y-1)*(W+1)+x] + S[y*(W+1)+(x-1)] - S[(y-1)*(W+1)+(x-1)];
-
-    const R   = Math.max(15, Math.round(Math.min(W,H)/16)) | 1;
-    const bin = new Uint8Array(W * H);
-    for (let y = 0; y < H; y++) {
-      for (let x = 0; x < W; x++) {
-        const x1=Math.max(0,x-R), y1=Math.max(0,y-R);
-        const x2=Math.min(W,x+R+1), y2=Math.min(H,y+R+1);
-        const n = (x2-x1)*(y2-y1);
-        const s = S[y2*(W+1)+x2] - S[y1*(W+1)+x2] - S[y2*(W+1)+x1] + S[y1*(W+1)+x1];
-        bin[y*W+x] = gray[y*W+x] < (s/n - 8) ? 1 : 0;
-      }
-    }
-    return bin;
-  }
-
-  /* ── Détection des lignes de grille ── */
-  function findGridLines(bin, W, H) {
-    const rowSum = new Float32Array(H);
-    const colSum = new Float32Array(W);
-    for (let y = 0; y < H; y++)
-      for (let x = 0; x < W; x++) {
-        rowSum[y] += bin[y*W+x];
-        colSum[x] += bin[y*W+x];
-      }
-
-    function findPeaks(profile, size, n) {
-      const win = Math.max(3, Math.round(size/60));
-      const smooth = new Float32Array(size);
-      for (let i = 0; i < size; i++) {
-        let s=0, c=0;
-        for (let j=Math.max(0,i-win); j<=Math.min(size-1,i+win); j++) { s+=profile[j]; c++; }
-        smooth[i] = s/c;
-      }
-      const maxVal = Math.max(...smooth);
-      const thr    = maxVal * 0.35;
-      const peaks  = [];
-      const minGap = size / (n * 2);
-      for (let i = 1; i < size-1; i++) {
-        if (smooth[i] >= thr && smooth[i] >= smooth[i-1] && smooth[i] >= smooth[i+1])
-          if (!peaks.length || i - peaks[peaks.length-1] > minGap)
-            peaks.push(i);
-      }
-      return peaks;
-    }
-
-    function normalize(peaks, n, size) {
-      if (peaks.length >= 2) {
-        const first=peaks[0], last=peaks[peaks.length-1];
-        const step=(last-first)/(n-1);
-        return Array.from({length:n}, (_,i) => Math.round(first + i*step));
-      }
-      return Array.from({length:n}, (_,i) => Math.round(i*(size-1)/(n-1)));
-    }
-
-    return {
-      rows: normalize(findPeaks(rowSum, H, 10), 10, H),
-      cols: normalize(findPeaks(colSum, W, 10), 10, W),
-    };
-  }
-
-  /* ── Préparation d'une cellule pour le modèle (28×28, normalisée) ── */
-  function cellToTensor(bin, x0, y0, x1, y1, W) {
-    const mw = Math.round((x1-x0)*0.15), mh = Math.round((y1-y0)*0.15);
-    const cx0=x0+mw, cy0=y0+mh, cx1=x1-mw, cy1=y1-mh;
-    const cw=cx1-cx0, ch=cy1-cy0;
-
-    /* Test de vacuité : densité < 3% → case vide */
-    let dark = 0;
-    for (let y=cy0; y<cy1; y++) for (let x=cx0; x<cx1; x++) dark += bin[y*W+x];
-    if (dark / (cw*ch) < 0.03) return null;
-
-    /* Extraire la boîte englobante réelle du chiffre */
-    let minX=cx1, maxX=cx0, minY=cy1, maxY=cy0;
-    for (let y=cy0; y<cy1; y++)
-      for (let x=cx0; x<cx1; x++)
-        if (bin[y*W+x]) { minX=Math.min(minX,x); maxX=Math.max(maxX,x); minY=Math.min(minY,y); maxY=Math.max(maxY,y); }
-    if (maxX<=minX || maxY<=minY) return null;
-
-    /* Recopier dans un canvas 28×28 avec marge de 4px pour centrer */
-    const SIZE = 28, PAD = 4;
-    const cv   = document.createElement('canvas');
-    cv.width = cv.height = SIZE;
-    const ctx  = cv.getContext('2d');
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, SIZE, SIZE);
-
-    /* Canvas intermédiaire pour la région du chiffre */
-    const sw = maxX-minX+1, sh = maxY-minY+1;
-    const tmp = document.createElement('canvas');
-    tmp.width = sw; tmp.height = sh;
-    const tctx = tmp.getContext('2d');
-    /* Dessiner pixel par pixel (bin → imageData blanc/noir) */
-    const idata = tctx.createImageData(sw, sh);
-    for (let y=0; y<sh; y++)
-      for (let x=0; x<sw; x++) {
-        const v   = bin[(minY+y)*W+(minX+x)] ? 0 : 255;
-        const idx = (y*sw+x)*4;
-        idata.data[idx]=idata.data[idx+1]=idata.data[idx+2]=v;
-        idata.data[idx+3]=255;
-      }
-    tctx.putImageData(idata, 0, 0);
-
-    /* Centrer dans 28×28 en préservant le ratio */
-    const ratio = Math.min((SIZE-PAD*2)/sw, (SIZE-PAD*2)/sh);
-    const dw = Math.round(sw*ratio), dh = Math.round(sh*ratio);
-    const dx = Math.round((SIZE-dw)/2), dy = Math.round((SIZE-dh)/2);
-    ctx.drawImage(tmp, 0, 0, sw, sh, dx, dy, dw, dh);
-
-    /* Convertir en Float32Array normalisé [0,1], fond=0, encre=1 */
-    const pixels = ctx.getImageData(0,0,SIZE,SIZE).data;
-    const tensor = new Float32Array(SIZE*SIZE);
-    for (let i=0; i<SIZE*SIZE; i++)
-      tensor[i] = 1 - (pixels[i*4]+pixels[i*4+1]+pixels[i*4+2])/(3*255);
-
-    return tensor;
-  }
-
-  /* ── Pipeline principal ── */
-  async function processImage(dataUrl) {
-    prevImg.src = dataUrl;
-    prevImg.style.display = 'block';
-    camPh.style.display = 'none';
-    proc.classList.add('show');
-    document.querySelector('#proc p').textContent = 'Chargement du modèle…';
-    photores.classList.remove('show');
-
-    const img = new Image();
-    await new Promise(res => { img.onload = res; img.src = dataUrl; });
-
-    /* Entraîner le modèle si pas encore fait */
-    if (!tfModel) {
-      document.querySelector('#proc p').textContent = 'Entraînement du modèle (~5s)…';
-      tfModel = await buildAndTrainModel();
-    }
-
-    document.querySelector('#proc p').textContent = 'Analyse de la grille…';
-
-    /* Prétraitement image */
-    const scale = Math.min(1, 900/Math.max(img.width, img.height));
-    const W = Math.round(img.width*scale), H = Math.round(img.height*scale);
-    const cv = document.createElement('canvas');
-    cv.width=W; cv.height=H;
-    cv.getContext('2d').drawImage(img, 0, 0, W, H);
-    const raw  = cv.getContext('2d').getImageData(0,0,W,H).data;
-    const gray = toGray(raw, W, H);
-    const bin  = adaptiveThreshold(gray, W, H);
-    const { rows, cols } = findGridLines(bin, W, H);
-
-    /* Inférence cellule par cellule */
-    const tf    = window.tf;
-    const board = Array.from({length:9}, () => Array(9).fill(0));
-    const SIZE  = 28;
-
-    for (let r=0; r<9; r++) {
-      for (let c=0; c<9; c++) {
-        const tensor = cellToTensor(bin, cols[c], rows[r], cols[c+1], rows[r+1], W);
-        if (!tensor) continue;
-
-        const input  = tf.tensor4d(tensor, [1, SIZE, SIZE, 1]);
-        const output = tfModel.predict(input);
-        const probs  = await output.data();
-        input.dispose(); output.dispose();
-
-        /* Trouver la classe avec la probabilité maximale */
-        let maxP=0, pred=0;
-        for (let i=0; i<9; i++) if (probs[i] > maxP) { maxP=probs[i]; pred=i+1; }
-
-        /* Seuil de confiance : si le modèle hésite trop, on laisse vide */
-        if (maxP > 0.55) board[r][c] = pred;
-      }
-    }
-
-    proc.classList.remove('show');
+    thumbImg.src = dataUrl;
     buildGrid('photo-grid');
-    document.querySelectorAll('#photo-grid input').forEach(inp => {
-      const v = board[+inp.dataset.r][+inp.dataset.c];
-      if (v) inp.value = v;
-    });
-    photores.classList.add('show');
-
-    const filled = board.flat().filter(v => v!==0).length;
-    status('status-photo',
-      filled > 0
-        ? `${filled} chiffre(s) détecté(s). Vérifie, corrige si besoin, puis clique sur Résoudre.`
-        : "Aucun chiffre détecté — saisis les indices manuellement.",
-      'inf');
+    document.getElementById('photo-and-grid').classList.add('show');
+    status('status-photo', 'Regarde la photo et saisis les chiffres dans la grille ci-contre, puis clique sur Résoudre.', 'inf');
   }
 
 })();
