@@ -297,11 +297,12 @@ body {
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
 <script>
 (function () {
 
-  /* ────── Solver ────── */
+  /* ══════════════════════════════════════════════════════════════
+   *  SOLVEUR SUDOKU
+   * ══════════════════════════════════════════════════════════════ */
   function ok(b, r, c, n) {
     for (let i = 0; i < 9; i++) {
       if (i !== c && b[r][i] === n) return false;
@@ -313,7 +314,6 @@ body {
         if ((i !== r || j !== c) && b[i][j] === n) return false;
     return true;
   }
-
   function solve(board) {
     for (let r = 0; r < 9; r++)
       for (let c = 0; c < 9; c++)
@@ -329,7 +329,6 @@ body {
         }
     return true;
   }
-
   function validClues(board) {
     for (let r = 0; r < 9; r++)
       for (let c = 0; c < 9; c++)
@@ -337,7 +336,9 @@ body {
     return true;
   }
 
-  /* ────── Grid DOM ────── */
+  /* ══════════════════════════════════════════════════════════════
+   *  GRILLE DOM
+   * ══════════════════════════════════════════════════════════════ */
   function buildGrid(id) {
     const el = document.getElementById(id);
     el.innerHTML = '';
@@ -347,14 +348,9 @@ body {
         cell.className = 'cell';
         if (c === 2 || c === 5) cell.dataset.cb = 1;
         if (r === 2 || r === 5) cell.dataset.rb = 1;
-
         const inp = document.createElement('input');
-        inp.type = 'text';
-        inp.inputMode = 'numeric';
-        inp.maxLength = 1;
-        inp.dataset.r = r;
-        inp.dataset.c = c;
-
+        inp.type = 'text'; inp.inputMode = 'numeric'; inp.maxLength = 1;
+        inp.dataset.r = r; inp.dataset.c = c;
         inp.addEventListener('keydown', e => {
           if (inp.readOnly) return;
           if (e.key === 'Backspace' || e.key === 'Delete') { inp.value = ''; e.preventDefault(); return; }
@@ -362,25 +358,20 @@ body {
           if (dirs[e.key]) {
             e.preventDefault();
             const [dr, dc] = dirs[e.key];
-            const nr = Math.min(8, Math.max(0, r+dr));
-            const nc = Math.min(8, Math.max(0, c+dc));
-            document.querySelector(`#${id} input[data-r="${nr}"][data-c="${nc}"]`)?.focus();
+            document.querySelector(`#${id} input[data-r="${Math.min(8,Math.max(0,r+dr))}"][data-c="${Math.min(8,Math.max(0,c+dc))}"]`)?.focus();
           }
         });
-
         inp.addEventListener('input', () => {
           if (inp.readOnly) return;
           const v = inp.value.replace(/[^1-9]/g, '');
           inp.value = v ? v[v.length-1] : '';
           inp.className = '';
         });
-
         cell.appendChild(inp);
         el.appendChild(cell);
       }
     }
   }
-
   function readBoard(id) {
     const b = Array.from({length:9}, () => Array(9).fill(0));
     document.querySelectorAll(`#${id} input`).forEach(inp => {
@@ -389,7 +380,6 @@ body {
     });
     return b;
   }
-
   function applyResult(id, original, solved) {
     document.querySelectorAll(`#${id} input`).forEach(inp => {
       const r = +inp.dataset.r, c = +inp.dataset.c;
@@ -398,46 +388,32 @@ body {
       inp.className = original[r][c] !== 0 ? '' : 'solved';
     });
   }
-
   function clearGrid(id) {
-    document.querySelectorAll(`#${id} input`).forEach(inp => {
-      inp.value = ''; inp.className = ''; inp.readOnly = false;
-    });
+    document.querySelectorAll(`#${id} input`).forEach(inp => { inp.value = ''; inp.className = ''; inp.readOnly = false; });
   }
-
   function markErrors(id, board) {
     document.querySelectorAll(`#${id} input`).forEach(inp => {
       const r = +inp.dataset.r, c = +inp.dataset.c;
       inp.classList.toggle('bad', board[r][c] !== 0 && !ok(board, r, c, board[r][c]));
     });
   }
-
   function status(id, msg, type) {
     const el = document.getElementById(id);
-    el.textContent = msg;
-    el.className = 'status-msg ' + type;
+    el.textContent = msg; el.className = 'status-msg ' + type;
   }
-
   function runSolver(gridId, statusId) {
     const board = readBoard(gridId);
-    if (!validClues(board)) {
-      markErrors(gridId, board);
-      status(statusId, 'La grille contient des contradictions — vérifie les indices.', 'err');
-      return;
-    }
+    if (!validClues(board)) { markErrors(gridId, board); status(statusId, 'La grille contient des contradictions.', 'err'); return; }
     const orig = board.map(r => [...r]);
-    if (solve(board)) {
-      applyResult(gridId, orig, board);
-      status(statusId, 'Grille résolue !', 'ok');
-    } else {
-      status(statusId, 'Aucune solution trouvée pour cette grille.', 'err');
-    }
+    if (solve(board)) { applyResult(gridId, orig, board); status(statusId, 'Grille résolue !', 'ok'); }
+    else status(statusId, 'Aucune solution trouvée.', 'err');
   }
 
-  /* ────── Init manual grid ────── */
   buildGrid('manual-grid');
 
-  /* ────── Tabs ────── */
+  /* ══════════════════════════════════════════════════════════════
+   *  ONGLETS
+   * ══════════════════════════════════════════════════════════════ */
   document.getElementById('tab-manual').addEventListener('click', () => {
     document.getElementById('tab-manual').classList.add('active');
     document.getElementById('tab-photo').classList.remove('active');
@@ -451,147 +427,239 @@ body {
     document.getElementById('panel-manual').classList.remove('active');
   });
 
-  /* ────── Manual actions ────── */
-  document.getElementById('btn-clear-manual').addEventListener('click', () => {
-    clearGrid('manual-grid');
-    status('status-manual', 'Remplis les indices puis clique sur Résoudre.', 'inf');
-  });
-  document.getElementById('btn-solve-manual').addEventListener('click', () => {
-    runSolver('manual-grid', 'status-manual');
-  });
+  document.getElementById('btn-clear-manual').addEventListener('click', () => { clearGrid('manual-grid'); status('status-manual', 'Remplis les indices puis clique sur Résoudre.', 'inf'); });
+  document.getElementById('btn-solve-manual').addEventListener('click', () => runSolver('manual-grid', 'status-manual'));
 
-  /* ────── Camera ────── */
-  let stream      = null;
-  const video     = document.getElementById('video');
-  const snapCv    = document.getElementById('snap-canvas');
-  const prevImg   = document.getElementById('preview-img');
-  const camPh     = document.getElementById('cam-ph');
-  const guide     = document.getElementById('guide');
-  const proc      = document.getElementById('proc');
-  const photores  = document.getElementById('photo-result');
-  const btnCap    = document.getElementById('btn-capture');
-  const btnCam    = document.getElementById('btn-start-cam');
+  /* ══════════════════════════════════════════════════════════════
+   *  CAMÉRA
+   * ══════════════════════════════════════════════════════════════ */
+  let stream = null;
+  const video    = document.getElementById('video');
+  const snapCv   = document.getElementById('snap-canvas');
+  const prevImg  = document.getElementById('preview-img');
+  const camPh    = document.getElementById('cam-ph');
+  const guide    = document.getElementById('guide');
+  const proc     = document.getElementById('proc');
+  const photores = document.getElementById('photo-result');
+  const btnCap   = document.getElementById('btn-capture');
+  const btnCam   = document.getElementById('btn-start-cam');
 
   function stopStream() {
     if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
-    video.style.display = 'none';
-    video.srcObject = null;
-    camPh.style.display = 'flex';
-    guide.style.display = 'none';
-    btnCap.disabled = true;
-    btnCam.textContent = 'Démarrer la caméra';
+    video.style.display = 'none'; video.srcObject = null;
+    camPh.style.display = 'flex'; guide.style.display = 'none';
+    btnCap.disabled = true; btnCam.textContent = 'Démarrer la caméra';
   }
-
   btnCam.addEventListener('click', async () => {
     if (stream) { stopStream(); return; }
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width:{ideal:1280}, height:{ideal:960} }
-      });
-      video.srcObject = stream;
-      video.style.display = 'block';
-      camPh.style.display = 'none';
-      guide.style.display = 'block';
-      prevImg.style.display = 'none';
-      photores.classList.remove('show');
-      btnCap.disabled = false;
-      btnCam.textContent = 'Arrêter la caméra';
-    } catch {
-      alert("Impossible d'accéder à la caméra. Vérifie les permissions du navigateur.");
-    }
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:960} } });
+      video.srcObject = stream; video.style.display = 'block';
+      camPh.style.display = 'none'; guide.style.display = 'block';
+      prevImg.style.display = 'none'; photores.classList.remove('show');
+      btnCap.disabled = false; btnCam.textContent = 'Arrêter la caméra';
+    } catch { alert("Impossible d'accéder à la caméra."); }
   });
-
   btnCap.addEventListener('click', () => {
-    snapCv.width  = video.videoWidth;
-    snapCv.height = video.videoHeight;
+    snapCv.width = video.videoWidth; snapCv.height = video.videoHeight;
     snapCv.getContext('2d').drawImage(video, 0, 0);
-    const url = snapCv.toDataURL('image/jpeg', 0.93);
-    stopStream();
-    processImage(url);
+    stopStream(); processImage(snapCv.toDataURL('image/jpeg', 0.93));
   });
-
   document.getElementById('file-input').addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = ev => processImage(ev.target.result);
-    reader.readAsDataURL(file);
-    e.target.value = '';
+    reader.readAsDataURL(file); e.target.value = '';
   });
-
   document.getElementById('btn-retake').addEventListener('click', () => {
-    photores.classList.remove('show');
-    prevImg.style.display = 'none';
-    prevImg.src = '';
-    camPh.style.display = 'flex';
+    photores.classList.remove('show'); prevImg.style.display = 'none'; prevImg.src = ''; camPh.style.display = 'flex';
   });
+  document.getElementById('btn-clear-photo').addEventListener('click', () => { clearGrid('photo-grid'); status('status-photo', 'Grille effacée.', 'inf'); });
+  document.getElementById('btn-solve-photo').addEventListener('click', () => runSolver('photo-grid', 'status-photo'));
 
-  document.getElementById('btn-clear-photo').addEventListener('click', () => {
-    clearGrid('photo-grid');
-    status('status-photo', 'Grille effacée — corrige ou résous.', 'inf');
-  });
+  /* ══════════════════════════════════════════════════════════════
+   *  TRAITEMENT IMAGE — RECONNAISSANCE DE CHIFFRES SANS LIBRAIRIE
+   *
+   *  Pipeline :
+   *   1. Conversion niveaux de gris
+   *   2. Binarisation adaptative (seuil local par bloc)
+   *   3. Détection des 10 lignes H et 10 lignes V par projection
+   *   4. Extraction de chaque cellule
+   *   5. Reconnaissance par descripteurs géométriques :
+   *      - densité de pixels noirs par zone (grille 4×4 sur le chiffre)
+   *      - rapport hauteur/largeur de la boîte englobante
+   *      - densité globale
+   *      Comparaison par distance euclidienne aux templates pré-calculés.
+   * ══════════════════════════════════════════════════════════════ */
 
-  document.getElementById('btn-solve-photo').addEventListener('click', () => {
-    runSolver('photo-grid', 'status-photo');
-  });
-
-  /* ────── OCR ────── */
-  let tWorker = null;
-  let tReady  = false;
-
-  (async () => {
-    try {
-      tWorker = await Tesseract.createWorker('eng', 1, { logger: () => {} });
-      await tWorker.setParameters({
-        tessedit_char_whitelist: '123456789',
-        tessedit_pageseg_mode:   '10',
-      });
-      tReady = true;
-    } catch { }
-  })();
-
-  async function ocrCell(ctx, x, y, w, h) {
-    const cv = document.createElement('canvas');
-    cv.width  = w * 3;
-    cv.height = h * 3;
-    const cx = cv.getContext('2d');
-    cx.imageSmoothingEnabled = false;
-    cx.drawImage(ctx.canvas, x, y, w, h, 0, 0, cv.width, cv.height);
-
-    const px = cx.getImageData(0, 0, cv.width, cv.height).data;
-    let dark = 0;
-    for (let i = 0; i < px.length; i += 4)
-      if (0.299*px[i] + 0.587*px[i+1] + 0.114*px[i+2] < 140) dark++;
-    if (dark / (cv.width * cv.height) < 0.03) return 0;
-
-    const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
-    const url  = URL.createObjectURL(blob);
-    try {
-      const { data: { text } } = await tWorker.recognize(url);
-      const d = text.trim().replace(/[^1-9]/g, '');
-      return d.length === 1 ? +d : 0;
-    } catch { return 0; }
-    finally { URL.revokeObjectURL(url); }
+  /* ── 1 & 2. Binarisation adaptative ── */
+  function toGray(data, W, H) {
+    const g = new Uint8Array(W * H);
+    for (let i = 0; i < W * H; i++)
+      g[i] = (77*data[i*4] + 150*data[i*4+1] + 29*data[i*4+2]) >> 8;
+    return g;
   }
 
-  async function ocrBoard(imgEl) {
-    const sz = 630, cs = sz / 9;
-    const off = document.createElement('canvas');
-    off.width = off.height = sz;
-    const ctx = off.getContext('2d');
-    ctx.drawImage(imgEl, 0, 0, sz, sz);
-    const board = Array.from({length:9}, () => Array(9).fill(0));
-    const pad = Math.round(cs * 0.14);
-    for (let r = 0; r < 9; r++)
-      for (let c = 0; c < 9; c++) {
-        const x = Math.round(c*cs)+pad, y = Math.round(r*cs)+pad;
-        const w = Math.round(cs)-pad*2, h = Math.round(cs)-pad*2;
-        board[r][c] = await ocrCell(ctx, x, y, w, h);
+  function adaptiveThreshold(gray, W, H) {
+    /* Table d'intégrales pour sommer un voisinage en O(1) */
+    const S = new Int32Array((W+1)*(H+1));
+    for (let y = 1; y <= H; y++)
+      for (let x = 1; x <= W; x++)
+        S[y*(W+1)+x] = gray[(y-1)*W+(x-1)] + S[(y-1)*(W+1)+x] + S[y*(W+1)+(x-1)] - S[(y-1)*(W+1)+(x-1)];
+
+    const R = Math.max(15, Math.round(Math.min(W,H) / 16)) | 1; // rayon du voisinage
+    const bin = new Uint8Array(W * H);
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        const x1=Math.max(0,x-R), y1=Math.max(0,y-R);
+        const x2=Math.min(W,x+R+1), y2=Math.min(H,y+R+1);
+        const n = (x2-x1)*(y2-y1);
+        const s = S[y2*(W+1)+x2] - S[y1*(W+1)+x2] - S[y2*(W+1)+x1] + S[y1*(W+1)+x1];
+        /* pixel noir si < moyenne locale - 8 (marge pour absorber le bruit) */
+        bin[y*W+x] = gray[y*W+x] < (s/n - 8) ? 1 : 0;
       }
-    return board;
+    }
+    return bin;
   }
 
-  async function processImage(dataUrl) {
+  /* ── 3. Détection des lignes de grille par projection ── */
+  function findGridLines(bin, W, H) {
+    /* Profil horizontal : somme des pixels noirs par ligne */
+    const rowSum = new Float32Array(H);
+    const colSum = new Float32Array(W);
+    for (let y = 0; y < H; y++)
+      for (let x = 0; x < W; x++) {
+        rowSum[y] += bin[y*W+x];
+        colSum[x] += bin[y*W+x];
+      }
+
+    /* On cherche 10 pics dans chaque profil (= les traits de la grille).
+       Méthode : lissage puis détection des 10 maxima locaux les mieux espacés. */
+    function findPeaks(profile, size, expectedCount) {
+      /* Lissage par fenêtre glissante pour fusionner les traits épais */
+      const smooth = new Float32Array(size);
+      const win = Math.max(3, Math.round(size/60));
+      for (let i = 0; i < size; i++) {
+        let s = 0, n = 0;
+        for (let j = Math.max(0,i-win); j <= Math.min(size-1,i+win); j++) { s += profile[j]; n++; }
+        smooth[i] = s / n;
+      }
+      /* Seuil = 40% du max global */
+      const maxVal = Math.max(...smooth);
+      const thr = maxVal * 0.40;
+      /* Collecte tous les maxima locaux au-dessus du seuil */
+      const peaks = [];
+      for (let i = 1; i < size-1; i++) {
+        if (smooth[i] >= thr && smooth[i] >= smooth[i-1] && smooth[i] >= smooth[i+1]) {
+          if (peaks.length === 0 || i - peaks[peaks.length-1] > size/(expectedCount*2))
+            peaks.push(i);
+        }
+      }
+      return peaks;
+    }
+
+    const hPeaks = findPeaks(rowSum, H, 10);
+    const vPeaks = findPeaks(colSum, W, 10);
+
+    /* Si on n'a pas exactement 10 pics, on interpole régulièrement entre le premier et le dernier */
+    function normalize(peaks, expectedCount, size) {
+      if (peaks.length >= 2) {
+        const first = peaks[0], last = peaks[peaks.length-1];
+        const step = (last - first) / (expectedCount - 1);
+        return Array.from({length: expectedCount}, (_, i) => Math.round(first + i*step));
+      }
+      /* Fallback : répartition uniforme sur toute l'image */
+      return Array.from({length: expectedCount}, (_, i) => Math.round(i * (size-1) / (expectedCount-1)));
+    }
+
+    return {
+      rows: normalize(hPeaks, 10, H),
+      cols: normalize(vPeaks, 10, W)
+    };
+  }
+
+  /* ── 4 & 5. Extraction et reconnaissance d'une cellule ── */
+
+  /*
+   *  Descripteurs utilisés pour reconnaître le chiffre :
+   *  - On divise la boîte englobante du chiffre en une grille 4×4 de zones
+   *  - Pour chaque zone on calcule la densité de pixels noirs (0.0 à 1.0)
+   *  - On ajoute le rapport h/w de la boîte englobante (forme globale)
+   *  => vecteur de 17 valeurs qu'on compare aux templates par distance L2
+   *
+   *  Les templates ont été construits manuellement en analysant les patterns
+   *  typiques des chiffres d'imprimerie : quelle zone est dense pour quel chiffre.
+   */
+  const TEMPLATES = {
+    1: [0.0,0.3,0.7,0.1, 0.0,0.1,0.9,0.1, 0.0,0.1,0.9,0.1, 0.0,0.1,0.9,0.1,  2.5],
+    2: [0.2,0.8,0.8,0.2, 0.0,0.2,0.8,0.4, 0.2,0.8,0.4,0.1, 0.8,0.8,0.8,0.2,  0.8],
+    3: [0.2,0.8,0.8,0.2, 0.0,0.2,0.8,0.4, 0.0,0.4,0.8,0.2, 0.2,0.6,0.8,0.2,  0.8],
+    4: [0.2,0.1,0.6,0.6, 0.6,0.4,0.8,0.6, 0.8,0.8,0.8,0.8, 0.0,0.0,0.6,0.6,  0.9],
+    5: [0.8,0.8,0.8,0.2, 0.8,0.6,0.2,0.0, 0.4,0.8,0.8,0.2, 0.2,0.4,0.8,0.4,  0.8],
+    6: [0.4,0.8,0.6,0.1, 0.8,0.4,0.2,0.0, 0.8,0.8,0.8,0.4, 0.4,0.8,0.8,0.4,  0.9],
+    7: [0.8,0.8,0.8,0.8, 0.0,0.2,0.6,0.6, 0.0,0.4,0.8,0.2, 0.0,0.6,0.6,0.0,  1.0],
+    8: [0.4,0.8,0.8,0.4, 0.6,0.4,0.4,0.6, 0.6,0.6,0.6,0.6, 0.4,0.8,0.8,0.4,  0.95],
+    9: [0.4,0.8,0.8,0.4, 0.6,0.4,0.4,0.8, 0.2,0.6,0.8,0.8, 0.2,0.6,0.8,0.4,  0.9],
+  };
+
+  function extractFeatures(bin, x0, y0, x1, y1, W) {
+    /* Boîte englobante réelle du chiffre (exclut les marges blanches) */
+    let minX=x1, maxX=x0, minY=y1, maxY=y0;
+    for (let y=y0; y<y1; y++)
+      for (let x=x0; x<x1; x++)
+        if (bin[y*W+x]) { minX=Math.min(minX,x); maxX=Math.max(maxX,x); minY=Math.min(minY,y); maxY=Math.max(maxY,y); }
+
+    if (maxX <= minX || maxY <= minY) return null; // cellule vide
+
+    const cw = maxX - minX + 1;
+    const ch = maxY - minY + 1;
+    const ratio = ch / cw; // rapport hauteur/largeur
+
+    /* Grille 4×4 de densités */
+    const zones = new Float32Array(16);
+    for (let zy=0; zy<4; zy++) {
+      for (let zx=0; zx<4; zx++) {
+        const px0 = minX + Math.round(zx*cw/4);
+        const py0 = minY + Math.round(zy*ch/4);
+        const px1 = minX + Math.round((zx+1)*cw/4);
+        const py1 = minY + Math.round((zy+1)*ch/4);
+        let dark=0, total=0;
+        for (let y=py0; y<py1; y++)
+          for (let x=px0; x<px1; x++) { dark+=bin[y*W+x]; total++; }
+        zones[zy*4+zx] = total > 0 ? dark/total : 0;
+      }
+    }
+    return [...zones, ratio];
+  }
+
+  function classify(features) {
+    let best = -1, bestDist = Infinity;
+    for (const [digit, tmpl] of Object.entries(TEMPLATES)) {
+      let d = 0;
+      for (let i = 0; i < features.length; i++) d += (features[i]-tmpl[i])**2;
+      if (d < bestDist) { bestDist = d; best = +digit; }
+    }
+    /* Seuil de rejet : si la distance est trop grande, on préfère laisser vide */
+    return bestDist < 1.8 ? best : 0;
+  }
+
+  function readCell(bin, x0, y0, x1, y1, W, H) {
+    /* Marge intérieure de 12% pour ne pas inclure les traits de la grille */
+    const mw = Math.round((x1-x0)*0.12), mh = Math.round((y1-y0)*0.12);
+    const cx0=x0+mw, cy0=y0+mh, cx1=x1-mw, cy1=y1-mh;
+
+    /* Densité globale de la cellule → si < 3% : vide */
+    let dark=0, total=(cx1-cx0)*(cy1-cy0);
+    for (let y=cy0; y<cy1; y++) for (let x=cx0; x<cx1; x++) dark+=bin[y*W+x];
+    if (dark/total < 0.03) return 0;
+
+    const feats = extractFeatures(bin, cx0, cy0, cx1, cy1, W);
+    if (!feats) return 0;
+    return classify(feats);
+  }
+
+  /* ── Pipeline principal ── */
+  function processImage(dataUrl) {
     prevImg.src = dataUrl;
     prevImg.style.display = 'block';
     camPh.style.display = 'none';
@@ -599,30 +667,44 @@ body {
     photores.classList.remove('show');
 
     const img = new Image();
-    await new Promise(res => { img.onload = res; img.src = dataUrl; });
+    img.onload = () => {
+      /* Redimensionner à 900px max pour vitesse et précision équilibrées */
+      const scale = Math.min(1, 900 / Math.max(img.width, img.height));
+      const W = Math.round(img.width*scale), H = Math.round(img.height*scale);
 
-    let board = Array.from({length:9}, () => Array(9).fill(0));
-    if (tReady) board = await ocrBoard(img);
+      const cv = document.createElement('canvas');
+      cv.width = W; cv.height = H;
+      const ctx = cv.getContext('2d');
+      ctx.drawImage(img, 0, 0, W, H);
 
-    proc.classList.remove('show');
+      const rawData = ctx.getImageData(0, 0, W, H).data;
+      const gray = toGray(rawData, W, H);
+      const bin  = adaptiveThreshold(gray, W, H);
 
-    buildGrid('photo-grid');
-    document.querySelectorAll('#photo-grid input').forEach(inp => {
-      const v = board[+inp.dataset.r][+inp.dataset.c];
-      if (v) inp.value = v;
-    });
+      const { rows, cols } = findGridLines(bin, W, H);
 
-    photores.classList.add('show');
-    const filled = board.flat().filter(v => v !== 0).length;
-    status(
-      'status-photo',
-      tReady
-        ? (filled > 0
-            ? `${filled} chiffre(s) détecté(s). Vérifie, corrige si besoin, puis clique sur Résoudre.`
-            : "Aucun chiffre détecté — saisis les indices manuellement puis clique sur Résoudre.")
-        : "OCR indisponible — saisis les indices manuellement puis clique sur Résoudre.",
-      'inf'
-    );
+      /* Lecture des 81 cellules */
+      const board = Array.from({length:9}, () => Array(9).fill(0));
+      for (let r=0; r<9; r++)
+        for (let c=0; c<9; c++)
+          board[r][c] = readCell(bin, cols[c], rows[r], cols[c+1], rows[r+1], W, H);
+
+      proc.classList.remove('show');
+      buildGrid('photo-grid');
+      document.querySelectorAll('#photo-grid input').forEach(inp => {
+        const v = board[+inp.dataset.r][+inp.dataset.c];
+        if (v) inp.value = v;
+      });
+      photores.classList.add('show');
+
+      const filled = board.flat().filter(v => v!==0).length;
+      status('status-photo',
+        filled > 0
+          ? `${filled} chiffre(s) détecté(s). Vérifie, corrige si besoin, puis clique sur Résoudre.`
+          : "Aucun chiffre détecté — saisis les indices manuellement.",
+        'inf');
+    };
+    img.src = dataUrl;
   }
 
 })();
