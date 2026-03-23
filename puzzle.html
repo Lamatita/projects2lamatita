@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Puzzle Personnalisable</title>
+<title>Puzzle</title>
 <style>
 :root {
   --fond:       #f7f3ff;
@@ -218,7 +218,7 @@ body {
 <!-- Barre du haut -->
 <div class="top-bar">
   <div>
-    <div class="page-title">🧩 Puzzle Personnalisable</div>
+    <div class="page-title">Puzzle Personnalisable</div>
     <div class="page-sub">Chargez une image, choisissez les options et mélangez !</div>
   </div>
 </div>
@@ -231,7 +231,7 @@ body {
 
     <!-- Image -->
     <div class="panel-box">
-      <h3>📷 Image</h3>
+      <h3>Image</h3>
       <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"
            ondragover="event.preventDefault();this.classList.add('over')"
            ondragleave="this.classList.remove('over')"
@@ -244,7 +244,7 @@ body {
 
     <!-- Nombre de pièces -->
     <div class="panel-box">
-      <h3>🔢 Nombre de pièces</h3>
+      <h3>Nombre de pièces</h3>
       <div class="form-field">
         <label>Sélectionner le nombre</label>
         <select id="pieceCount">
@@ -306,7 +306,7 @@ body {
 
     <!-- Mode -->
     <div class="panel-box">
-      <h3>🎨 Mode de découpe</h3>
+      <h3>Mode de découpe</h3>
       <div class="mode-toggle">
         <div class="mode-btn active" id="modeClassique" onclick="setMode('classique')">Classique</div>
         <div class="mode-btn" id="modeEtrange" onclick="setMode('etrange')">Étrange</div>
@@ -318,24 +318,23 @@ body {
 
     <!-- Boutons -->
     <div class="panel-box">
-      <h3>🎮 Actions</h3>
-      <button class="btn btn-shuffle" id="btnShuffle" onclick="shufflePuzzle()" disabled>🔀 Mélanger</button>
-      <button class="btn btn-reset"   id="btnReset"   onclick="resetPuzzle()"   disabled style="margin-top:6px;">↩️ Recommencer</button>
+      <h3>Actions</h3>
+      <button class="btn btn-shuffle" id="btnShuffle" onclick="shufflePuzzle()" disabled>Mélanger</button>
+      <button class="btn btn-reset"   id="btnReset"   onclick="resetPuzzle()"   disabled style="margin-top:6px;">Recommencer</button>
     </div>
 
   </div>
 
   <!-- ── Centre (table) ── -->
   <div class="center-area">
-    <div class="table-label">🪵 Table</div>
+    <div class="table-label">Table de jeu</div>
     <div id="puzzleTable">
       <canvas id="puzzleCanvas"></canvas>
       <div class="table-placeholder" id="placeholder">
-        <span class="icon">🧩</span>
         Chargez une image et cliquez sur<br><strong>Mélanger</strong> pour commencer !
       </div>
       <div id="victoryBanner">
-        <h2>🎉 Bravo !</h2>
+        <h2>Bravo !</h2>
         <p id="victoryTime">Puzzle complété !</p>
       </div>
     </div>
@@ -346,7 +345,7 @@ body {
 
     <!-- Chrono -->
     <div class="panel-box">
-      <h3>⏱️ Chronomètre</h3>
+      <h3>Chronomètre</h3>
       <div class="chrono-display" id="chronoDisplay">00:00</div>
       <div class="chrono-label" id="chronoLabel">En attente…</div>
       <button class="btn btn-pause" id="btnPause" onclick="togglePause()" disabled style="margin-top:6px;">⏸ Pause</button>
@@ -354,14 +353,14 @@ body {
 
     <!-- Progression -->
     <div class="panel-box">
-      <h3>📊 Progression</h3>
+      <h3>Progression</h3>
       <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
       <div class="progress-label" id="progressLabel">0 / 0 pièces</div>
     </div>
 
     <!-- Aperçu image -->
     <div class="panel-box" style="flex:1;display:flex;flex-direction:column;">
-      <h3>🖼️ Image originale</h3>
+      <h3>Image originale</h3>
       <div id="previewPlaceholder" class="preview-placeholder">L'image apparaîtra ici après chargement</div>
       <img id="previewFull" alt="image originale">
     </div>
