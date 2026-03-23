@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Generateur de Plans de Classe</title>
+<title>Générateur de Plans de Classe</title>
+<!-- PDF.js pour l'import PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<!-- SheetJS pour l'import Excel -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
     --fond:       #f7f3ff;
@@ -26,11 +30,27 @@ body {
     flex-direction:column;
 }
 
+/* ── Confettis : z-index -1 pour passer derrière tout ── */
+.falling {
+    position:fixed; top:-10%;
+    animation:fall linear infinite;
+    pointer-events:none;
+    z-index:-1;          /* derrière canvas, titres et panneaux */
+}
+.confetti { width:10px; height:10px; opacity:.7; }
+.lama     { font-size:1.6rem; line-height:1; }
+.c1{background:#6c63ff;}.c2{background:#ffb703;}.c3{background:#ff6f91;}
+.c4{background:#00c9a7;}.c5{background:#845ec2;}
+@keyframes fall {
+    0%   { transform:translateY(0)      rotate(0deg); }
+    100% { transform:translateY(120vh)  rotate(var(--rotation)); }
+}
+
 /* ── Barre du haut ── */
 .top-bar {
     width:100%; padding:6px 16px;
     display:flex; align-items:center; justify-content:space-between;
-    flex-shrink:0; z-index:10;
+    flex-shrink:0; position:relative; z-index:2;
 }
 .back-link {
     background:transparent; border:2px solid var(--principal); color:var(--principal);
@@ -44,6 +64,7 @@ body {
 .btn-bar {
     display:flex; gap:5px; padding:4px 16px;
     flex-shrink:0; flex-wrap:wrap; align-items:center;
+    position:relative; z-index:2;
 }
 .btn {
     padding:6px 12px; border:none; border-radius:7px;
@@ -55,14 +76,17 @@ body {
 .btn-alpha  { background:#3b82f6; }
 .btn-spe    { background:#845ec2; }
 .btn-rand   { background:#10b981; }
+.btn-eval   { background:#e11d48; }
 .btn-clear  { background:#ef4444; }
 .btn-save   { background:#22c55e; }
 .btn-mode   { background:#1d4ed8; }
-.btn-pdf    { background:#f97316; }
+.btn-png    { background:#f97316; }
+.btn-prof   { background:#ffb703; color:#1a1000; }
 
 /* ── Info strip ── */
 .info-strip {
-    padding:2px 16px 4px; display:flex; align-items:center; gap:14px; flex-shrink:0;
+    padding:2px 16px 4px; display:flex; align-items:center; gap:14px;
+    flex-shrink:0; position:relative; z-index:2;
 }
 .info-strip span { font-size:.78em; color:var(--doux); font-weight:600; }
 .badge {
@@ -73,6 +97,7 @@ body {
 /* ── Zone principale ── */
 .main {
     flex:1; display:flex; overflow:hidden; padding:4px 10px 8px; gap:10px;
+    position:relative; z-index:1;
 }
 .canvas-area {
     flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden;
@@ -84,7 +109,7 @@ body {
 
 /* ── Panneau droite ── */
 .side-panel {
-    width:260px; flex-shrink:0; display:flex; flex-direction:column;
+    width:262px; flex-shrink:0; display:flex; flex-direction:column;
     gap:8px; overflow-y:auto; scrollbar-width:thin;
     scrollbar-color:var(--principal) transparent;
 }
@@ -97,9 +122,9 @@ body {
     text-transform:uppercase; letter-spacing:.07em; margin-bottom:8px;
 }
 
-/* Liste eleves */
+/* Liste élèves */
 .student-list {
-    max-height:200px; overflow-y:auto; scrollbar-width:thin;
+    max-height:180px; overflow-y:auto; scrollbar-width:thin;
     scrollbar-color:var(--principal) transparent;
 }
 .student-row {
@@ -128,8 +153,9 @@ body {
 .btn-sm:hover { filter:brightness(1.1); }
 .btn-sm.green  { background:#22c55e; }
 .btn-sm.red    { background:#ef4444; }
+.btn-sm.ocre   { background:#f59e0b; color:#1a1000; }
 
-/* Drop zone */
+/* Zone d'import */
 .drop-zone {
     border:2px dashed var(--principal); border-radius:8px; padding:10px;
     text-align:center; color:var(--doux); font-size:.78em; cursor:pointer;
@@ -138,21 +164,15 @@ body {
 .drop-zone.over { background:var(--surf-alt); }
 .drop-zone input[type=file] { display:none; }
 
-/* Legende */
+/* Légende */
 .legend-item { display:flex; align-items:center; gap:7px; font-size:.78em; color:var(--doux); margin-bottom:4px; }
 .legend-dot  { width:13px; height:13px; border-radius:3px; flex-shrink:0; }
-
-/* Confettis */
-.falling { position:fixed; top:-10%; animation:fall linear infinite; pointer-events:none; z-index:0; }
-.confetti { width:10px; height:10px; opacity:.65; }
-.c1{background:#6c63ff;}.c2{background:#ffb703;}.c3{background:#ff6f91;}.c4{background:#00c9a7;}.c5{background:#845ec2;}
-@keyframes fall { 0%{transform:translateY(0) rotate(0deg);} 100%{transform:translateY(120vh) rotate(var(--rotation));} }
 
 /* Tooltip */
 #tip {
     position:fixed; background:rgba(42,32,64,.94); color:#fff; font-size:.77em;
     padding:5px 10px; border-radius:7px; pointer-events:none; display:none;
-    z-index:999; border:1px solid var(--principal); white-space:nowrap; max-width:240px;
+    z-index:999; border:1px solid var(--principal); white-space:nowrap; max-width:260px;
 }
 
 /* Toast */
@@ -166,45 +186,54 @@ body {
 </head>
 <body>
 
-<!-- Confettis -->
-<div class="falling confetti c1" style="left:4%;  animation-duration:5.1s; --rotation:720deg;"></div>
+<!-- Confettis et lamas — z-index:-1, passent derrière tout -->
+<div class="falling confetti c1" style="left:3%;  animation-duration:5.1s; --rotation:720deg;"></div>
+<div class="falling lama"        style="left:9%;  animation-duration:7.2s; --rotation:-1080deg;">🦙</div>
 <div class="falling confetti c2" style="left:16%; animation-duration:6.4s; --rotation:540deg;"></div>
-<div class="falling confetti c3" style="left:31%; animation-duration:4.7s; --rotation:-720deg;"></div>
-<div class="falling confetti c4" style="left:48%; animation-duration:5.9s; --rotation:360deg;"></div>
-<div class="falling confetti c5" style="left:63%; animation-duration:6.2s; --rotation:900deg;"></div>
-<div class="falling confetti c1" style="left:77%; animation-duration:5.5s; --rotation:720deg;"></div>
-<div class="falling confetti c2" style="left:91%; animation-duration:6.8s; --rotation:-900deg;"></div>
+<div class="falling lama"        style="left:23%; animation-duration:8.1s; --rotation:900deg;">🦙</div>
+<div class="falling confetti c3" style="left:30%; animation-duration:4.7s; --rotation:-720deg;"></div>
+<div class="falling lama"        style="left:37%; animation-duration:6.8s; --rotation:1260deg;">🦙</div>
+<div class="falling confetti c4" style="left:44%; animation-duration:5.9s; --rotation:360deg;"></div>
+<div class="falling lama"        style="left:51%; animation-duration:7.5s; --rotation:-1440deg;">🦙</div>
+<div class="falling confetti c5" style="left:58%; animation-duration:6.2s; --rotation:900deg;"></div>
+<div class="falling lama"        style="left:65%; animation-duration:8.6s; --rotation:-1080deg;">🦙</div>
+<div class="falling confetti c1" style="left:72%; animation-duration:5.5s; --rotation:720deg;"></div>
+<div class="falling lama"        style="left:80%; animation-duration:7.9s; --rotation:1620deg;">🦙</div>
+<div class="falling confetti c2" style="left:88%; animation-duration:6.8s; --rotation:-900deg;"></div>
+<div class="falling confetti c3" style="left:95%; animation-duration:5.3s; --rotation:540deg;"></div>
 
 <div id="tip"></div>
 <div id="toast"></div>
 
-<!-- Barre haut -->
+<!-- Barre du haut -->
 <div class="top-bar">
-    <button class="back-link" onclick="history.back()">← Retour en arriere</button>
-    <h1 class="page-title">Generateur de Plans de Classe</h1>
+    <button class="back-link" onclick="history.back()">← Retour en arrière</button>
+    <h1 class="page-title">Générateur de Plans de Classe</h1>
     <div style="width:160px;"></div>
 </div>
 
-<!-- Boutons -->
+<!-- Boutons d'action -->
 <div class="btn-bar">
-    <button class="btn btn-alpha" onclick="genAlpha()">Alphabetique</button>
-    <button class="btn btn-spe"   onclick="genSpe()">Par Spe</button>
-    <button class="btn btn-rand"  onclick="genRand()">Aleatoire</button>
+    <button class="btn btn-alpha" onclick="genAlpha()">Alphabétique</button>
+    <button class="btn btn-spe"   onclick="genSpe()">Par Spé</button>
+    <button class="btn btn-rand"  onclick="genRand()">Aléatoire</button>
+    <button class="btn btn-eval"  onclick="genEval()">Évaluation</button>
+    <button class="btn btn-prof"  onclick="toggleProfMode()" id="btnProf">Bureau prof : OFF</button>
     <button class="btn btn-clear" onclick="clearLayout()">Effacer</button>
     <button class="btn btn-save"  onclick="saveLayout()">Sauvegarder</button>
-    <button class="btn btn-mode"  id="btnMode" onclick="toggleMode()">Mode : Selection</button>
-    <button class="btn btn-pdf"   onclick="exportPDF()">Export PDF</button>
+    <button class="btn btn-mode"  id="btnMode" onclick="toggleMode()">Mode : Sélection</button>
+    <button class="btn btn-png"   onclick="exportPNG()">Export PNG</button>
 </div>
 
 <!-- Infos -->
 <div class="info-strip">
-    <span>Mode : <span class="badge" id="modeLabel">Selection des tables</span></span>
-    <span>Eleves : <span class="badge" id="nbEleves">0</span></span>
+    <span>Mode : <span class="badge" id="modeLabel">Sélection des tables</span></span>
+    <span>Élèves : <span class="badge" id="nbEleves">0</span></span>
     <span>Tables : <span class="badge" id="nbTables">0</span></span>
     <span id="genInfo" style="color:#10b981;font-weight:700;font-size:.78em;"></span>
 </div>
 
-<!-- Contenu -->
+<!-- Contenu principal -->
 <div class="main">
 
     <div class="canvas-area">
@@ -213,20 +242,20 @@ body {
 
     <div class="side-panel">
 
-        <!-- Gestion eleves -->
+        <!-- Gestion des élèves -->
         <div class="panel-box">
-            <h3>Gerer les eleves</h3>
+            <h3>Gérer les élèves</h3>
             <div class="student-list" id="studentList"></div>
             <div class="btn-row" style="margin-top:6px;">
                 <button class="btn-sm green" onclick="showAddForm()">+ Ajouter</button>
                 <button class="btn-sm red"   onclick="deleteSelected()">Supprimer</button>
             </div>
             <div id="addForm" style="display:none;margin-top:9px;">
-                <div class="form-field"><label>Nom</label>    <input id="fNom"    type="text" placeholder="Dupont"></div>
-                <div class="form-field"><label>Prenom</label> <input id="fPrenom" type="text" placeholder="Marie"></div>
-                <div class="form-field"><label>Classe</label> <input id="fClasse" type="text" placeholder="3e B"></div>
-                <div class="form-field"><label>Spe 1</label>  <input id="fSpe1"   type="text" placeholder="Maths"></div>
-                <div class="form-field"><label>Spe 2</label>  <input id="fSpe2"   type="text" placeholder="SES"></div>
+                <div class="form-field"><label>Nom</label>       <input id="fNom"    type="text" placeholder="Dupont"></div>
+                <div class="form-field"><label>Prénom</label>    <input id="fPrenom" type="text" placeholder="Marie"></div>
+                <div class="form-field"><label>Classe</label>    <input id="fClasse" type="text" placeholder="3e B"></div>
+                <div class="form-field"><label>Spé 1</label>     <input id="fSpe1"   type="text" placeholder="Maths"></div>
+                <div class="form-field"><label>Spé 2</label>     <input id="fSpe2"   type="text" placeholder="SES"></div>
                 <div class="btn-row">
                     <button class="btn-sm green" onclick="addStudent()">Enregistrer</button>
                     <button class="btn-sm red"   onclick="cancelAdd()">Annuler</button>
@@ -234,27 +263,30 @@ body {
             </div>
         </div>
 
-        <!-- Import CSV -->
+        <!-- Import de liste -->
         <div class="panel-box">
-            <h3>Importer un CSV</h3>
+            <h3>Importer une liste</h3>
             <div class="drop-zone" id="dropZone"
                  ondragover="event.preventDefault();this.classList.add('over')"
                  ondragleave="this.classList.remove('over')"
                  ondrop="handleDrop(event)"
-                 onclick="document.getElementById('csvInput').click()">
-                Glissez un fichier CSV ici<br>ou cliquez pour parcourir
-                <input type="file" id="csvInput" accept=".csv" onchange="handleFile(this.files[0])">
+                 onclick="document.getElementById('fileInput').click()">
+                Glissez un fichier ici<br>
+                <span style="font-size:.85em;opacity:.7;">CSV · TXT · Excel · PDF</span>
+                <input type="file" id="fileInput" accept=".csv,.txt,.xlsx,.xls,.pdf"
+                       onchange="handleFile(this.files[0])">
             </div>
             <div id="filesLoaded" style="font-size:.73em;color:var(--doux);margin-top:5px;"></div>
         </div>
 
-        <!-- Legende -->
+        <!-- Légende -->
         <div class="panel-box">
-            <h3>Legende</h3>
-            <div class="legend-item"><div class="legend-dot" style="background:#6c63ff;"></div>Table selectionnee (vide)</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#50ffa0;"></div>Eleve place</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#c4bfee;"></div>Table vide (vue plan)</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#e5e7eb;"></div>Case non selectionnee</div>
+            <h3>Légende</h3>
+            <div class="legend-item"><div class="legend-dot" style="background:#6c63ff;"></div>Table sélectionnée (vide)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#d1fae5; border:1px solid #34d399;"></div>Élève placé</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#fef3c7; border:1px solid #f59e0b;"></div>Bureau prof</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#fca5a5; border:1px solid #ef4444;"></div>Mode évaluation</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#e5e7eb;"></div>Case non sélectionnée</div>
         </div>
 
     </div>
@@ -264,25 +296,25 @@ body {
 (function () {
 'use strict';
 
-// ── Constantes (reprises du Python : GRID_SIZE=20, CELL_SIZE=40, MARGIN=5) ─────
+// ── Constantes ────────────────────────────────────────────────────────────────
 const GRID_SIZE = 20;
-const CELL_SIZE = 34;
-const MARGIN    = 4;
-const W = GRID_SIZE * (CELL_SIZE + MARGIN);
-const H = GRID_SIZE * (CELL_SIZE + MARGIN);
+const CELL      = 34;
+const GAP       = 4;
+const W = GRID_SIZE * (CELL + GAP);
+const H = GRID_SIZE * (CELL + GAP);
 
-// ── Etat global ───────────────────────────────────────────────────────────────
+// ── État global ───────────────────────────────────────────────────────────────
 let students       = [];
-let grid           = mkGrid(false);
+let grid           = mkGrid(false);   // tables élèves activées
+let profGrid       = mkGrid(false);   // tables prof activées
 let seatingPlan    = mkGrid(null);
-let mode           = 'SELECT_LAYOUT';
+let mode           = 'SELECT_LAYOUT'; // 'SELECT_LAYOUT' | 'VIEW_PLAN'
+let profMode       = false;           // true = clics placent bureau prof
 let generationMode = null;
 let selectedIdx    = -1;
 let loadedFiles    = [];
 
-function mkGrid(val) {
-    return Array.from({length:GRID_SIZE}, ()=>new Array(GRID_SIZE).fill(val));
-}
+function mkGrid(v){ return Array.from({length:GRID_SIZE},()=>new Array(GRID_SIZE).fill(v)); }
 
 // ── Canvas ────────────────────────────────────────────────────────────────────
 const canvas = document.getElementById('planCanvas');
@@ -290,117 +322,219 @@ const ctx    = canvas.getContext('2d');
 canvas.width  = W;
 canvas.height = H;
 
-// ── Toast ─────────────────────────────────────────────────────────────────────
-function toast(msg, dur=2200) {
-    const el = document.getElementById('toast');
-    el.textContent = msg;
-    el.style.display = 'block';
+// ── UI helpers ────────────────────────────────────────────────────────────────
+function toast(msg, dur=2400){
+    const el=document.getElementById('toast');
+    el.textContent=msg; el.style.display='block';
     clearTimeout(toast._t);
-    toast._t = setTimeout(()=>{ el.style.display='none'; }, dur);
+    toast._t=setTimeout(()=>{el.style.display='none';},dur);
 }
 
-// ── Info bar ──────────────────────────────────────────────────────────────────
-function updateInfoBar() {
-    document.getElementById('nbEleves').textContent  = students.length;
-    document.getElementById('nbTables').textContent  = getSeats().length;
+function updateInfoBar(){
+    document.getElementById('nbEleves').textContent = students.length;
+    document.getElementById('nbTables').textContent = getSeats().length;
     document.getElementById('modeLabel').textContent =
-        mode === 'SELECT_LAYOUT' ? 'Selection des tables'
-                                 : `Plan (${generationMode || 'aucun'})`;
+        mode==='SELECT_LAYOUT' ? 'Sélection des tables'
+                               : `Plan (${generationMode||'aucun'})`;
     document.getElementById('btnMode').textContent =
-        mode === 'SELECT_LAYOUT' ? 'Mode : Selection' : 'Mode : Vue plan';
+        mode==='SELECT_LAYOUT' ? 'Mode : Sélection' : 'Mode : Vue plan';
     document.getElementById('genInfo').textContent =
-        generationMode ? `Generation : ${generationMode}` : '';
+        generationMode ? `Génération : ${generationMode}` : '';
+    const bp=document.getElementById('btnProf');
+    bp.textContent = profMode ? 'Bureau prof : ON' : 'Bureau prof : OFF';
+    bp.style.outline = profMode ? '2px solid #1a1000' : 'none';
 }
 
 // ── Seats ─────────────────────────────────────────────────────────────────────
-function getSeats() {
+function getSeats(){
     const s=[];
     for(let r=0;r<GRID_SIZE;r++)
         for(let c=0;c<GRID_SIZE;c++)
             if(grid[r][c]) s.push([r,c]);
     return s;
 }
+function clearSeatingPlan(){ seatingPlan=mkGrid(null); }
 
-function clearSeatingPlan() { seatingPlan = mkGrid(null); }
+// ── Détection de l'avant de la classe ────────────────────────────────────────
+// Retourne 'top'|'bottom'|'left'|'right' selon la position dominante du bureau prof.
+// Si aucun bureau prof n'est posé, retourne 'top' par défaut.
+function getFrontSide(){
+    // Recense toutes les cellules prof
+    const profCells=[];
+    for(let r=0;r<GRID_SIZE;r++)
+        for(let c=0;c<GRID_SIZE;c++)
+            if(profGrid[r][c]) profCells.push([r,c]);
+
+    if(!profCells.length) return 'top';
+
+    // Barycentre du bureau prof
+    const avgR = profCells.reduce((s,[r])=>s+r,0) / profCells.length;
+    const avgC = profCells.reduce((s,[,c])=>s+c,0) / profCells.length;
+
+    // Distance au 4 bords depuis le barycentre
+    const distTop    = avgR;
+    const distBottom = (GRID_SIZE-1) - avgR;
+    const distLeft   = avgC;
+    const distRight  = (GRID_SIZE-1) - avgC;
+
+    const min = Math.min(distTop, distBottom, distLeft, distRight);
+    if(min===distTop)    return 'top';
+    if(min===distBottom) return 'bottom';
+    if(min===distLeft)   return 'left';
+    return 'right';
+}
+
+// Retourne un score de «proximité à l'avant» pour un siège [r,c]
+// (score bas = proche du prof = premier rang)
+function frontScore(r, c, side){
+    if(side==='top')    return r;
+    if(side==='bottom') return (GRID_SIZE-1)-r;
+    if(side==='left')   return c;
+    return (GRID_SIZE-1)-c;
+}
+
+// Trie les sièges du plus proche au plus lointain de l'avant
+function sortSeatsByFront(seats){
+    const side=getFrontSide();
+    return [...seats].sort((a,b)=>frontScore(a[0],a[1],side)-frontScore(b[0],b[1],side));
+}
 
 // ── Dessin ────────────────────────────────────────────────────────────────────
-function draw() {
+function cellXY(r,c){ return [c*(CELL+GAP), r*(CELL+GAP)]; }
+
+function draw(){
     ctx.clearRect(0,0,W,H);
 
     // Fond
-    ctx.fillStyle = '#f0ecff';
+    ctx.fillStyle='#f0ecff';
     ctx.fillRect(0,0,W,H);
 
-    // Legere grille de fond
-    ctx.strokeStyle = 'rgba(108,99,255,.08)';
-    ctx.lineWidth = 0.5;
+    // Grille de fond subtile
+    ctx.strokeStyle='rgba(108,99,255,.07)';
+    ctx.lineWidth=0.5;
     for(let i=0;i<=GRID_SIZE;i++){
-        const x=i*(CELL_SIZE+MARGIN), y=i*(CELL_SIZE+MARGIN);
-        ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+        const p=i*(CELL+GAP);
+        ctx.beginPath(); ctx.moveTo(p,0); ctx.lineTo(p,H); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0,p); ctx.lineTo(W,p); ctx.stroke();
     }
 
-    for(let r=0;r<GRID_SIZE;r++) {
-        for(let c=0;c<GRID_SIZE;c++) {
-            const x = c*(CELL_SIZE+MARGIN);
-            const y = r*(CELL_SIZE+MARGIN);
-            const active = grid[r][c];
+    for(let r=0;r<GRID_SIZE;r++){
+        for(let c=0;c<GRID_SIZE;c++){
+            const [x,y]=cellXY(r,c);
+            const active=grid[r][c];
+            const isProf=profGrid[r][c];
 
+            // ── Bureau prof ──
+            if(isProf){
+                // Fusionne visuellement avec les voisins prof adjacents
+                // On dessine juste un fond, les bords seront gérés ci-dessous
+                const nProf = profGrid[r]?.[c-1]; // voisin gauche
+                ctx.shadowColor='rgba(0,0,0,.18)'; ctx.shadowBlur=4; ctx.shadowOffsetY=2;
+                ctx.fillStyle='#fef3c7';
+                ctx.strokeStyle='#f59e0b';
+                ctx.lineWidth=1.5;
+                ctx.beginPath();
+                ctx.roundRect(x,y,CELL,CELL,4);
+                ctx.fill(); ctx.stroke();
+                ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+                // Texte "Prof" uniquement sur la cellule la plus à gauche d'un bloc
+                const leftIsProf = c>0 && profGrid[r][c-1];
+                if(!leftIsProf){
+                    // Compter la largeur du bloc
+                    let w=1;
+                    while(c+w<GRID_SIZE && profGrid[r][c+w]) w++;
+                    ctx.fillStyle='#78350f';
+                    ctx.font='bold 8px "Segoe UI",sans-serif';
+                    ctx.textAlign='center'; ctx.textBaseline='middle';
+                    const bw=w*(CELL+GAP)-GAP;
+                    ctx.fillText('Prof',x+bw/2,y+CELL/2);
+                }
+                continue;
+            }
+
+            // ── Cases normales ──
             let fill, stroke, lw;
-
-            if(mode==='SELECT_LAYOUT') {
-                // Comme Python : BLUE si actif, LIGHT_GRAY sinon
+            if(mode==='SELECT_LAYOUT'){
                 fill   = active ? '#6c63ff' : '#e5e7eb';
                 stroke = active ? '#4a42cc' : '#d1d5db';
                 lw     = active ? 1.5 : 0.7;
             } else {
-                // VIEW_PLAN : GREEN si eleve place, LIGHT_GRAY si vide actif, transparent sinon
-                if(!active) {
-                    fill='#f5f3ff'; stroke='rgba(0,0,0,0)'; lw=0;
-                } else {
-                    const s = seatingPlan[r][c];
-                    fill   = s ? '#d1fae5' : '#c4bfee';
-                    stroke = s ? '#34d399' : '#9893d8';
-                    lw = 1.5;
+                if(!active){ fill='#f5f3ff'; stroke='transparent'; lw=0; }
+                else {
+                    const s=seatingPlan[r][c];
+                    if(generationMode==='évaluation' && s){
+                        fill='#fee2e2'; stroke='#ef4444'; lw=1.5;
+                    } else {
+                        fill   = s ? '#d1fae5' : '#c4bfee';
+                        stroke = s ? '#34d399' : '#9893d8';
+                        lw=1.5;
+                    }
                 }
             }
 
-            if(active) {
-                ctx.shadowColor='rgba(0,0,0,.2)'; ctx.shadowBlur=4; ctx.shadowOffsetY=2;
-            }
-
+            if(active){ ctx.shadowColor='rgba(0,0,0,.18)'; ctx.shadowBlur=4; ctx.shadowOffsetY=2; }
             ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.lineWidth=lw;
-            ctx.beginPath();
-            ctx.roundRect(x, y, CELL_SIZE, CELL_SIZE, 4);
-            ctx.fill();
-            if(lw) ctx.stroke();
-
+            ctx.beginPath(); ctx.roundRect(x,y,CELL,CELL,4);
+            ctx.fill(); if(lw) ctx.stroke();
             ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
 
             // Texte en VIEW_PLAN
-            if(mode==='VIEW_PLAN' && active) {
-                const s = seatingPlan[r][c];
-                if(s) {
+            if(mode==='VIEW_PLAN' && active){
+                const s=seatingPlan[r][c];
+                if(s){
                     ctx.textAlign='center'; ctx.textBaseline='middle';
-                    // Prenom + Nom sur deux lignes (comme Python : first_line/second_line)
-                    ctx.fillStyle='#064e3b';
-                    ctx.font=`bold 7px "Segoe UI",sans-serif`;
-                    ctx.fillText(trunc(s.prenom,9), x+CELL_SIZE/2, y+CELL_SIZE/2-5);
-                    ctx.fillText(trunc(s.nom,9),    x+CELL_SIZE/2, y+CELL_SIZE/2+4);
-                    // Specialites (comme Python : spe1/spe2 en font 6)
-                    if(s.spe1||s.spe2) {
-                        ctx.fillStyle='rgba(4,80,50,.5)';
+                    const dark = generationMode==='évaluation' ? '#7f1d1d' : '#064e3b';
+                    ctx.fillStyle=dark;
+                    ctx.font='bold 7px "Segoe UI",sans-serif';
+                    ctx.fillText(trunc(s.prenom,9), x+CELL/2, y+CELL/2-5);
+                    ctx.fillText(trunc(s.nom,9),    x+CELL/2, y+CELL/2+4);
+                    if(s.spe1||s.spe2){
+                        ctx.fillStyle='rgba(4,80,50,.45)';
                         ctx.font='5.5px "Segoe UI",sans-serif';
-                        ctx.fillText(trunc(`${s.spe1||''}/${s.spe2||''}`,11), x+CELL_SIZE/2, y+CELL_SIZE-4);
+                        ctx.fillText(trunc(`${s.spe1||''}/${s.spe2||''}`,11), x+CELL/2, y+CELL-4);
                     }
                 }
             }
         }
     }
+    // ── Indicateur « AVANT » ──────────────────────────────────────────────────
+    // Bande colorée + flèche sur le côté de la classe qui fait face au prof
+    drawFrontIndicator();
+
     ctx.textAlign='left'; ctx.textBaseline='alphabetic';
 }
 
-function trunc(s,n){ return s.length>n ? s.slice(0,n-1)+'.' : s; }
+// Dessine la bande « AVANT » et une flèche sur le bord correspondant
+function drawFrontIndicator(){
+    const side = getFrontSide();
+    const BAND = 8;   // épaisseur de la bande
+    const col  = 'rgba(108,99,255,0.55)';
+
+    ctx.save();
+
+    // Bande colorée sur le bord avant
+    ctx.fillStyle = col;
+    if(side==='top')    ctx.fillRect(0, 0, W, BAND);
+    if(side==='bottom') ctx.fillRect(0, H-BAND, W, BAND);
+    if(side==='left')   ctx.fillRect(0, 0, BAND, H);
+    if(side==='right')  ctx.fillRect(W-BAND, 0, BAND, H);
+
+    // Label « AVANT »
+    const mid = W/2;
+    const midH = H/2;
+    ctx.fillStyle = '#4a42cc';
+    ctx.font = 'bold 9px "Segoe UI",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    if(side==='top')    ctx.fillText('AVANT', mid,  BAND/2);
+    if(side==='bottom') ctx.fillText('AVANT', mid,  H - BAND/2);
+    if(side==='left')   ctx.fillText('AVANT', BAND/2 + 2, midH);
+    if(side==='right')  ctx.fillText('AVANT', W - BAND/2 - 2, midH);
+
+    ctx.restore();
+}
+
+function trunc(s,n){ return s.length>n?s.slice(0,n-1)+'.':s; }
 
 // ── Interactions canvas ───────────────────────────────────────────────────────
 canvas.addEventListener('click', e=>{
@@ -408,25 +542,32 @@ canvas.addEventListener('click', e=>{
     const rect=canvas.getBoundingClientRect();
     const mx=(e.clientX-rect.left)*(W/rect.width);
     const my=(e.clientY-rect.top) *(H/rect.height);
-    const col=Math.floor(mx/(CELL_SIZE+MARGIN));
-    const row=Math.floor(my/(CELL_SIZE+MARGIN));
-    if(row>=0&&row<GRID_SIZE&&col>=0&&col<GRID_SIZE) {
+    const col=Math.floor(mx/(CELL+GAP));
+    const row=Math.floor(my/(CELL+GAP));
+    if(row<0||row>=GRID_SIZE||col<0||col>=GRID_SIZE) return;
+
+    if(profMode){
+        // En mode bureau prof : bascule la cellule prof (et retire la table élève si besoin)
+        profGrid[row][col] = !profGrid[row][col];
+        if(profGrid[row][col]) grid[row][col]=false; // pas les deux en même temps
+    } else {
         grid[row][col] = !grid[row][col];
+        if(grid[row][col]) profGrid[row][col]=false;
         clearSeatingPlan();
-        draw(); updateInfoBar();
     }
+    draw(); updateInfoBar();
 });
 
-// Tooltip au survol (VIEW_PLAN uniquement)
+// Tooltip
 canvas.addEventListener('mousemove', e=>{
     const tip=document.getElementById('tip');
     if(mode!=='VIEW_PLAN'){ tip.style.display='none'; return; }
     const rect=canvas.getBoundingClientRect();
     const mx=(e.clientX-rect.left)*(W/rect.width);
     const my=(e.clientY-rect.top) *(H/rect.height);
-    const col=Math.floor(mx/(CELL_SIZE+MARGIN));
-    const row=Math.floor(my/(CELL_SIZE+MARGIN));
-    if(row>=0&&row<GRID_SIZE&&col>=0&&col<GRID_SIZE&&grid[row][col]) {
+    const col=Math.floor(mx/(CELL+GAP));
+    const row=Math.floor(my/(CELL+GAP));
+    if(row>=0&&row<GRID_SIZE&&col>=0&&col<GRID_SIZE&&grid[row][col]){
         const s=seatingPlan[row][col];
         if(s){
             tip.style.display='block';
@@ -438,113 +579,160 @@ canvas.addEventListener('mousemove', e=>{
 });
 canvas.addEventListener('mouseleave',()=>{ document.getElementById('tip').style.display='none'; });
 
-// ── Generations ───────────────────────────────────────────────────────────────
+// ── Mode bureau prof ──────────────────────────────────────────────────────────
+function toggleProfMode(){
+    profMode=!profMode;
+    updateInfoBar();
+    toast(profMode ? 'Mode bureau prof activé — cliquez pour placer' : 'Mode bureau prof désactivé');
+}
 
-// generate_alphabetic : tri par nom.upper()
-function genAlpha() {
+// ── Génération alphabétique ───────────────────────────────────────────────────
+function genAlpha(){
     clearSeatingPlan();
     const seats=getSeats();
-    if(!seats.length){ toast('Selectionnez d\'abord des tables (mode Selection)'); return; }
-    if(seats.length<students.length)
-        toast(`Attention : ${seats.length} places pour ${students.length} eleves`);
+    if(!seats.length){ toast('Sélectionnez d\'abord des tables'); return; }
+    if(seats.length<students.length) toast(`Attention : ${seats.length} places pour ${students.length} élèves`);
+    const orderedSeats = sortSeatsByFront(seats);
     const sorted=[...students].sort((a,b)=>a.nom.toUpperCase().localeCompare(b.nom.toUpperCase()));
-    sorted.forEach((s,i)=>{ if(i<seats.length){ const[r,c]=seats[i]; seatingPlan[r][c]=s; } });
-    generationMode='alphabetique'; mode='VIEW_PLAN';
-    draw(); updateInfoBar();
-    toast('Plan alphabetique genere');
+    sorted.forEach((s,i)=>{ if(i<orderedSeats.length){ const[r,c]=orderedSeats[i]; seatingPlan[r][c]=s; } });
+    generationMode='alphabétique'; mode='VIEW_PLAN';
+    draw(); updateInfoBar(); toast('Plan alphabétique généré');
 }
 
-// generate_by_specialty : groupes spe1-spe2 tries, puis tri nom dans chaque groupe
-function genSpe() {
+// ── Génération par spécialité ─────────────────────────────────────────────────
+function genSpe(){
     clearSeatingPlan();
     const seats=getSeats();
-    if(!seats.length){ toast('Selectionnez d\'abord des tables (mode Selection)'); return; }
+    if(!seats.length){ toast('Sélectionnez d\'abord des tables'); return; }
+    const orderedSeatsSpe = sortSeatsByFront(seats);
     const groups={};
-    students.forEach(s=>{
-        const key=`${s.spe1||''}-${s.spe2||''}`;
-        if(!groups[key]) groups[key]=[];
-        groups[key].push(s);
-    });
+    students.forEach(s=>{ const k=`${s.spe1||''}-${s.spe2||''}`; if(!groups[k]) groups[k]=[]; groups[k].push(s); });
     let idx=0;
-    Object.keys(groups).sort().forEach(key=>{
-        const grp=groups[key].sort((a,b)=>a.nom.toUpperCase().localeCompare(b.nom.toUpperCase()));
-        grp.forEach(s=>{ if(idx<seats.length){ const[r,c]=seats[idx++]; seatingPlan[r][c]=s; } });
+    Object.keys(groups).sort().forEach(k=>{
+        groups[k].sort((a,b)=>a.nom.toUpperCase().localeCompare(b.nom.toUpperCase()))
+                 .forEach(s=>{ if(idx<orderedSeatsSpe.length){ const[r,c]=orderedSeatsSpe[idx++]; seatingPlan[r][c]=s; } });
     });
-    generationMode='par specialites'; mode='VIEW_PLAN';
-    draw(); updateInfoBar();
-    toast(`Plan par specialites genere (${Object.keys(groups).length} groupes)`);
+    generationMode='par spécialités'; mode='VIEW_PLAN';
+    draw(); updateInfoBar(); toast(`Plan par spécialités généré (${Object.keys(groups).length} groupes)`);
 }
 
-// generate_random : Fisher-Yates (equivalent de random.shuffle Python)
-function genRand() {
+// ── Génération aléatoire uniforme (pas obligatoirement au fond) ───────────────
+// On mélange les SIÈGES aussi, pas seulement les élèves,
+// pour que les élèves soient répartis aléatoirement dans toute la grille.
+function genRand(){
     clearSeatingPlan();
     const seats=getSeats();
-    if(!seats.length){ toast('Selectionnez d\'abord des tables (mode Selection)'); return; }
+    if(!seats.length){ toast('Sélectionnez d\'abord des tables'); return; }
+
+    // Mélange des sièges (Fisher-Yates)
+    const shuffledSeats=[...seats];
+    for(let i=shuffledSeats.length-1;i>0;i--){
+        const j=Math.floor(Math.random()*(i+1));
+        [shuffledSeats[i],shuffledSeats[j]]=[shuffledSeats[j],shuffledSeats[i]];
+    }
+    // Mélange des élèves
     const shuffled=[...students];
     for(let i=shuffled.length-1;i>0;i--){
         const j=Math.floor(Math.random()*(i+1));
         [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];
     }
-    shuffled.forEach((s,i)=>{ if(i<seats.length){ const[r,c]=seats[i]; seatingPlan[r][c]=s; } });
-    generationMode='aleatoire'; mode='VIEW_PLAN';
-    draw(); updateInfoBar();
-    toast('Plan aleatoire genere');
+    shuffled.forEach((s,i)=>{ if(i<shuffledSeats.length){ const[r,c]=shuffledSeats[i]; seatingPlan[r][c]=s; } });
+    generationMode='aléatoire'; mode='VIEW_PLAN';
+    draw(); updateInfoBar(); toast('Plan aléatoire généré');
 }
 
-function clearLayout() {
-    grid=mkGrid(false); clearSeatingPlan(); generationMode=null;
-    draw(); updateInfoBar();
-    toast('Disposition effacee');
+// ── Mode évaluation : maximise les distances entre élèves ─────────────────────
+// Algorithme glouton : on place les élèves un par un sur le siège
+// qui maximise la distance minimale aux élèves déjà placés.
+function genEval(){
+    clearSeatingPlan();
+    const seats=getSeats();
+    if(!seats.length){ toast('Sélectionnez d\'abord des tables'); return; }
+    if(!students.length){ toast('Aucun élève à placer'); return; }
+
+    // Mélange des élèves pour éviter tout biais alphabétique
+    const eleves=[...students];
+    for(let i=eleves.length-1;i>0;i--){
+        const j=Math.floor(Math.random()*(i+1));
+        [eleves[i],eleves[j]]=[eleves[j],eleves[i]];
+    }
+
+    // Sièges disponibles triés par l'avant (le glouton part du rang le plus proche du prof)
+    const available = sortSeatsByFront(seats);
+    const placed=[];   // [{r,c}] élèves déjà assis
+
+    function dist2(a,b){ return (a[0]-b[0])**2+(a[1]-b[1])**2; }
+    function minDistToPlaced(seat){
+        if(!placed.length) return Infinity;
+        return Math.min(...placed.map(p=>dist2(seat,p)));
+    }
+
+    eleves.forEach((eleve,i)=>{
+        if(!available.length) return;
+        let bestIdx=0, bestDist=-1;
+        available.forEach((seat,idx)=>{
+            const d=minDistToPlaced(seat);
+            if(d>bestDist){ bestDist=d; bestIdx=idx; }
+        });
+        const [r,c]=available[bestIdx];
+        seatingPlan[r][c]=eleve;
+        placed.push([r,c]);
+        available.splice(bestIdx,1);
+    });
+
+    generationMode='évaluation'; mode='VIEW_PLAN';
+    draw(); updateInfoBar(); toast('Plan évaluation généré — distances maximisées');
 }
 
-function toggleMode() {
-    mode = mode==='SELECT_LAYOUT' ? 'VIEW_PLAN' : 'SELECT_LAYOUT';
+// ── Effacer / basculer ────────────────────────────────────────────────────────
+function clearLayout(){
+    grid=mkGrid(false); profGrid=mkGrid(false); clearSeatingPlan(); generationMode=null;
+    draw(); updateInfoBar(); toast('Disposition effacée');
+}
+
+function toggleMode(){
+    mode=mode==='SELECT_LAYOUT'?'VIEW_PLAN':'SELECT_LAYOUT';
     draw(); updateInfoBar();
 }
 
-// ── Sauvegarde localStorage (equivalent layout_config.json) ───────────────────
-function saveLayout() {
-    try {
-        localStorage.setItem('layout_config', JSON.stringify({
-            grid,
-            generationMode,
-            seatingPlan: seatingPlan.map(row=>row.map(s=>s?{nom:s.nom,prenom:s.prenom,classe:s.classe,spe1:s.spe1,spe2:s.spe2}:null))
+// ── Sauvegarde localStorage ───────────────────────────────────────────────────
+function saveLayout(){
+    try{
+        localStorage.setItem('layout_config2', JSON.stringify({
+            grid, profGrid, generationMode,
+            seatingPlan:seatingPlan.map(row=>row.map(s=>s?{nom:s.nom,prenom:s.prenom,classe:s.classe,spe1:s.spe1,spe2:s.spe2}:null))
         }));
-        toast('Configuration sauvegardee');
-    } catch(e){ toast('Erreur de sauvegarde'); }
+        toast('Configuration sauvegardée');
+    }catch(e){ toast('Erreur de sauvegarde'); }
 }
-
-function loadLayout() {
-    try {
-        const raw=localStorage.getItem('layout_config');
+function loadLayout(){
+    try{
+        const raw=localStorage.getItem('layout_config2');
         if(!raw) return;
         const data=JSON.parse(raw);
-        if(data.grid) grid=data.grid;
+        if(data.grid)     grid=data.grid;
+        if(data.profGrid) profGrid=data.profGrid;
         if(data.generationMode) generationMode=data.generationMode;
-        if(data.seatingPlan) {
+        if(data.seatingPlan){
             clearSeatingPlan();
             data.seatingPlan.forEach((row,r)=>row.forEach((sd,c)=>{
                 if(sd){ const f=students.find(s=>s.nom===sd.nom&&s.prenom===sd.prenom&&s.classe===sd.classe); if(f) seatingPlan[r][c]=f; }
             }));
         }
         if(generationMode) mode='VIEW_PLAN';
-    } catch(e){}
+    }catch(e){}
 }
 
-// ── Eleves ────────────────────────────────────────────────────────────────────
-function saveStudents() { try{ localStorage.setItem('students',JSON.stringify(students)); }catch(e){} }
-function loadStudents()  { try{ const r=localStorage.getItem('students'); if(r) students=JSON.parse(r); }catch(e){} }
+// ── Élèves ────────────────────────────────────────────────────────────────────
+function saveStudents(){ try{localStorage.setItem('students2',JSON.stringify(students));}catch(e){} }
+function loadStudents() { try{const r=localStorage.getItem('students2');if(r)students=JSON.parse(r);}catch(e){} }
+function studentExists(s){ return students.some(x=>x.nom.toLowerCase()===s.nom.toLowerCase()&&x.prenom.toLowerCase()===s.prenom.toLowerCase()&&x.classe===s.classe); }
 
-function studentExists(s) {
-    return students.some(x=>x.nom.toLowerCase()===s.nom.toLowerCase()
-        &&x.prenom.toLowerCase()===s.prenom.toLowerCase()&&x.classe===s.classe);
-}
-
-function renderStudentList() {
+function renderStudentList(){
     const list=document.getElementById('studentList');
     list.innerHTML='';
     if(!students.length){
-        list.innerHTML='<div style="font-size:.76em;color:var(--doux);padding:6px;">Aucun eleve — importez un CSV ou ajoutez manuellement.</div>';
+        list.innerHTML='<div style="font-size:.76em;color:var(--doux);padding:6px;">Aucun élève — importez un fichier ou ajoutez manuellement.</div>';
         return;
     }
     students.forEach((s,i)=>{
@@ -560,149 +748,218 @@ function showAddForm()  { document.getElementById('addForm').style.display='bloc
 function cancelAdd()    { document.getElementById('addForm').style.display='none'; clearFields(); }
 function clearFields()  { ['fNom','fPrenom','fClasse','fSpe1','fSpe2'].forEach(id=>{ document.getElementById(id).value=''; }); }
 
-function addStudent() {
+function addStudent(){
     const nom=document.getElementById('fNom').value.trim();
     const prenom=document.getElementById('fPrenom').value.trim();
     const classe=document.getElementById('fClasse').value.trim();
     const spe1=document.getElementById('fSpe1').value.trim();
     const spe2=document.getElementById('fSpe2').value.trim();
-    if(!nom||!prenom||!classe){ toast('Nom, Prenom et Classe sont obligatoires'); return; }
+    if(!nom||!prenom||!classe){ toast('Nom, Prénom et Classe sont obligatoires'); return; }
     const s={nom,prenom,classe,spe1,spe2};
-    if(studentExists(s)){ toast('Cet eleve existe deja'); return; }
-    students.push(s);
-    saveStudents(); clearFields();
+    if(studentExists(s)){ toast('Cet élève existe déjà'); return; }
+    students.push(s); saveStudents(); clearFields();
     document.getElementById('addForm').style.display='none';
     renderStudentList(); updateInfoBar();
-    toast(`Eleve ajoute : ${prenom} ${nom}`);
+    toast(`Élève ajouté : ${prenom} ${nom}`);
 }
-
-function deleteSelected() {
-    if(selectedIdx<0||selectedIdx>=students.length){ toast('Selectionnez un eleve'); return; }
+function deleteSelected(){
+    if(selectedIdx<0||selectedIdx>=students.length){ toast('Sélectionnez un élève'); return; }
     const s=students.splice(selectedIdx,1)[0];
     selectedIdx=-1; clearSeatingPlan(); saveStudents();
     renderStudentList(); draw(); updateInfoBar();
-    toast(`Eleve supprime : ${s.prenom} ${s.nom}`);
+    toast(`Élève supprimé : ${s.prenom} ${s.nom}`);
 }
 
-// ── Import CSV (detect_csv_columns du Python) ─────────────────────────────────
-function detectColumns(headers) {
-    const h={};
-    headers.forEach(col=>{ h[col.toLowerCase().trim()]=col; });
-    const keys={
-        nom:   ['noms','nom','lastname','name'],
-        prenom:['prenoms','prenom','firstname','first_name'],
-        classe:['classe','class','grade'],
-        spe1:  ['spe 1','spe1','specialite 1','speciality 1','specialty 1'],
-        spe2:  ['spe 2','spe2','specialite 2','speciality 2','specialty 2'],
-    };
-    const mapping={};
-    Object.entries(keys).forEach(([key,names])=>{
-        for(const n of names){ if(h[n]){ mapping[key]=h[n]; break; } }
-    });
-    return mapping;
+// ── Import CSV / TXT ──────────────────────────────────────────────────────────
+function detectColumns(headers){
+    const h={}; headers.forEach(col=>{ h[col.toLowerCase().trim()]=col; });
+    const keys={nom:['noms','nom','lastname','name'],prenom:['prenoms','prenom','firstname','first_name'],
+        classe:['classe','class','grade'],spe1:['spe 1','spe1','specialite 1','speciality 1','specialty 1'],
+        spe2:['spe 2','spe2','specialite 2','speciality 2','specialty 2']};
+    const m={};
+    Object.entries(keys).forEach(([k,names])=>{ for(const n of names){if(h[n]){m[k]=h[n];break;}} });
+    return m;
 }
 
-function parseCSV(text, filename) {
+function parseCSV(text, filename){
     const lines=text.trim().split(/\r?\n/);
-    if(lines.length<2){ toast('CSV vide ou invalide'); return; }
-    const sep=lines[0].includes(';')?';':',';
+    if(lines.length<2){ toast('Fichier vide ou invalide'); return; }
+    const sep=lines[0].includes(';')?';':lines[0].includes('\t')?'\t':',';
     const headers=lines[0].split(sep).map(s=>s.trim().replace(/^"|"$/g,''));
-    const mapping=detectColumns(headers);
-    if(!mapping.nom||!mapping.prenom||!mapping.classe){
-        toast('Colonnes NOM, PRENOM, CLASSE introuvables dans ce CSV'); return;
-    }
+    const m=detectColumns(headers);
     let added=0;
-    for(let i=1;i<lines.length;i++){
-        if(!lines[i].trim()) continue;
-        const vals=lines[i].split(sep).map(s=>s.trim().replace(/^"|"$/g,''));
-        const get=col=>col?(vals[headers.indexOf(col)]||''):'';
-        const s={nom:get(mapping.nom),prenom:get(mapping.prenom),classe:get(mapping.classe),spe1:get(mapping.spe1),spe2:get(mapping.spe2)};
-        if(s.nom&&s.prenom&&!studentExists(s)){ students.push(s); added++; }
+    if(m.nom&&m.prenom){
+        // Format structuré avec colonnes
+        for(let i=1;i<lines.length;i++){
+            if(!lines[i].trim()) continue;
+            const vals=lines[i].split(sep).map(s=>s.trim().replace(/^"|"$/g,''));
+            const get=col=>col?(vals[headers.indexOf(col)]||''):'';
+            const s={nom:get(m.nom),prenom:get(m.prenom),classe:get(m.classe)||'',spe1:get(m.spe1),spe2:get(m.spe2)};
+            if(s.nom&&s.prenom&&!studentExists(s)){ students.push(s); added++; }
+        }
+    } else {
+        // Format liste simple : "Prénom NOM" ou "NOM Prénom" ou "NOM, Prénom"
+        for(let i=0;i<lines.length;i++){
+            const l=lines[i].trim(); if(!l) continue;
+            const parts=l.split(/[,;]\s*|\s+/);
+            if(parts.length>=2){
+                // Heuristique : NOM en majuscules, prénom en capitales
+                let nom,prenom;
+                if(parts[0]===parts[0].toUpperCase()){ nom=parts[0]; prenom=parts.slice(1).join(' '); }
+                else { prenom=parts[0]; nom=parts.slice(1).join(' '); }
+                const s={nom,prenom,classe:'',spe1:'',spe2:''};
+                if(!studentExists(s)){ students.push(s); added++; }
+            }
+        }
     }
+    finalizeImport(filename, added);
+}
+
+function parseTXT(text, filename){
+    // TXT : une ligne par élève, format libre "Prénom NOM" ou "NOM, Prénom"
+    const lines=text.trim().split(/\r?\n/);
+    let added=0;
+    lines.forEach(l=>{
+        l=l.trim(); if(!l) return;
+        const virgule=l.includes(',');
+        let nom,prenom;
+        if(virgule){
+            const parts=l.split(',').map(s=>s.trim());
+            nom=parts[0]; prenom=parts[1]||'';
+        } else {
+            const parts=l.split(/\s+/);
+            if(parts.length<2) return;
+            // Majuscules = NOM
+            if(parts[0]===parts[0].toUpperCase()&&parts[0]!==parts[0].toLowerCase()){
+                nom=parts[0]; prenom=parts.slice(1).join(' ');
+            } else {
+                prenom=parts[0]; nom=parts.slice(1).join(' ');
+            }
+        }
+        if(nom&&prenom){
+            const s={nom,prenom,classe:'',spe1:'',spe2:''};
+            if(!studentExists(s)){ students.push(s); added++; }
+        }
+    });
+    finalizeImport(filename, added);
+}
+
+function parseXLSX(buffer, filename){
+    try{
+        const wb=XLSX.read(buffer,{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const data=XLSX.utils.sheet_to_json(ws,{defval:''});
+        if(!data.length){ toast('Feuille Excel vide'); return; }
+        const headers=Object.keys(data[0]);
+        const m=detectColumns(headers);
+        let added=0;
+        data.forEach(row=>{
+            const get=col=>col?(String(row[col]||'').trim()):'';
+            let nom,prenom,classe,spe1,spe2;
+            if(m.nom&&m.prenom){
+                nom=get(m.nom); prenom=get(m.prenom);
+                classe=get(m.classe); spe1=get(m.spe1); spe2=get(m.spe2);
+            } else {
+                // Colonnes non reconnues : prendre les deux premières
+                const vals=headers.map(h=>String(row[h]||'').trim()).filter(Boolean);
+                if(vals.length<2) return;
+                prenom=vals[0]; nom=vals[1]; classe=vals[2]||''; spe1=vals[3]||''; spe2=vals[4]||'';
+            }
+            if(nom&&prenom){
+                const s={nom,prenom,classe,spe1,spe2};
+                if(!studentExists(s)){ students.push(s); added++; }
+            }
+        });
+        finalizeImport(filename, added);
+    }catch(e){ toast('Erreur lecture Excel : '+e.message); }
+}
+
+async function parsePDF(buffer, filename){
+    try{
+        // PDF.js
+        if(typeof pdfjsLib==='undefined'){ toast('PDF.js non chargé'); return; }
+        pdfjsLib.GlobalWorkerOptions.workerSrc=
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const pdf=await pdfjsLib.getDocument({data:buffer}).promise;
+        let fullText='';
+        for(let p=1;p<=pdf.numPages;p++){
+            const page=await pdf.getPage(p);
+            const tc=await page.getTextContent();
+            fullText+=tc.items.map(i=>i.str).join(' ')+'\n';
+        }
+        // Traiter le texte comme TXT
+        parseTXT(fullText, filename);
+    }catch(e){ toast('Erreur lecture PDF : '+e.message); }
+}
+
+function finalizeImport(filename, added){
     loadedFiles.push(filename);
     saveStudents(); renderStudentList(); updateInfoBar();
     document.getElementById('filesLoaded').textContent=
-        `${loadedFiles.length} fichier(s) — ${students.length} eleves au total`;
+        `${loadedFiles.length} fichier(s) — ${students.length} élèves au total`;
     document.getElementById('dropZone').classList.remove('over');
-    toast(`${added} eleves importes depuis ${filename}`);
+    toast(`${added} élèves importés depuis ${filename}`);
 }
 
-function handleFile(file) {
+function handleFile(file){
     if(!file) return;
-    const r=new FileReader();
-    r.onload=e=>parseCSV(e.target.result,file.name);
-    r.readAsText(file,'utf-8');
+    const name=file.name.toLowerCase();
+    if(name.endsWith('.xlsx')||name.endsWith('.xls')){
+        const r=new FileReader();
+        r.onload=e=>parseXLSX(new Uint8Array(e.target.result), file.name);
+        r.readAsArrayBuffer(file);
+    } else if(name.endsWith('.pdf')){
+        const r=new FileReader();
+        r.onload=e=>parsePDF(new Uint8Array(e.target.result), file.name);
+        r.readAsArrayBuffer(file);
+    } else {
+        // CSV ou TXT
+        const r=new FileReader();
+        r.onload=e=>{
+            name.endsWith('.txt') ? parseTXT(e.target.result,file.name)
+                                  : parseCSV(e.target.result,file.name);
+        };
+        r.readAsText(file,'utf-8');
+    }
 }
-function handleDrop(e) {
+
+function handleDrop(e){
     e.preventDefault();
     document.getElementById('dropZone').classList.remove('over');
     const f=e.dataTransfer.files[0];
-    if(f&&f.name.toLowerCase().endsWith('.csv')) handleFile(f);
-    else toast('Veuillez deposer un fichier .csv');
+    if(f) handleFile(f);
+    else toast('Fichier non reconnu');
 }
 
-// ── Export PDF (equivalent export_to_pdf du Python) ───────────────────────────
-function exportPDF() {
-    const hasStudents=seatingPlan.some(row=>row.some(s=>s!==null));
-    if(!hasStudents){ toast('Generez d\'abord un plan de classe'); return; }
-    const seats=getSeats();
-    if(!seats.length){ toast('Aucune table definie'); return; }
-    const rows=seats.map(s=>s[0]), cols=seats.map(s=>s[1]);
-    const minR=Math.min(...rows),maxR=Math.max(...rows);
-    const minC=Math.min(...cols),maxC=Math.max(...cols);
-    const cellW=85, cellH=52;
-    let tableHTML='';
-    for(let r=minR;r<=maxR;r++){
-        tableHTML+='<tr>';
-        for(let c=minC;c<=maxC;c++){
-            if(grid[r][c]){
-                const s=seatingPlan[r][c];
-                if(s){
-                    const name=`${s.prenom} ${s.nom}`;
-                    const disp=name.length>22?name.slice(0,20)+'..':name;
-                    const spe=s.spe1||s.spe2?`${s.spe1||''}/${s.spe2||''}`:'';
-                    tableHTML+=`<td class="placed"><span class="n">${disp}</span>${spe?`<span class="s">${spe}</span>`:''}`;
-                } else {
-                    tableHTML+=`<td class="empty">`;
-                }
-            } else {
-                tableHTML+=`<td class="none">`;
-            }
-            tableHTML+='</td>';
-        }
-        tableHTML+='</tr>';
-    }
-    const modeLabel=generationMode||'personnalise';
-    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Plan de Classe</title>
-<style>
-body{font-family:'Segoe UI',sans-serif;margin:18px;}
-h1{font-size:15px;margin-bottom:3px;}p{font-size:10.5px;color:#666;margin-bottom:12px;}
-table{border-collapse:collapse;}
-td{width:${cellW}px;height:${cellH}px;border:1px solid #ccc;text-align:center;vertical-align:middle;padding:2px;font-size:9px;}
-td.placed{background:#d1fae5;border:1.5px solid #6ee7b7;}
-td.placed .n{display:block;font-weight:bold;font-size:8.5px;}
-td.placed .s{display:block;color:#555;font-size:7px;margin-top:1px;}
-td.empty{background:#ede8ff;}td.none{background:transparent;border:none;}
-@media print{@page{size:landscape;margin:10mm;}}
-</style></head><body>
-<h1>Plan de Classe — ${modeLabel}</h1>
-<p>Total eleves : ${students.length} &nbsp;|&nbsp; Tables : ${seats.length}</p>
-<table>${tableHTML}</table></body></html>`;
-    const win=window.open('','_blank');
-    if(!win){ toast('Autorisez les popups pour exporter'); return; }
-    win.document.write(html); win.document.close();
-    win.onload=()=>{ win.focus(); win.print(); };
-    toast('Fenetre d\'impression ouverte');
+// ── Export PNG ────────────────────────────────────────────────────────────────
+function exportPNG(){
+    // On crée un canvas offscreen avec fond opaque pour l'export
+    const offscreen=document.createElement('canvas');
+    offscreen.width=W; offscreen.height=H;
+    const octx=offscreen.getContext('2d');
+
+    // Copier le rendu actuel sur fond blanc
+    octx.fillStyle='#ffffff';
+    octx.fillRect(0,0,W,H);
+    octx.drawImage(canvas,0,0);
+
+    // Téléchargement
+    const link=document.createElement('a');
+    const label=(generationMode||'plan').replace(/\s/g,'_').replace(/[éèê]/g,'e').replace(/[àâ]/g,'a');
+    link.download=`plan_classe_${label}.png`;
+    link.href=offscreen.toDataURL('image/png');
+    link.click();
+    toast('Export PNG téléchargé');
 }
 
-// ── Raccourci clavier Entree dans le formulaire ───────────────────────────────
+// ── Clavier ───────────────────────────────────────────────────────────────────
 document.addEventListener('keydown', e=>{
     if(e.key==='Enter'&&document.getElementById('addForm').style.display!=='none') addStudent();
 });
 
-// ── Exposer globalement ───────────────────────────────────────────────────────
-Object.assign(window,{genAlpha,genSpe,genRand,clearLayout,saveLayout,toggleMode,exportPDF,
-    showAddForm,cancelAdd,addStudent,deleteSelected,handleDrop,handleFile});
+// ── Exposition globale ────────────────────────────────────────────────────────
+Object.assign(window,{genAlpha,genSpe,genRand,genEval,clearLayout,saveLayout,toggleMode,
+    toggleProfMode,exportPNG,showAddForm,cancelAdd,addStudent,deleteSelected,handleDrop,handleFile});
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 loadStudents();
