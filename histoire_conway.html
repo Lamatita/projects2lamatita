@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D'où ça vient ? — Histoire du Jeu de la Vie</title>
+<style>
+:root {
+    --fond:       #f7f3ff;
+    --principal:  #6c63ff;
+    --secondaire: #ffb703;
+    --accent:     #ff6f91;
+    --vert:       #00c9a7;
+    --violet:     #845ec2;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, var(--fond) 0%, #e6e1ff 50%, #fde8f0 100%);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* ── Confettis & lamas ─────────────────────────────────────────────── */
+.falling {
+    position: fixed;
+    top: -10%;
+    animation: fall linear infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+.confetti { width: 12px; height: 12px; opacity: .7; border-radius: 2px; }
+.lama     { font-size: 2rem; }
+.c1 { background: var(--principal); }
+.c2 { background: var(--secondaire); }
+.c3 { background: var(--accent); }
+.c4 { background: var(--vert); }
+.c5 { background: var(--violet); }
+@keyframes fall {
+    0%   { transform: translateY(0) rotate(0deg); opacity: .7; }
+    100% { transform: translateY(120vh) rotate(var(--rotation)); opacity: .3; }
+}
+
+/* ── Barre haute ────────────────────────────────────────────────────── */
+.top-bar {
+    width: 100%;
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    z-index: 100;
+}
+.back-link {
+    color: var(--principal);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.05em;
+    transition: opacity .2s;
+}
+.back-link:hover { opacity: .7; }
+.page-title {
+    color: var(--principal);
+    font-size: 1.35em;
+    font-weight: 700;
+}
+
+/* ── Contenu principal ─────────────────────────────────────────────── */
+.page-content {
+    position: relative;
+    z-index: 10;
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 10px 20px 60px;
+}
+
+/* ── Canvas texte ────────────────────────────────────────────────────
+   On utilise des "cards" en canvas-style (fond sombre + bordure violette)
+   pour imiter l'esthétique du jeu tout en étant lisible comme un texte.
+─────────────────────────────────────────────────────────────────────── */
+.card {
+    background: rgba(30, 30, 40, 0.88);
+    border: 1.5px solid rgba(108,99,255,.4);
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 22px;
+    box-shadow: 0 6px 32px rgba(108,99,255,.12), 0 2px 8px rgba(0,0,0,.10);
+    backdrop-filter: blur(6px);
+    color: #dcddee;
+    line-height: 1.75;
+    font-size: .97em;
+}
+
+/* ── En-tête créateur ───────────────────────────────────────────────── */
+.creator-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    margin-bottom: 22px;
+}
+.creator-photo-wrap {
+    flex-shrink: 0;
+    width: 120px;
+    text-align: center;
+}
+.creator-photo {
+    width: 110px;
+    height: 110px;
+    border-radius: 12px;
+    object-fit: cover;
+    border: 2px solid rgba(108,99,255,.5);
+    box-shadow: 0 4px 18px rgba(108,99,255,.2);
+    background: #1e1e28;
+    display: block;
+    margin: 0 auto 6px;
+}
+.photo-credit {
+    font-size: .7em;
+    color: #606080;
+    text-align: center;
+    line-height: 1.3;
+}
+.creator-info h2 {
+    color: #a0a8ff;
+    font-size: 1.45em;
+    font-weight: 700;
+    margin-bottom: 4px;
+    letter-spacing: .01em;
+}
+.creator-info .dates {
+    color: var(--secondaire);
+    font-size: .88em;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+.creator-info p {
+    color: #b8b8d0;
+    font-size: .93em;
+    line-height: 1.65;
+}
+
+/* ── Titres de section ──────────────────────────────────────────────── */
+.card h3 {
+    color: var(--secondaire);
+    font-size: 1.12em;
+    font-weight: 700;
+    margin-bottom: 12px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid rgba(108,99,255,.25);
+    letter-spacing: .02em;
+}
+
+/* ── Texte courant ──────────────────────────────────────────────────── */
+.card p { margin-bottom: 10px; }
+.card p:last-child { margin-bottom: 0; }
+.card em  { color: #50d282; font-style: normal; font-weight: 600; }
+.card strong { color: #a0a8ff; }
+
+/* ── Timeline ───────────────────────────────────────────────────────── */
+.timeline { list-style: none; padding: 0; }
+.timeline li {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 14px;
+    align-items: flex-start;
+}
+.tl-year {
+    flex-shrink: 0;
+    background: rgba(108,99,255,.22);
+    border: 1px solid rgba(108,99,255,.4);
+    border-radius: 6px;
+    padding: 2px 9px;
+    font-size: .8em;
+    font-weight: 700;
+    color: #a0a8ff;
+    white-space: nowrap;
+    margin-top: 2px;
+}
+.tl-text { color: #c8c8e0; font-size: .93em; line-height: 1.6; }
+
+/* ── Usages actuels — grille de chips ──────────────────────────────── */
+.chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.chip {
+    background: rgba(80,210,130,.12);
+    border: 1px solid rgba(80,210,130,.35);
+    border-radius: 20px;
+    padding: 5px 15px;
+    font-size: .87em;
+    color: #50d282;
+    font-weight: 600;
+}
+
+/* ── Sources ────────────────────────────────────────────────────────── */
+.sources-list { list-style: none; padding: 0; }
+.sources-list li {
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(108,99,255,.15);
+    font-size: .88em;
+    color: #9090b0;
+}
+.sources-list li:last-child { border-bottom: none; }
+.sources-list a {
+    color: #7878ff;
+    text-decoration: none;
+    word-break: break-word;
+}
+.sources-list a:hover { text-decoration: underline; }
+.src-label {
+    color: var(--secondaire);
+    font-weight: 700;
+    margin-right: 6px;
+}
+</style>
+</head>
+<body>
+
+<!-- Confettis & lamas -->
+<div class="falling confetti c1" style="left:3%;   animation-duration:5.2s;  --rotation:720deg;"></div>
+<div class="falling lama"        style="left:10%;  animation-duration:7.1s;  --rotation:-1080deg;">🦙</div>
+<div class="falling confetti c2" style="left:16%;  animation-duration:6.3s;  --rotation:540deg;"></div>
+<div class="falling lama"        style="left:23%;  animation-duration:8.4s;  --rotation:900deg;">🦙</div>
+<div class="falling confetti c3" style="left:30%;  animation-duration:4.8s;  --rotation:-720deg;"></div>
+<div class="falling lama"        style="left:37%;  animation-duration:6.9s;  --rotation:1260deg;">🦙</div>
+<div class="falling confetti c4" style="left:45%;  animation-duration:5.5s;  --rotation:360deg;"></div>
+<div class="falling lama"        style="left:54%;  animation-duration:7.7s;  --rotation:-1440deg;">🦙</div>
+<div class="falling confetti c5" style="left:62%;  animation-duration:6.0s;  --rotation:900deg;"></div>
+<div class="falling lama"        style="left:70%;  animation-duration:8.2s;  --rotation:-1080deg;">🦙</div>
+<div class="falling confetti c1" style="left:78%;  animation-duration:5.6s;  --rotation:720deg;"></div>
+<div class="falling lama"        style="left:86%;  animation-duration:7.4s;  --rotation:1620deg;">🦙</div>
+<div class="falling confetti c2" style="left:93%;  animation-duration:6.6s;  --rotation:-900deg;"></div>
+
+<div class="top-bar">
+    <a href="jeu_de_la_vie.html" class="back-link">← Retour au jeu</a>
+    <h1 class="page-title">D'où ça vient ?</h1>
+    <div style="width:140px;"></div>
+</div>
+
+<div class="page-content">
+
+    <!-- ── Créateur ──────────────────────────────────────────────────── -->
+    <div class="card">
+        <div class="creator-header">
+            <div class="creator-photo-wrap">
+                <img
+                    class="creator-photo"
+                    src="John_H_Conway_2005_(cropped)_(2).jpg"
+                    alt="Portrait de John Horton Conway"
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                />
+                <!-- Fallback si l'image ne charge pas -->
+                <div class="photo-credit">Thane Plambeck<br>CC-BY-2.0</div>
+            </div>
+            <div class="creator-info">
+                <h2>John Horton Conway</h2>
+                <div class="dates">26 décembre 1937, Liverpool — 11 avril 2020, New Jersey</div>
+                <p>
+                    Mathématicien britannique d'exception, Conway est l'une des figures les plus
+                    créatives et exubérantes des mathématiques du XX<sup>e</sup> siècle. Professeur
+                    à Cambridge puis à Princeton, il a laissé son empreinte dans la théorie des
+                    groupes, les nœuds, la théorie des jeux combinatoires… et bien sûr dans les
+                    automates cellulaires grâce à l'invention du <em>Jeu de la Vie</em>.
+                    Il décède en avril 2020 des suites de la Covid-19, à l'âge de 82 ans.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Contexte & Inspiration ────────────────────────────────────── -->
+    <div class="card">
+        <h3>Les origines — Qui, quand, pourquoi ?</h3>
+        <p>
+            En <em>1970</em>, John Conway est professeur de mathématiques à l'université de Cambridge.
+            Fasciné par les travaux du mathématicien et informaticien <strong>John von Neumann</strong>
+            des années 1940, il cherche à concevoir un <em>automate cellulaire</em> — un système de
+            cellules sur une grille qui évoluent selon des règles simples — mais bien plus élégant et
+            minimal que les machines théoriques de von Neumann, qui étaient extrêmement complexes.
+        </p>
+        <p>
+            Le défi que Conway s'est lancé : trouver le jeu le plus simple possible (le moins de
+            règles, les plus claires) capable de produire des comportements <em>imprévisibles et
+            complexes</em>. Il passe des mois à tester des jeux de règles différents, souvent avec
+            des collègues autour d'un tableau de Go.
+        </p>
+        <p>
+            La recette finale tient en trois règles :
+            une cellule naît si elle a <em>exactement 3 voisines vivantes</em> ;
+            elle survit si elle en a <em>2 ou 3</em> ;
+            dans tous les autres cas, elle meurt. Trois lignes pour un univers entier.
+        </p>
+    </div>
+
+    <!-- ── Publication & Popularisation ─────────────────────────────── -->
+    <div class="card">
+        <h3>La publication qui a tout changé</h3>
+        <p>
+            Le Jeu de la Vie est présenté au monde en <em>octobre 1970</em> dans la colonne
+            « Mathematical Games » du magazine <strong>Scientific American</strong>, rédigée par
+            le journaliste et vulgarisateur <strong>Martin Gardner</strong>, ami de Conway.
+            L'article provoque un engouement immédiat et inattendu.
+        </p>
+        <p>
+            On estime qu'à son apogée, une part significative de la puissance de calcul des
+            ordinateurs de la planète était consacrée à simuler le Jeu de la Vie — des passionnés
+            du monde entier cherchant à découvrir de nouvelles configurations stables, des
+            oscillateurs ou des vaisseaux. Une véritable communauté de « <em>Lifers</em> » naît,
+            qui continue d'exister aujourd'hui.
+        </p>
+    </div>
+
+    <!-- ── Chronologie ─────────────────────────────────────────────── -->
+    <div class="card">
+        <h3>Chronologie</h3>
+        <ul class="timeline">
+            <li>
+                <span class="tl-year">1948</span>
+                <span class="tl-text">John von Neumann imagine les premiers automates cellulaires théoriques, capables de se reproduire. Trop complexes pour être simulés à l'époque.</span>
+            </li>
+            <li>
+                <span class="tl-year">1968</span>
+                <span class="tl-text">Conway démarre ses expériences de simplification d'automates cellulaires à Cambridge, autour d'un tableau de Go.</span>
+            </li>
+            <li>
+                <span class="tl-year">1970</span>
+                <span class="tl-text">Invention du Jeu de la Vie et publication dans Scientific American (Martin Gardner). Explosion de popularité mondiale immédiate.</span>
+            </li>
+            <li>
+                <span class="tl-year">1970</span>
+                <span class="tl-text">Découverte du <em>planeur</em> (glider) par R. W. Gosper et son groupe au MIT — premier vaisseau documenté. Il offre une prime de 50 $ à quiconque trouverait un motif à croissance infinie.</span>
+            </li>
+            <li>
+                <span class="tl-year">1970</span>
+                <span class="tl-text">Découverte du <em>Gosper Glider Gun</em> — premier générateur de planeurs, prouvant qu'une population peut croître sans limite.</span>
+            </li>
+            <li>
+                <span class="tl-year">1982</span>
+                <span class="tl-text">Publication de <em>Winning Ways for your Mathematical Plays</em> (Conway, Berlekamp, Guy) — bible de la théorie des jeux combinatoires incluant le Jeu de la Vie.</span>
+            </li>
+            <li>
+                <span class="tl-year">1990s</span>
+                <span class="tl-text">Internet accélère le partage de motifs. Naissance du LifeWiki, base de données collaborative des motifs connus.</span>
+            </li>
+            <li>
+                <span class="tl-year">2010</span>
+                <span class="tl-text">Démonstration que le Jeu de la Vie est <em>Turing-complet</em> : il peut simuler n'importe quel ordinateur, y compris… lui-même.</span>
+            </li>
+            <li>
+                <span class="tl-year">2020</span>
+                <span class="tl-text">Décès de John Conway le 11 avril. La communauté mondiale rend hommage à l'inventeur du jeu qui a fait aimer les maths à des millions de personnes.</span>
+            </li>
+        </ul>
+    </div>
+
+    <!-- ── But initial ────────────────────────────────────────────────── -->
+    <div class="card">
+        <h3>Dans quel but Conway a-t-il inventé ce jeu ?</h3>
+        <p>
+            L'objectif premier était <em>mathématique et théorique</em> : vérifier si des règles
+            ultra-simples pouvaient engendrer des comportements aussi riches que ceux des machines
+            de von Neumann, notamment la <strong>reproduction</strong> et la
+            <strong>croissance spontanée</strong>.
+        </p>
+        <p>
+            Conway souhaitait également explorer le concept de <em>vie artificielle</em> : à partir
+            de quand peut-on dire qu'un système « vit » ? Ses règles jouent sur l'équilibre entre
+            l'<em>isolement</em> (trop peu de voisins → mort) et la <em>surpopulation</em> (trop
+            de voisins → mort aussi), à l'image des contraintes écologiques du monde réel.
+        </p>
+        <p>
+            Mais Conway reconnaissait lui-même n'avoir jamais imaginé l'ampleur du phénomène : le
+            Jeu de la Vie est devenu, involontairement, l'un des outils pédagogiques les plus
+            efficaces pour expliquer la <strong>complexité émergente</strong> — l'idée que des
+            comportements sophistiqués peuvent surgir de règles d'une simplicité déconcertante.
+        </p>
+    </div>
+
+    <!-- ── À quoi ça sert aujourd'hui ─────────────────────────────────── -->
+    <div class="card">
+        <h3>À quoi ça sert aujourd'hui ?</h3>
+        <p>
+            Loin d'être un simple amusement, le Jeu de la Vie est aujourd'hui un outil de
+            référence dans de nombreuses disciplines :
+        </p>
+        <div class="chips">
+            <span class="chip">Intelligence artificielle</span>
+            <span class="chip">Biologie théorique</span>
+            <span class="chip">Informatique théorique</span>
+            <span class="chip">Modélisation écologique</span>
+            <span class="chip">Urbanisme & simulation</span>
+            <span class="chip">Physique statistique</span>
+            <span class="chip">Enseignement des maths</span>
+            <span class="chip">Génération procédurale</span>
+        </div>
+        <p style="margin-top:14px;">
+            En <em>informatique théorique</em>, il a été prouvé que le Jeu de la Vie est
+            <strong>Turing-complet</strong> : on peut y construire n'importe quel circuit logique,
+            et même simuler un ordinateur entier. Des chercheurs ont effectivement implémenté
+            un Jeu de la Vie… à l'intérieur du Jeu de la Vie.
+        </p>
+        <p>
+            En <em>biologie</em>, les automates cellulaires inspirés du Jeu de la Vie servent à
+            modéliser la croissance tumorale, la propagation d'épidémies, ou encore la formation
+            de motifs sur les pelages d'animaux (zèbres, léopards). En <em>urbanisme</em>, des
+            variantes simulent l'étalement des villes ou la formation de quartiers.
+        </p>
+        <p>
+            Dans les jeux vidéo, des algorithmes proches génèrent des grottes, des forêts ou des
+            terrains de façon procédurale. Et dans les salles de classe du monde entier, le Jeu de
+            la Vie reste l'un des exemples les plus frappants pour illustrer qu'en mathématiques,
+            la <em>complexité naît souvent de la simplicité</em>.
+        </p>
+    </div>
+
+    <!-- ── Sources ────────────────────────────────────────────────────── -->
+    <div class="card">
+        <h3>Sources</h3>
+        <ul class="sources-list">
+            <li>
+                <span class="src-label">[1]</span>
+                Gardner, M. (octobre 1970). <em>Mathematical Games : The fantastic combinations of John Conway's new solitaire game "life".</em> Scientific American, 223, p. 120–123.
+            </li>
+            <li>
+                <span class="src-label">[2]</span>
+                Wikipédia FR — John Horton Conway.
+                <a href="https://fr.wikipedia.org/wiki/John_Horton_Conway" target="_blank">
+                    fr.wikipedia.org/wiki/John_Horton_Conway
+                </a>
+            </li>
+            <li>
+                <span class="src-label">[3]</span>
+                Wikipédia FR — Jeu de la vie.
+                <a href="https://fr.wikipedia.org/wiki/Jeu_de_la_vie" target="_blank">
+                    fr.wikipedia.org/wiki/Jeu_de_la_vie
+                </a>
+            </li>
+            <li>
+                <span class="src-label">[4]</span>
+                Princeton University — <em>Mathematician John Horton Conway dies at 82.</em>
+                <a href="https://www.princeton.edu/news/2020/04/14/mathematician-john-horton-conway-magical-genius-known-inventing-game-life-dies-age" target="_blank">
+                    princeton.edu (2020)
+                </a>
+            </li>
+            <li>
+                <span class="src-label">[5]</span>
+                Roberts, S. (2015). <em>Genius at Play : The Curious Mind of John Horton Conway.</em> Bloomsbury Publishing.
+            </li>
+            <li>
+                <span class="src-label">[6]</span>
+                LifeWiki — Encyclopédie collaborative du Jeu de la Vie (en).
+                <a href="https://www.conwaylife.com/wiki/Main_Page" target="_blank">
+                    conwaylife.com/wiki
+                </a>
+            </li>
+            <li>
+                <span class="src-label">[7]</span>
+                Royal Society — <em>John Horton Conway. 26 December 1937 — 11 April 2020.</em> Biographical Memoirs of Fellows of the Royal Society, 2022.
+                <a href="https://royalsocietypublishing.org/rsbm/article/doi/10.1098/rsbm.2021.0034/116160/" target="_blank">
+                    royalsocietypublishing.org
+                </a>
+            </li>
+            <li>
+                <span class="src-label">[Photo]</span>
+                Portrait de John H. Conway (2005), Thane Plambeck, licence CC-BY-2.0 —
+                <a href="https://www.flickr.com/photos/thane/20366806/" target="_blank">
+                    flickr
+                </a>
+            </li>
+        </ul>
+    </div>
+
+</div><!-- /page-content -->
+</body>
+</html>

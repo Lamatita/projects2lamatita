@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jeu de la Vie</title>
+<style>
+:root {
+    --fond:       #f7f3ff;
+    --principal:  #6c63ff;
+    --secondaire: #ffb703;
+    --accent:     #ff6f91;
+    --vert:       #00c9a7;
+    --violet:     #845ec2;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, var(--fond), #e6e1ff);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Confettis & lamas ─────────────────────────────────────────────────── */
+.falling {
+    position: fixed;
+    top: -10%;
+    animation: fall linear infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+.confetti { width: 12px; height: 12px; opacity: .8; border-radius: 2px; }
+.lama     { font-size: 2rem; }
+.c1 { background: var(--principal); }
+.c2 { background: var(--secondaire); }
+.c3 { background: var(--accent); }
+.c4 { background: var(--vert); }
+.c5 { background: var(--violet); }
+@keyframes fall {
+    0%   { transform: translateY(0) rotate(0deg); }
+    100% { transform: translateY(120vh) rotate(var(--rotation)); }
+}
+
+/* ── Barre du haut ──────────────────────────────────────────────────────── */
+.top-bar {
+    width: 100%;
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 100;
+    position: relative;
+    flex-shrink: 0;
+}
+.back-link {
+    color: var(--principal);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1em;
+    transition: opacity .2s;
+}
+.back-link:hover { opacity: .7; }
+.page-title {
+    color: var(--principal);
+    font-size: 1.4em;
+    font-weight: 700;
+}
+
+/* ── Zone de jeu ────────────────────────────────────────────────────────── */
+.game-wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+    min-height: 0;
+    padding: 6px 12px;
+}
+#gameCanvas {
+    border-radius: 14px;
+    box-shadow: 0 8px 40px rgba(108,99,255,.25), 0 2px 8px rgba(0,0,0,.12);
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+    cursor: default;
+}
+
+/* ── Bouton bas de page ─────────────────────────────────────────────────── */
+.bottom-bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 20px 14px;
+    flex-shrink: 0;
+    z-index: 100;
+    position: relative;
+}
+.info-btn {
+    background: linear-gradient(135deg, var(--principal), var(--violet));
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    padding: 11px 32px;
+    font-size: 1em;
+    font-weight: 700;
+    font-family: "Segoe UI", sans-serif;
+    cursor: pointer;
+    box-shadow: 0 4px 18px rgba(108,99,255,.35);
+    transition: transform .15s, box-shadow .15s;
+    text-decoration: none;
+    display: inline-block;
+    letter-spacing: .02em;
+}
+.info-btn:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 8px 28px rgba(108,99,255,.45);
+}
+.info-btn:active { transform: scale(.97); }
+</style>
+</head>
+<body>
+
+<!-- Confettis & lamas -->
+<div class="falling confetti c1" style="left:4%;   animation-duration:5s;    --rotation:720deg;"></div>
+<div class="falling lama"        style="left:11%;  animation-duration:7s;    --rotation:-1080deg;">🦙</div>
+<div class="falling confetti c2" style="left:17%;  animation-duration:6s;    --rotation:540deg;"></div>
+<div class="falling lama"        style="left:24%;  animation-duration:8s;    --rotation:900deg;">🦙</div>
+<div class="falling confetti c3" style="left:31%;  animation-duration:4.5s;  --rotation:-720deg;"></div>
+<div class="falling lama"        style="left:38%;  animation-duration:6.5s;  --rotation:1260deg;">🦙</div>
+<div class="falling confetti c4" style="left:46%;  animation-duration:5.8s;  --rotation:360deg;"></div>
+<div class="falling lama"        style="left:53%;  animation-duration:7.2s;  --rotation:-1440deg;">🦙</div>
+<div class="falling confetti c5" style="left:61%;  animation-duration:6.1s;  --rotation:900deg;"></div>
+<div class="falling lama"        style="left:68%;  animation-duration:8.5s;  --rotation:-1080deg;">🦙</div>
+<div class="falling confetti c1" style="left:75%;  animation-duration:5.3s;  --rotation:720deg;"></div>
+<div class="falling lama"        style="left:83%;  animation-duration:7.9s;  --rotation:1620deg;">🦙</div>
+<div class="falling confetti c2" style="left:91%;  animation-duration:6.7s;  --rotation:-900deg;"></div>
+
+<div class="top-bar">
+    <a href="index.html" class="back-link">← Retour à l'accueil</a>
+    <h1 class="page-title">Jeu de la Vie</h1>
+    <div style="width:160px;"></div>
+</div>
+
+<div class="game-wrapper">
+    <canvas id="gameCanvas"></canvas>
+</div>
+
+<div class="bottom-bar">
+    <a href="histoire_conway.html" class="info-btn">Mais, d'où ça vient ?</a>
+</div>
+
+<script>
+(function () {
+'use strict';
+
+// ════════════════════════════════════════════════════════════════════
+//  JEU DE LA VIE — Canvas 100×100 — style Palais de la découverte
+// ════════════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+
+// ── Constantes ──────────────────────────────────────────────────────
+const GRID_W = 100, GRID_H = 100;
+const ALIVE_RATIO     = 0.30;
+const POPULATED_RATIO = 0.50;
+
+// Palette inspirée du démineur (sombre, lisible)
+const C = {
+    bg:          '#1e1e28',
+    panel:       '#14141c',
+    alive:       '#50d282',   // vert vif
+    dead:        '#1a1a24',
+    gridLine:    '#282838',
+    border:      '#505878',
+    panelBorder: '#3c3c6e',
+    text:        '#dcddee',
+    muted:       '#8890b0',
+    accent:      '#6c63ff',
+    accentHov:   '#8a84ff',
+    btnBg:       '#282840',
+    btnHov:      '#3a3a5a',
+    btnActive:   '#2a3d2a',
+    btnActiveBd: '#50d282',
+    editAccent:  '#ffb703',
+    editBg:      '#3d3010',
+    cursorLive:  '#50d282',
+    cursorDead:  '#c83250',
+    panelSep:    '#22223a',
+};
+
+// ── Taille du canvas ─────────────────────────────────────────────────
+// Le panneau de contrôle est intégré en haut du canvas (comme le démineur)
+const CTRL_H  = 90;    // hauteur du panneau de contrôle
+const CELL_PX = 7;     // px par cellule
+const GAP     = 1;     // espace inter-cellules
+const STEP    = CELL_PX + GAP;
+
+const CW = GRID_W * STEP - GAP;          // largeur de la grille
+const CH = GRID_H * STEP - GAP;          // hauteur de la grille
+const W  = CW;
+const H  = CTRL_H + CH + 4;             // +4 = marge bas
+
+canvas.width  = W;
+canvas.height = H;
+
+// ── Grille ──────────────────────────────────────────────────────────
+let grid  = new Uint8Array(GRID_W * GRID_H);
+let grid2 = new Uint8Array(GRID_W * GRID_H);  // buffer de travail
+
+function idx(r, c) { return r * GRID_W + c; }
+
+function makeGrid() {
+    grid.fill(0);
+    const pop = Math.floor(GRID_H * POPULATED_RATIO);
+    for (let r = 0; r < pop; r++)
+        for (let c = 0; c < GRID_W; c++)
+            grid[idx(r, c)] = Math.random() < ALIVE_RATIO ? 1 : 0;
+}
+
+function stepGrid() {
+    for (let r = 0; r < GRID_H; r++) {
+        const rp = (r - 1 + GRID_H) % GRID_H;
+        const rn = (r + 1) % GRID_H;
+        for (let c = 0; c < GRID_W; c++) {
+            const cp = (c - 1 + GRID_W) % GRID_W;
+            const cn = (c + 1) % GRID_W;
+            const n = grid[idx(rp,cp)] + grid[idx(rp,c)] + grid[idx(rp,cn)]
+                    + grid[idx(r, cp)]                    + grid[idx(r, cn)]
+                    + grid[idx(rn,cp)] + grid[idx(rn,c)] + grid[idx(rn,cn)];
+            const alive = grid[idx(r,c)];
+            grid2[idx(r,c)] = (alive && (n===2||n===3)) || (!alive && n===3) ? 1 : 0;
+        }
+    }
+    const tmp = grid; grid = grid2; grid2 = tmp;
+    generation++;
+}
+
+// ── État ─────────────────────────────────────────────────────────────
+let generation = 0;
+let running    = false;
+let editMode   = false;
+let drawValue  = null;     // 0 ou 1, fixé au premier clic en mode édition
+let speed      = 10;       // ét./s
+const SPEEDS   = [1,2,5,10,20,30,60];
+let speedIdx   = SPEEDS.indexOf(10);
+
+let lastStepTime = 0;
+
+makeGrid();
+
+// ── Souris ───────────────────────────────────────────────────────────
+let mx = -1, my = -1;
+function posCanvas(e) {
+    const r = canvas.getBoundingClientRect();
+    return {
+        x: (e.clientX - r.left) * (W / r.width),
+        y: (e.clientY - r.top)  * (H / r.height),
+    };
+}
+function cellAt(x, y) {
+    if (y < CTRL_H) return null;
+    const gy = y - CTRL_H;
+    const c = Math.floor(x / STEP);
+    const r = Math.floor(gy / STEP);
+    if (c < 0 || c >= GRID_W || r < 0 || r >= GRID_H) return null;
+    return { r, c };
+}
+
+// ── Géométrie des boutons ────────────────────────────────────────────
+function rects() {
+    const pad = 12, bh = 32, bw = 130, bw2 = 90, bw3 = 76;
+    const row1y = 10, row2y = 52;
+
+    // Ligne 1 : Édition | Vider | Reset | Démarrer
+    const btnEdit  = { x: pad,              y: row1y, w: bw2, h: bh };
+    const btnClear = { x: pad+bw2+6,        y: row1y, w: bw2, h: bh };
+    const btnReset = { x: pad+2*(bw2+6),    y: row1y, w: bw,  h: bh };
+    const btnPlay  = { x: W-pad-bw3,        y: row1y, w: bw3, h: bh };
+
+    // Ligne 2 : Vitesse (slider)
+    const sldX = 100, sldW = W - sldX - pad - 60, sldY = row2y + 14;
+
+    return { btnEdit, btnClear, btnReset, btnPlay, sldX, sldW, sldY, row2y };
+}
+
+function inR(x, y, r) { return x>=r.x && x<=r.x+r.w && y>=r.y && y<=r.y+r.h; }
+
+// ── Dessin ───────────────────────────────────────────────────────────
+function rr(x,y,w,h,rad,fill,stroke,sw=1) {
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, rad);
+    if (fill)   { ctx.fillStyle   = fill;   ctx.fill(); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = sw; ctx.stroke(); }
+}
+function txt(s, x, y, size, color, bold=false, align='center') {
+    ctx.font = `${bold?'bold ':' '}${size}px "Segoe UI", sans-serif`;
+    ctx.fillStyle = color;
+    ctx.textAlign = align;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(s, x, y);
+}
+
+function drawCtrl() {
+    const { btnEdit, btnClear, btnReset, btnPlay, sldX, sldW, sldY, row2y } = rects();
+
+    // Fond panneau
+    rr(0, 0, W, CTRL_H, 0, C.panel, null);
+    ctx.strokeStyle = C.panelSep; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, CTRL_H); ctx.lineTo(W, CTRL_H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, 46); ctx.lineTo(W, 46); ctx.stroke();
+
+    // ── Ligne 1 : boutons ──────────────────────────────────────────
+    // Bouton Édition
+    const hovEdit = inR(mx, my, btnEdit);
+    const bgEdit  = editMode ? C.editBg : (hovEdit ? C.btnHov : C.btnBg);
+    const bdEdit  = editMode ? C.editAccent : C.border;
+    rr(btnEdit.x, btnEdit.y, btnEdit.w, btnEdit.h, 6, bgEdit, bdEdit);
+    txt(editMode ? '✏ Édition ON' : '✏ Édition', btnEdit.x+btnEdit.w/2, btnEdit.y+btnEdit.h/2, 11,
+        editMode ? C.editAccent : C.text, editMode);
+
+    // Bouton Vider
+    const hovClear = inR(mx,my,btnClear) && editMode;
+    rr(btnClear.x, btnClear.y, btnClear.w, btnClear.h, 6,
+       editMode ? (hovClear ? C.btnHov : C.btnBg) : '#1a1a26',
+       editMode ? C.border : '#2a2a3a');
+    txt('✕ Vider', btnClear.x+btnClear.w/2, btnClear.y+btnClear.h/2, 11,
+        editMode ? C.text : '#3a3a5a', false);
+
+    // Bouton Reset
+    const hovReset = inR(mx,my,btnReset);
+    rr(btnReset.x, btnReset.y, btnReset.w, btnReset.h, 6,
+       hovReset ? C.btnHov : C.btnBg, C.border);
+    txt('⟳ Initialiser (aléatoire)', btnReset.x+btnReset.w/2, btnReset.y+btnReset.h/2, 11, C.text);
+
+    // Bouton Play / Pause
+    const hovPlay = inR(mx,my,btnPlay) && !editMode;
+    const bgPlay  = running ? C.btnActive : (hovPlay ? C.btnHov : C.btnBg);
+    const bdPlay  = running ? C.btnActiveBd : C.border;
+    rr(btnPlay.x, btnPlay.y, btnPlay.w, btnPlay.h, 6, bgPlay, bdPlay);
+    txt(running ? '⏸ Pause' : '▶ Lancer', btnPlay.x+btnPlay.w/2, btnPlay.y+btnPlay.h/2, 11,
+        running ? C.alive : C.text, running);
+
+    // ── Ligne 2 : vitesse ──────────────────────────────────────────
+    txt('Vitesse :', sldX - 6, row2y + 16, 11, C.muted, false, 'right');
+    const t = speedIdx / (SPEEDS.length - 1);
+    const fillX = sldX + Math.round(t * sldW);
+
+    // Track
+    ctx.strokeStyle = C.border; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(sldX, sldY); ctx.lineTo(sldX+sldW, sldY); ctx.stroke();
+    // Fill
+    ctx.strokeStyle = (running || editMode) ? '#3a3a5a' : C.accent; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(sldX, sldY); ctx.lineTo(fillX, sldY); ctx.stroke();
+    // Handle
+    ctx.beginPath(); ctx.arc(fillX, sldY, 7, 0, Math.PI*2);
+    ctx.fillStyle = (running || editMode) ? '#3a3a5a' : C.accent; ctx.fill();
+    ctx.beginPath(); ctx.arc(fillX, sldY, 4, 0, Math.PI*2);
+    ctx.fillStyle = C.panel; ctx.fill();
+
+    // Valeur
+    txt(SPEEDS[speedIdx]+' ét/s', sldX+sldW+36, row2y+16, 11,
+        (running||editMode) ? '#3a3a5a' : C.alive, true);
+
+    // Infos génération + mode
+    const modeStr = editMode ? '✏ MODE ÉDITION' : '● GÉN. ' + generation.toLocaleString('fr');
+    txt(modeStr, W-12, row2y+16, 11, editMode ? C.editAccent : C.muted, editMode, 'right');
+}
+
+function drawGrid() {
+    const oy = CTRL_H + 2;
+    // Fond grille
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, oy - 2, W, CH + 4);
+
+    // Lignes de grille
+    ctx.strokeStyle = C.gridLine; ctx.lineWidth = 1;
+    for (let c = 0; c <= GRID_W; c++) {
+        const x = c * STEP - GAP/2;
+        ctx.beginPath(); ctx.moveTo(x, oy); ctx.lineTo(x, oy+CH); ctx.stroke();
+    }
+    for (let r = 0; r <= GRID_H; r++) {
+        const y = oy + r * STEP - GAP/2;
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+
+    // Cellules vivantes
+    ctx.fillStyle = C.alive;
+    for (let r = 0; r < GRID_H; r++)
+        for (let c = 0; c < GRID_W; c++)
+            if (grid[idx(r,c)])
+                ctx.fillRect(c*STEP, oy + r*STEP, CELL_PX, CELL_PX);
+
+    // Survol mode édition
+    if (editMode && mx >= 0) {
+        const cell = cellAt(mx, my);
+        if (cell) {
+            const { r, c } = cell;
+            const outline = grid[idx(r,c)] ? C.cursorDead : C.cursorLive;
+            ctx.strokeStyle = outline; ctx.lineWidth = 2;
+            ctx.strokeRect(c*STEP + 1, oy + r*STEP + 1, CELL_PX - 2, CELL_PX - 2);
+        }
+    }
+
+    // Bordure grille
+    ctx.strokeStyle = editMode ? C.editAccent : C.panelBorder; ctx.lineWidth = 2;
+    ctx.strokeRect(0, oy-2, W, CH+4);
+}
+
+function draw() {
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, W, H);
+    drawCtrl();
+    drawGrid();
+    requestAnimationFrame(draw);
+}
+
+// ── Simulation ───────────────────────────────────────────────────────
+function tick(ts) {
+    if (running && !editMode) {
+        const dt = 1000 / SPEEDS[speedIdx];
+        if (ts - lastStepTime >= dt) {
+            stepGrid();
+            lastStepTime = ts;
+        }
+    }
+    requestAnimationFrame(tick);
+}
+
+// ── Contrôles ────────────────────────────────────────────────────────
+function togglePlay() {
+    if (editMode) return;
+    running = !running;
+}
+function toggleEdit() {
+    editMode = !editMode;
+    if (editMode) running = false;
+}
+function reset() {
+    makeGrid(); generation = 0; running = false; editMode = false;
+}
+
+canvas.addEventListener('mousemove', e => {
+    const { x, y } = posCanvas(e);
+    mx = x; my = y;
+    if (drawValue !== null && editMode) {
+        const cell = cellAt(x, y);
+        if (cell) grid[idx(cell.r, cell.c)] = drawValue;
+    }
+    // Drag slider vitesse
+    if (sliderDrag) updateSlider(x);
+});
+
+canvas.addEventListener('mouseleave', () => { mx = -1; my = -1; });
+
+let sliderDrag = false;
+function updateSlider(x) {
+    const { sldX, sldW } = rects();
+    const t = Math.max(0, Math.min(1, (x - sldX) / sldW));
+    speedIdx = Math.round(t * (SPEEDS.length - 1));
+}
+
+canvas.addEventListener('mousedown', e => {
+    const { x, y } = posCanvas(e);
+    const { btnEdit, btnClear, btnReset, btnPlay, sldX, sldW, sldY, row2y } = rects();
+
+    if (e.button !== 0) return;
+
+    // Boutons ctrl
+    if (y < CTRL_H) {
+        if (inR(x,y,btnEdit))  { toggleEdit(); return; }
+        if (inR(x,y,btnClear) && editMode) { grid.fill(0); return; }
+        if (inR(x,y,btnReset)) { reset(); return; }
+        if (inR(x,y,btnPlay))  { togglePlay(); return; }
+        // Slider
+        const sy1 = row2y + 6, sy2 = row2y + 26;
+        if (y >= sy1 && y <= sy2 && x >= sldX - 10 && x <= sldX+sldW+10) {
+            sliderDrag = true; updateSlider(x); return;
+        }
+        return;
+    }
+
+    // Grille édition
+    if (editMode) {
+        const cell = cellAt(x, y);
+        if (cell) {
+            drawValue = 1 - grid[idx(cell.r, cell.c)];
+            grid[idx(cell.r, cell.c)] = drawValue;
+        }
+    }
+});
+
+canvas.addEventListener('mouseup', () => {
+    drawValue = null;
+    sliderDrag = false;
+});
+
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+requestAnimationFrame(draw);
+requestAnimationFrame(tick);
+
+})();
+</script>
+</body>
+</html>
