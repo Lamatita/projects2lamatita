@@ -148,14 +148,22 @@ var zones = {};
 var GRAVITY = 0.38, JUMP_FORCE = -12, SPRING_F = -19, MOVE_SPD = 4.5;
 var CHAR_R = 16, PLAT_H = 12;
 var TITRE_COL = '#ffd23a';
+// Transition de niveau
+var lastLevelIdx = 0;
+var levelTransition = null; // {name, timer, alpha}
+
+// Polyfill findIndex
+if(!Array.prototype.findIndex){
+  Array.prototype.findIndex=function(fn){for(var i=0;i<this.length;i++)if(fn(this[i],i))return i;return -1;};
+}
 
 // ── Niveaux ──────────────────────────────────────────────────────────
 var LEVELS = [
-  { name:'Souterrain',   min:0,   max:49,   bg:['#3d2b1f','#5a3e2b'] },
-  { name:'Ciel',         min:50,  max:149,  bg:['#87ceeb','#c8eeff'] },
-  { name:'Stratosphère', min:150, max:299,  bg:['#5b7fa6','#9bc5e0'] },
-  { name:'Espace',       min:300, max:499,  bg:['#050510','#0a0a30'] },
-  { name:'Paradis',      min:500, max:9999, bg:['#fff8e1','#ffe4b5'] },
+  { name:'Souterrain',   icon:'🪨', min:0,   max:49,   bg:['#3d2b1f','#5a3e2b'] },
+  { name:'Ciel',         icon:'☀️', min:50,  max:149,  bg:['#87ceeb','#c8eeff'] },
+  { name:'Stratosphère', icon:'✈️', min:150, max:299,  bg:['#5b7fa6','#9bc5e0'] },
+  { name:'Espace',       icon:'🚀', min:300, max:499,  bg:['#050510','#0a0a30'] },
+  { name:'Paradis',      icon:'👼', min:500, max:9999, bg:['#fff8e1','#ffe4b5'] },
 ];
 function getLevel(s){ return LEVELS.find(function(l){return s>=l.min&&s<=l.max;})||LEVELS[4]; }
 
@@ -256,8 +264,8 @@ function generatePlatforms(){
   platforms=[]; items=[];
   platforms.push({x:W/2-50, y:H-70, w:100, h:PLAT_H, type:'earth', used:false, vx:0, dir:1});
   var lastY = H-70;
-  for(var i=0;i<26;i++){
-    lastY -= 50+Math.random()*30;
+  for(var i=0;i<14;i++){
+    lastY -= 80+Math.random()*50;
     platforms.push(makePlat(lastY, 0));
   }
 }
@@ -265,8 +273,9 @@ function topY(){ return Math.min.apply(null, platforms.map(function(p){return p.
 function extendPlatforms(){
   while(topY() > camY - H){
     var t = topY();
-    var newY = t-(50+Math.random()*30);
-    var ws = Math.floor((H-newY+camY)/50);
+    var newY = t-(80+Math.random()*50);
+    // score = hauteur montée / facteur. camY est négatif quand on monte, newY aussi.
+    var ws = Math.floor((H - newY) / 80);
     platforms.push(makePlat(newY, ws));
   }
   platforms = platforms.filter(function(p){return p.y-camY<H+100;});
@@ -297,6 +306,7 @@ function initPlayer(){
 // ── Init ─────────────────────────────────────────────────────────────
 function initGame(){
   score=0; camY=0; paused=false; particles=[];
+  lastLevelIdx=0; levelTransition=null;
   etat='playing';
   document.getElementById('btnPause').textContent='⏸';
   generatePlatforms(); initClouds(); initStars(); initPlayer();
@@ -521,12 +531,29 @@ function update(){
   var screenY=player.y-camY;
   if(screenY<H*0.42){
     camY-=H*0.42-screenY;
-    var ns=Math.floor(-camY/50);
+    // score = distance montée depuis départ (player.y part de H-70-CHAR_R ≈ H)
+    // On convertit la position absolue monde en score
+    var ns=Math.floor((H - player.y) / 80);
     if(ns>score) score=ns;
     if(score>meilleur) meilleur=score;
   }
   extendPlatforms();
   if(player.y-camY>H+60) etat='gameover';
+
+  // Détection changement de niveau
+  var curLvlIdx = LEVELS.findIndex(function(l){return score>=l.min&&score<=l.max;});
+  if(curLvlIdx<0) curLvlIdx=LEVELS.length-1;
+  if(curLvlIdx !== lastLevelIdx && curLvlIdx > 0){
+    levelTransition = { name: LEVELS[curLvlIdx].name, icon: LEVELS[curLvlIdx].icon, timer: 180, alpha: 0 };
+    lastLevelIdx = curLvlIdx;
+  }
+  if(levelTransition){
+    if(levelTransition.timer>120) levelTransition.alpha = (180-levelTransition.timer)/60;
+    else if(levelTransition.timer<60) levelTransition.alpha = levelTransition.timer/60;
+    else levelTransition.alpha = 1;
+    levelTransition.timer--;
+    if(levelTransition.timer<=0) levelTransition=null;
+  }
 
   particles.forEach(function(p){ p.x+=p.vx; p.y+=p.vy; p.vy+=0.15; p.life-=0.05; });
   particles=particles.filter(function(p){return p.life>0;});
@@ -545,13 +572,53 @@ function draw(){
   if(selectedChar==='frog') drawFrog(ctx,player.x,player.y-off,player.state);
   else drawLama(ctx,player.x,player.y-off,player.dir);
   if(player.item) drawItemAt(ctx,player.x,player.y-off-26,player.item);
-  // HUD
+
+  // HUD score
   ctx.fillStyle='#fff'; ctx.font='bold 32px "Consolas","Courier New",monospace';
   ctx.textAlign='center'; ctx.textBaseline='top';
   ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=6;
   ctx.fillText(score,W/2,12); ctx.shadowBlur=0;
   ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='11px "Consolas","Courier New",monospace';
   ctx.textAlign='left'; ctx.fillText(getLevel(score).name,8,14);
+
+  // Bouton sortie plein écran (affiché seulement si fullscreen actif)
+  if(document.body.classList.contains('fullscreen')){
+    ctx.fillStyle='rgba(0,0,0,0.35)';
+    ctx.fillRect(W-90,6,84,26);
+    ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=1;
+    ctx.strokeRect(W-90,6,84,26);
+    ctx.fillStyle='rgba(255,255,255,0.9)'; ctx.font='11px "Segoe UI",sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('⛶ Quitter FS',W-48,19);
+    zones.exitFS={x:W-90,y:6,w:84,h:26};
+  } else {
+    zones.exitFS=null;
+  }
+
+  // Bannière transition niveau
+  if(levelTransition && levelTransition.alpha>0){
+    var tr=levelTransition;
+    ctx.globalAlpha=tr.alpha;
+    // Fond de la bannière
+    ctx.fillStyle='rgba(0,0,0,0.55)';
+    ctx.fillRect(0, H/2-44, W, 88);
+    // Ligne dorée haut et bas
+    ctx.fillStyle='rgba(255,210,50,0.8)';
+    ctx.fillRect(0,H/2-44,W,3);
+    ctx.fillRect(0,H/2+41,W,3);
+    // Texte
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.font='bold 28px "Consolas","Courier New",monospace';
+    ctx.fillStyle='#fff';
+    ctx.shadowColor='rgba(0,0,0,0.7)'; ctx.shadowBlur=10;
+    ctx.fillText(tr.icon+' '+tr.name, W/2, H/2-12);
+    ctx.shadowBlur=0;
+    ctx.font='13px "Consolas","Courier New",monospace';
+    ctx.fillStyle='rgba(255,220,80,0.95)';
+    ctx.fillText('Nouveau niveau atteint !', W/2, H/2+18);
+    ctx.globalAlpha=1;
+  }
+
   ctx.textAlign='left'; ctx.textBaseline='alphabetic';
 }
 
@@ -613,9 +680,14 @@ canvas.addEventListener('mousemove', function(e){
   sourisY=(e.clientY-r.top)*(H/r.height);
 });
 canvas.addEventListener('click', function(e){
-  if(etat!=='gameover') return;
   var r=canvas.getBoundingClientRect();
   var mx=(e.clientX-r.left)*(W/r.width), my=(e.clientY-r.top)*(H/r.height);
+  // Bouton quitter plein écran (disponible tout le temps)
+  if(zones.exitFS){
+    var z=zones.exitFS;
+    if(mx>=z.x&&mx<=z.x+z.w&&my>=z.y&&my<=z.y+z.h){ toggleFullscreen(); return; }
+  }
+  if(etat!=='gameover') return;
   if(zones['Rejouer']){var z=zones['Rejouer']; if(mx>=z.x&&mx<=z.x+z.w&&my>=z.y&&my<=z.y+z.h){initGame();return;}}
   if(zones['Menu']){var z=zones['Menu']; if(mx>=z.x&&mx<=z.x+z.w&&my>=z.y&&my<=z.y+z.h){showCharModal();return;}}
 });
