@@ -145,17 +145,29 @@ body {
 }
 
 .carousel-track {
-  display: flex;
-  transition: none;
+  position: relative;
+  width: 100%;
+  min-height: 400px;
 }
 
 .carousel-slide {
-  min-width: 100%;
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  min-height: 400px;
   display: flex;
   justify-content: center;
   align-items: center;
   background: #f0ecff;
+  opacity: 0;
+  transition: opacity 0.5s;
+  pointer-events: none;
+}
+
+.carousel-slide.active {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .carousel-slide img {
@@ -554,54 +566,54 @@ body {
 <div class="carousel-section">
   <div class="carousel-container" id="carousel" onclick="handleCarouselClick(event)">
     <div class="carousel-track" id="carouselTrack">
-      <div class="carousel-slide" style="display:flex"><img src="https://projets2lamatita.fr/Ada_Lovelace.png" alt="Ada Lovelace" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Henrietta_Swan_Leavitt.jpg" alt="Henrietta Swan Leavitt" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Grace_Hopper(photoàplusieurs).jpg" alt="Grace Hopper" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Kathleen_Booth.jpg" alt="Kathleen Booth" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Jean-Jennings-Bartik.jpg" alt="Jean Jennings Bartik" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Frances_Bilas_Spence.png" alt="Frances Bilas Spence" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Kathleen Antonelli.jpg" alt="Kathleen Antonelli" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Ruth_Teitelbaum.png" alt="Ruth Teitelbaum" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/joan-clarke.jpg" alt="Joan Clarke" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/mary_ellen_wilkes.png" alt="Mary Allen Wilkes" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/margarethamilton_&soncode.png" alt="Margaret Hamilton" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/sis_mary_kenneth_Keller.png" alt="Sister Mary Kenneth Keller" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Hedy_Lamarr3.jpg" alt="Hedy Lamarr" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Karen_Spärck.jpg" alt="Karen Spärck Jones" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Barbara_Liskov.jpg" alt="Barbara Liskov" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Frances-E-Allen.jpg" alt="Frances E. Allen" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Radia-Perlman.jpg" alt="Radia Perlman" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Anita-Borg.jpg" alt="Anita Borg" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Sophie_Wilson.jpg" alt="Sophie Wilson" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Susan-Kare.jpg" alt="Susan Kare" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/carol_shaw.jpg" alt="Carol Shaw" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Shafi-Goldwasser.jpg" alt="Shafi Goldwasser" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Mitchell_Baker.jpg" alt="Mitchell Baker" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Marissa_Mayer.jpg" alt="Marissa Mayer" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/fei-fei-li.jpg" alt="Fei-Fei Li" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/cynthia-dwork.jpg" alt="Cynthia Dwork" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Daphne-Koller.jpg" alt="Daphne Koller" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Regina-Barzilay.jpg" alt="Regina Barzilay" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Joy_Buolamwini.jpg" alt="Joy Buolamwini" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Timnit_Gebru.jpg" alt="Timnit Gebru" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Parisa_Tabriz.jpg" alt="Parisa Tabriz" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Katie_Bouman.jpg" alt="Katie Bouman" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/susan_landau.jpg" alt="Susan Landau" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Dorothy_Denning.jpg" alt="Dorothy Denning" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/stormypeters.jpg" alt="Stormy Peters" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Hanna-Wallach.jpg" alt="Hanna Wallach" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Been_Kim.jpg" alt="Been Kim" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/ayanna_howard.jpg" alt="Ayanna Howard" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Manuela-Veloso.jpg" alt="Manuela Veloso" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Daniela-Rus.jpg" alt="Daniela Rus" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Jean-E-Sammet.jpg" alt="Jean E. Sammet" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/mary-shaw.jpg" alt="Mary Shaw" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Katherine_Johnson.jpg" alt="Katherine Johnson" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Evelyn_Boyd _Granville.jpg" alt="Evelyn Boyd Granville" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Ida_Rhodes.jpg" alt="Ida Rhodes" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Gertrude_Blanch.jpg" alt="Gertrude Blanch" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Betty-Holbeton.jpg" alt="Betty Holberton" loading="eager"></div>
-      <div class="carousel-slide" style="display:none"><img src="https://projets2lamatita.fr/Beatrice_Worsley.jpg" alt="Beatrice Worsley" loading="eager"></div>
+      <div class="carousel-slide active"><img src="https://projets2lamatita.fr/Ada_Lovelace.png" alt="Ada Lovelace" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Henrietta_Swan_Leavitt.jpg" alt="Henrietta Swan Leavitt" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Grace_Hopper(photoàplusieurs).jpg" alt="Grace Hopper" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Kathleen_Booth.jpg" alt="Kathleen Booth" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Jean-Jennings-Bartik.jpg" alt="Jean Jennings Bartik" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Frances_Bilas_Spence.png" alt="Frances Bilas Spence" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Kathleen Antonelli.jpg" alt="Kathleen Antonelli" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Ruth_Teitelbaum.png" alt="Ruth Teitelbaum" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/joan-clarke.jpg" alt="Joan Clarke" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/mary_ellen_wilkes.png" alt="Mary Allen Wilkes" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/margarethamilton_&soncode.png" alt="Margaret Hamilton" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/sis_mary_kenneth_Keller.png" alt="Sister Mary Kenneth Keller" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Hedy_Lamarr3.jpg" alt="Hedy Lamarr" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Karen_Spärck.jpg" alt="Karen Spärck Jones" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Barbara_Liskov.jpg" alt="Barbara Liskov" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Frances-E-Allen.jpg" alt="Frances E. Allen" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Radia-Perlman.jpg" alt="Radia Perlman" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Anita-Borg.jpg" alt="Anita Borg" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Sophie_Wilson.jpg" alt="Sophie Wilson" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Susan-Kare.jpg" alt="Susan Kare" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/carol_shaw.jpg" alt="Carol Shaw" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Shafi-Goldwasser.jpg" alt="Shafi Goldwasser" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Mitchell_Baker.jpg" alt="Mitchell Baker" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Marissa_Mayer.jpg" alt="Marissa Mayer" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/fei-fei-li.jpg" alt="Fei-Fei Li" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/cynthia-dwork.jpg" alt="Cynthia Dwork" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Daphne-Koller.jpg" alt="Daphne Koller" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Regina-Barzilay.jpg" alt="Regina Barzilay" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Joy_Buolamwini.jpg" alt="Joy Buolamwini" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Timnit_Gebru.jpg" alt="Timnit Gebru" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Parisa_Tabriz.jpg" alt="Parisa Tabriz" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Katie_Bouman.jpg" alt="Katie Bouman" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/susan_landau.jpg" alt="Susan Landau" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Dorothy_Denning.jpg" alt="Dorothy Denning" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/stormypeters.jpg" alt="Stormy Peters" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Hanna-Wallach.jpg" alt="Hanna Wallach" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Been_Kim.jpg" alt="Been Kim" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/ayanna_howard.jpg" alt="Ayanna Howard" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Manuela-Veloso.jpg" alt="Manuela Veloso" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Daniela-Rus.jpg" alt="Daniela Rus" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Jean-E-Sammet.jpg" alt="Jean E. Sammet" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/mary-shaw.jpg" alt="Mary Shaw" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Katherine_Johnson.jpg" alt="Katherine Johnson" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Evelyn_Boyd _Granville.jpg" alt="Evelyn Boyd Granville" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Ida_Rhodes.jpg" alt="Ida Rhodes" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Gertrude_Blanch.jpg" alt="Gertrude Blanch" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Betty-Holbeton.jpg" alt="Betty Holberton" loading="eager"></div>
+      <div class="carousel-slide"><img src="https://projets2lamatita.fr/Beatrice_Worsley.jpg" alt="Beatrice Worsley" loading="eager"></div>
     </div>
 
     <!-- Flèche gauche → image précédente -->
