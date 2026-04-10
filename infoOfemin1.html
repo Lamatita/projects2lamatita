@@ -1,0 +1,1902 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L'informatique au féminin</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --fond: #f7f3ff;
+  --principal: #6c63ff;
+  --secondaire: #ffb703;
+  --rouge: #8b0000;
+  --rouge-vif: #c0392b;
+  --or: #ffb703;
+  --or-clair: #ffe680;
+  --creme: #2a2060;
+  --creme-fonce: #1a1040;
+  --texte: #1a1040;
+  --ombre: rgba(108,99,255,0.3);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'EB Garamond', Georgia, serif;
+  background: var(--fond);
+  color: #1a1040;
+  overflow-x: hidden;
+}
+
+/* ── Confettis (même style que labyrinthe) ── */
+.falling { position: fixed; top: -10%; animation: fall linear infinite; pointer-events: none; z-index: 0; }
+.confetti { width: 12px; height: 12px; opacity: .8; border-radius: 2px; }
+.lama { font-size: 2rem; }
+.c1 { background: var(--principal); } .c2 { background: var(--secondaire); }
+.c3 { background: #ff6f91; } .c4 { background: #00c9a7; } .c5 { background: #845ec2; }
+@keyframes fall { 0% { transform: translateY(0) rotate(0deg); } 100% { transform: translateY(110vh) rotate(var(--rotation)); } }
+
+/* ── Barre de navigation ── */
+.top-bar {
+  width: 100%;
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 50;
+}
+
+.back-link {
+  background: transparent;
+  border: 2px solid var(--principal);
+  color: var(--principal);
+  font-family: "Segoe UI", sans-serif;
+  font-weight: 700;
+  font-size: 1em;
+  padding: 6px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+  text-decoration: none;
+}
+.back-link:hover { background: var(--principal); color: #fff; }
+
+.page-title-bar {
+  color: var(--principal);
+  font-family: "Segoe UI", sans-serif;
+  font-size: 1.4em;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* ── Sous-titre STICKY ── */
+.sticky-subtitle {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(247,243,255,0.96);
+  border-bottom: 2px solid var(--principal);
+  text-align: center;
+  padding: 10px 20px;
+  font-family: "Segoe UI", sans-serif;
+  font-style: italic;
+  font-size: 1em;
+  color: #444;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 12px rgba(108,99,255,0.10);
+}
+.sticky-subtitle span {
+  color: var(--principal);
+  font-style: normal;
+  font-weight: 700;
+}
+
+/* ── Hero / titre principal ── */
+.hero {
+  text-align: center;
+  padding: 36px 20px 20px;
+  position: relative;
+  z-index: 1;
+}
+.hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.2em, 5vw, 4em);
+  font-weight: 900;
+  color: var(--principal);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-shadow: 0 2px 16px rgba(108,99,255,0.15);
+}
+.hero h1 em {
+  color: var(--secondaire);
+  font-style: normal;
+  display: block;
+}
+.hero-ligne {
+  width: 160px;
+  height: 2px;
+  background: linear-gradient(to right, transparent, var(--principal), transparent);
+  margin: 14px auto 0;
+}
+
+/* ── Carrousel ── */
+.carousel-section {
+  position: relative;
+  z-index: 2;
+  padding: 28px 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.carousel-container {
+  position: relative;
+  width: 100%;
+  max-width: 700px;
+  overflow: hidden;
+  border: 2px solid rgba(108,99,255,0.35);
+  border-radius: 12px;
+  background: #f0ecff;
+  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(108,99,255,0.15);
+}
+
+.carousel-track {
+  display: flex;
+  transition: none;
+}
+
+.carousel-slide {
+  min-width: 100%;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f0ecff;
+}
+
+.carousel-slide img {
+  display: block;
+  max-width: 100%;
+  max-height: 480px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Placeholder si pas d'image */
+.carousel-placeholder {
+  width: 100%;
+  height: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--principal);
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3em;
+  gap: 12px;
+  opacity: 0.75;
+}
+.carousel-placeholder .initiales {
+  font-size: 4em;
+  font-weight: 900;
+  color: var(--principal);
+  opacity: 0.5;
+  text-shadow: 0 0 40px rgba(108,99,255,0.3);
+}
+
+/* Flèches carrousel */
+.carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(247,243,255,0.90);
+  border: 2px solid var(--principal);
+  color: var(--principal);
+  font-size: 1.6em;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .25s, background .2s;
+  z-index: 10;
+  pointer-events: none;
+}
+.carousel-arrow:hover { background: var(--principal); color: #fff; }
+.carousel-container:hover .carousel-arrow { pointer-events: auto; }
+.carousel-container:hover .carousel-arrow-right { opacity: 1; }
+.carousel-container:hover .carousel-arrow-left  { opacity: 1; }
+.carousel-arrow-left  { left: 14px; }
+.carousel-arrow-right { right: 14px; }
+
+/* Zone invisible gauche/droite pour détecter la souris */
+.carousel-zone-left, .carousel-zone-right {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 40%;
+  z-index: 5;
+}
+.carousel-zone-left  { left: 0; }
+.carousel-zone-right { right: 0; }
+
+/* Indicateurs */
+.carousel-dots {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 700px;
+  padding: 0 20px;
+}
+.dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: rgba(108,99,255,0.25);
+  cursor: pointer;
+  transition: background .2s, transform .2s;
+}
+.dot.active { background: var(--principal); transform: scale(1.4); }
+
+/* ── Section cartes ── */
+.cards-section {
+  padding: 50px 24px 80px;
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 50px;
+}
+
+/* ── Nom sous le carrousel ── */
+.carousel-name {
+  margin-top: 12px;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.25em;
+  font-weight: 700;
+  color: var(--principal);
+  letter-spacing: 0.06em;
+  text-align: center;
+  min-height: 1.6em;
+  transition: opacity 0.35s;
+}
+
+/* ── Section-divider invisible par défaut, révélé au scroll ── */
+.section-divider {
+  text-align: center;
+  padding: 20px 0 30px;
+  color: var(--principal);
+  font-family: 'Playfair Display', serif;
+  font-size: 1em;
+  letter-spacing: 0.2em;
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+.section-divider.visible { opacity: 0.5; }
+.section-divider::before, .section-divider::after { content: '— '; }
+
+/* ── Carte individuelle ── */
+.femme-card {
+  background: #fff;
+  border: 1px solid rgba(108,99,255,0.18);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(108,99,255,0.12);
+  scroll-margin-top: 80px;
+}
+
+/* Bandeau titre de carte */
+.card-header {
+  background: linear-gradient(135deg, var(--principal) 0%, #845ec2 100%);
+  padding: 14px 24px;
+  text-align: center;
+  position: relative;
+}
+.card-header::before, .card-header::after {
+  content: '✦';
+  color: var(--secondaire);
+  opacity: 0.8;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8em;
+}
+.card-header::before { left: 20px; }
+.card-header::after  { right: 20px; }
+
+.card-header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.2em, 2.5vw, 1.8em);
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.06em;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* Corps de la carte */
+.card-body {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 0;
+  min-height: 300px;
+}
+@media (max-width: 700px) {
+  .card-body { grid-template-columns: 1fr; }
+}
+
+/* Colonne gauche : photo + dates */
+.card-left {
+  padding: 28px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  border-right: 1px solid rgba(108,99,255,0.12);
+  background: #f7f3ff;
+}
+
+.card-photo-frame {
+  position: relative;
+  width: 180px;
+  height: 220px;
+  border: 2px solid rgba(108,99,255,0.3);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #e8e0ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-photo-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-photo-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--principal);
+  opacity: 0.45;
+  gap: 8px;
+  font-family: 'Playfair Display', serif;
+}
+.card-photo-placeholder .pl-initiales {
+  font-size: 3.5em;
+  font-weight: 900;
+  line-height: 1;
+}
+.card-photo-placeholder .pl-label {
+  font-size: 0.7em;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.card-dates {
+  font-family: 'EB Garamond', serif;
+  font-size: 0.95em;
+  color: var(--principal);
+  text-align: center;
+  letter-spacing: 0.04em;
+  font-style: italic;
+}
+
+/* Colonne droite : texte */
+.card-right {
+  padding: 28px 32px 28px 28px;
+}
+
+.card-right p, .card-right .card-text {
+  font-family: 'EB Garamond', serif;
+  font-size: 1.05em;
+  line-height: 1.85;
+  color: #2a1a4a;
+}
+
+/* ── Effet Wikipedia ── */
+.wiki-word {
+  color: var(--principal);
+  border-bottom: 1px dotted var(--principal);
+  cursor: pointer;
+  position: relative;
+  transition: color .15s;
+}
+.wiki-word:hover { color: #845ec2; }
+
+.wiki-popup {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  background: #fff;
+  border: 1px solid var(--principal);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(108,99,255,0.25);
+  z-index: 200;
+  overflow: hidden;
+  pointer-events: none;
+}
+.wiki-word:hover .wiki-popup { display: block; }
+
+.wiki-popup img {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  display: block;
+}
+
+.wiki-popup-img-placeholder {
+  width: 100%;
+  height: 130px;
+  background: linear-gradient(135deg, #e8e0ff, #f7f3ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5em;
+  opacity: 0.7;
+}
+
+.wiki-popup-desc {
+  padding: 10px 12px;
+  font-family: 'EB Garamond', serif;
+  font-size: 0.82em;
+  line-height: 1.5;
+  color: #2a1a4a;
+  font-style: italic;
+}
+
+/* Flèche de la popup */
+.wiki-popup::after {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 7px solid var(--principal);
+}
+
+/* ── Bouton retour en haut ── */
+#backToTop {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 500;
+  background: var(--principal);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  font-size: 1.4em;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(108,99,255,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s, transform .3s;
+  transform: translateY(12px);
+}
+#backToTop.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+#backToTop:hover {
+  background: #845ec2;
+  transform: translateY(-2px);
+}
+.carousel-slide { opacity: 1; transition: opacity 0.5s; }
+
+/* ── Footer ── */
+.page-footer {
+  text-align: center;
+  padding: 30px;
+  border-top: 1px solid rgba(108,99,255,0.15);
+  color: rgba(108,99,255,0.4);
+  font-size: 0.82em;
+  letter-spacing: 0.08em;
+  font-style: italic;
+}
+</style>
+</head>
+<body>
+
+<!-- Confettis (même style que la page labyrinthe) -->
+<div class="falling confetti c1" style="left:5%;  animation-duration:5s;   --rotation:720deg;"></div>
+<div class="falling lama"        style="left:12%; animation-duration:7s;   --rotation:-1080deg;">🦙</div>
+<div class="falling confetti c2" style="left:18%; animation-duration:6s;   --rotation:540deg;"></div>
+<div class="falling lama"        style="left:25%; animation-duration:8s;   --rotation:900deg;">🦙</div>
+<div class="falling confetti c3" style="left:32%; animation-duration:4.5s; --rotation:-720deg;"></div>
+<div class="falling lama"        style="left:38%; animation-duration:6.5s; --rotation:1260deg;">🦙</div>
+<div class="falling confetti c4" style="left:45%; animation-duration:5.8s; --rotation:360deg;"></div>
+<div class="falling lama"        style="left:52%; animation-duration:7.2s; --rotation:-1440deg;">🦙</div>
+<div class="falling confetti c5" style="left:60%; animation-duration:6.1s; --rotation:900deg;"></div>
+<div class="falling lama"        style="left:67%; animation-duration:8.5s; --rotation:-1080deg;">🦙</div>
+<div class="falling confetti c1" style="left:74%; animation-duration:5.3s; --rotation:720deg;"></div>
+<div class="falling lama"        style="left:82%; animation-duration:7.9s; --rotation:1620deg;">🦙</div>
+<div class="falling confetti c2" style="left:90%; animation-duration:6.7s; --rotation:-900deg;"></div>
+
+<!-- Barre de navigation -->
+<div class="top-bar">
+  <a class="back-link" href="javascript:history.back()">← Retour en arrière</a>
+  <span class="page-title-bar">L'informatique au féminin</span>
+  <div style="width:160px;"></div>
+</div>
+
+<!-- Sous-titre STICKY -->
+<div class="sticky-subtitle">
+  <span>♀️</span> N'oublions pas les femmes qui ont fait avancer les sciences <span>♀️</span>
+</div>
+
+
+<!-- ══ CARROUSEL ══ -->
+<div class="carousel-section">
+  <div class="carousel-container" id="carousel" onclick="handleCarouselClick(event)">
+    <div class="carousel-track" id="carouselTrack">
+      <!-- Les slides sont générées en JS -->
+    </div>
+
+    <!-- Flèche gauche → image précédente -->
+    <button class="carousel-arrow carousel-arrow-left" onclick="event.stopPropagation(); goToSlide((currentSlide - 1 + femmes.length) % femmes.length)">&#8249;</button>
+    <!-- Flèche droite → image suivante -->
+    <button class="carousel-arrow carousel-arrow-right" onclick="event.stopPropagation(); goToSlide((currentSlide + 1) % femmes.length)">&#8250;</button>
+
+    <!-- Zones hover invisibles -->
+    <div class="carousel-zone-left"></div>
+    <div class="carousel-zone-right"></div>
+  </div>
+
+  <!-- Points indicateurs -->
+  <div class="carousel-dots" id="carouselDots"></div>
+  <div class="carousel-name" id="carouselName"></div>
+</div>
+
+<!-- ══ SÉPARATEUR ══ -->
+<div class="cards-section">
+  <div class="section-divider">Les pionnières de l'informatique</div>
+
+
+  <div class="femme-card" id="card-0">
+    <div class="card-header"><h2>Ada Lovelace</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+<img src="Ada_Lovelace.png" alt="Ada Lovelace">
+        </div>
+        <div class="card-dates">1815 — 1852</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text">
+          <p>
+            Augusta Ada King, comtesse de Lovelace, née Byron, est souvent présentée comme la toute première
+            programmeuse de l'histoire de l'informatique. Fille du poète Lord Byron, elle grandit sous l'autorité
+            rigoureuse de sa mère qui, craignant qu'Ada n'héritât du tempérament fantaisiste de son père, lui imposa
+            une éducation résolument tournée vers les mathématiques et la logique.
+          </p>
+          <br>
+          <p>
+            C'est lors de ses échanges avec le mathématicien
+            <span class="wiki-word">Charles Babbage
+              <span class="wiki-popup">
+                <div class="wiki-popup-img-placeholder">⚙️</div>
+                <div class="wiki-popup-desc">Charles Babbage (1791–1871), mathématicien britannique, inventeur de la Machine Analytique — ancêtre mécanique de l'ordinateur moderne.</div>
+              </span>
+            </span>
+            qu'Ada Lovelace révéla l'étendue de son génie. En traduisant un article du mathématicien Luigi Menabrea
+            consacré à la Machine Analytique, elle y ajouta ses propres annotations — trois fois plus longues que le
+            texte original — dans lesquelles elle décrivit avec précision un
+            <span class="wiki-word">algorithme
+              <span class="wiki-popup">
+                <div class="wiki-popup-img-placeholder"><img src="Ada_Lovelace.png" alt="Ada Lovelace"></div>
+                <div class="wiki-popup-desc">Un algorithme est une suite finie et non ambiguë d'opérations permettant de résoudre un problème ou d'accomplir une tâche. Ada Lovelace en formula l'un des tous premiers pour calculer les nombres de Bernoulli.</div>
+              </span>
+            </span>
+            destiné à calculer les nombres de Bernoulli sur la Machine Analytique. C'est ce programme qui lui vaut
+            d'être considérée comme la première programmeuse de l'humanité.
+          </p>
+          <br>
+          <p>
+            Plus visionnaire encore, Ada comprit que la machine ne se limitait pas aux calculs numériques : elle
+            entrevit la possibilité de composer de la musique, de manipuler des symboles, préfigurant ainsi l'idée
+            même d'un
+            <span class="wiki-word">ordinateur universel
+              <span class="wiki-popup">
+                <div class="wiki-popup-img-placeholder">💻</div>
+                <div class="wiki-popup-desc">La notion d'ordinateur universel (machine de Turing) désigne une machine capable de simuler toute autre machine algorithmique. Turing formalisera ce concept un siècle après les intuitions d'Ada.</div>
+              </span>
+            </span>
+            — concept que Alan Turing ne formalisera qu'un siècle plus tard. Elle mourut à seulement 36 ans, laissant
+            derrière elle une œuvre que l'humanité ne reconnut à sa juste valeur qu'au milieu du XX<sup>e</sup> siècle.
+            En son honneur, le langage de programmation Ada fut baptisé en 1983.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-1">
+    <div class="card-header"><h2>Henrietta Swan Leavitt</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Henrietta_Swan_Leavitt.jpg" alt="Henrietta Swan Leavitt"></div>
+        </div>
+        <div class="card-dates">1868–1921</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em>  A travaillé sur les méthodes de calcul systématique au sein des "calculatrices humaines".</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-1">
+    <div class="card-header"><h2>Henrietta Swan Leavitt</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <img src="Henrietta_Swan_Leavitt.jpg" alt="Henrietta Swan Leavitt">
+        </div>
+        <div class="card-dates">1868 — 1921</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text">
+          <p>
+            Henrietta Swan Leavitt était une astronome américaine travaillant à l’observatoire de Harvard, où elle faisait partie des
+            <span class="wiki-word">calculatrices humaines
+              <span class="wiki-popup">
+                <div class="wiki-popup-img-placeholder">📊</div>
+                <div class="wiki-popup-desc">Les calculatrices humaines étaient des femmes chargées d’effectuer à la main des calculs scientifiques complexes avant l’arrivée des ordinateurs.</div>
+              </span>
+            </span>.
+            Son travail consistait à analyser minutieusement des plaques photographiques du ciel.
+          </p>
+          <br>
+          <p>
+            Elle étudia particulièrement les
+            <span class="wiki-word">étoiles Céphéides
+              <span class="wiki-popup">
+                <div class="wiki-popup-img-placeholder">✨</div>
+                <div class="wiki-popup-desc">Les Céphéides sont des étoiles variables dont la luminosité fluctue de manière régulière, ce qui permet de mesurer les distances astronomiques.</div>
+              </span>
+            </span>
+            et découvrit une relation fondamentale entre leur période de variation et leur luminosité.
+          </p>
+          <br>
+          <p>
+            Cette découverte devint un outil essentiel pour mesurer l’univers et fut utilisée par
+            <span class="wiki-word">Edwin Hubble
+              <span class="wiki-popup">
+                <div class="wiki-popup-img-placeholder">🌌</div>
+                <div class="wiki-popup-desc">Edwin Hubble est l’astronome qui démontra que l’univers est en expansion grâce à l’observation des galaxies.</div>
+              </span>
+            </span>,
+            ouvrant la voie à l’astronomie moderne et aux calculs scientifiques automatisés.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-2">
+    <div class="card-header"><h2>Grace Hopper</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="" alt="Ada Lovelace"></div>
+        </div>
+        <div class="card-dates">1906 — 1992</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte à compléter.</em> Grace Hopper a créé le tout premier <span class="wiki-word">compilateur
+  <span class="wiki-popup">
+    <div class="wiki-popup-img-placeholder">
+      <img src="compiler_example.jpg" alt="Compilateur">
+    </div>
+    <div class="wiki-popup-desc">
+      Un compilateur est un programme qui traduit un langage de programmation en langage machine compréhensible par l’ordinateur.
+    </div>
+  </span>
+</span> et a exercé une influence majeure sur le langage COBOL.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-3">
+    <div class="card-header"><h2>Kathleen Booth</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Kathleen_Booth.jpg" alt="Kathleen Booth"></div>
+        </div>
+        <div class="card-dates"></div>1922–2022</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte à compléter.</em>  A conçu des machines informatiques et inventé le langage assembleur. </p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-4">
+    <div class="card-header"><h2>Jean Jennings Bartik</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Jean-Jennings-Bartik.jpg" alt="Jean Jennings Bartik"></div>
+        </div>
+        <div class="card-dates">1924–2011</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte à compléter.</em>Fut l'une des programmeuses originelles de l'ENIAC, le premier ordinateur électronique.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-5">
+    <div class="card-header"><h2>Frances Bilas Spence</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Frances_Bilas_Spence.png" alt="Frances Bilas Spence"></div>
+        </div>
+        <div class="card-dates">à un moment</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte à compléter.</em>Membres de l'équipe fondatrice ayant programmé le premier ordinateur électronique. .</p></div>
+      </div>
+      </div>
+  </div>
+  <div class="femme-card" id="card-6">
+    <div class="card-header"><h2>Kathleen Antonelli</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Kathleen Antonelli.jpg" alt="Frances Bilas Spence"></div>
+        </div>
+        <div class="card-dates">à un moment</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte à compléter.</em>Membres de l'équipe fondatrice ayant programmé le premier ordinateur électronique. .</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-7">
+    <div class="card-header"><h2>Marlyn Wescoff</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="" alt="Marlyn Wescoff"></div>
+        </div>
+        <div class="card-dates">à un moment</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte à compléter.</em>Membres de l'équipe fondatrice ayant programmé le premier ordinateur électronique. .</p></div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="femme-card" id="card-8">
+    <div class="card-header"><h2>Ruth Teitelbaum</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="" alt="Ruth Teitelbaum"></div>
+        </div>
+        <div class="card-dates">à un moment</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte à compléter.</em>Membres de l'équipe fondatrice ayant programmé le premier ordinateur électronique. .</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-9">
+    <div class="card-header"><h2>Joan Clarke</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="joan-clarke.jpg" alt="Joan Clarke"></div>
+        </div>
+        <div class="card-dates">à un moment</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte à compléter.</em>A apporté des contributions essentielles en cryptanalyse à Bletchley Park pendant la guerre</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-10">
+    <div class="card-header"><h2>Mary Allen Wilkes</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="mary_ellen_wilkes.png" alt="Joan Clarke"></div>
+        </div>
+        <div class="card-dates">à un moment</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte à compléter.</em>A contribué à la création du LINC, considéré comme le premier ordinateur personnel.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-11">
+    <div class="card-header"><h2>Margaret Hamilton</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="margarethamilton_&soncode.png" alt="Margaret Hamilton"></div>
+        </div>
+        <div class="card-dates">à un moment</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte à compléter.</em>A dirigé le développement du logiciel pour les missions Apollo et a popularisé le terme "software engineering".</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-12">
+    <div class="card-header"><h2>Sister Mary Kenneth Keller</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="sis_mary_kenneth_Keller.png" alt="Sister Mary Kenneth Keller"></div>
+        </div>
+        <div class="card-dates">à un moment</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte à compléter.</em>Fut la première femme à obtenir un doctorat en informatique aux États-Unis.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-13">
+    <div class="card-header"><h2>Hedy Lamarr</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Hedy_Lamarr3.jpg" alt="Hedy Lamarr"></div>
+        </div>
+        <div class="card-dates">à un moment</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte à compléter.</em>A inventé la technologie de transmission par étalement de spectre, qui sert de base au Wi-Fi moderne. </p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-14">
+    <div class="card-header"><h2>Karen Spärck Jones</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="" alt="Karen Spärck Jones"></div>
+        </div>
+        <div class="card-dates">à un moment</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte à compléter.</em>A établi les fondements de la recherche d'information, notamment avec le concept TF-IDF. </p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-15">
+    <div class="card-header"><h2>Barbara Liskov</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="" alt="Barbara Liskov"></div>
+        </div>
+        <div class="card-dates">à un moment</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte à compléter.</em>A travaillé sur l'abstraction de données et a formulé le principe de substitution de Liskov.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-16">
+    <div class="card-header"><h2>Frances E. Allen </h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="" alt="Frances E. Allen"></div>
+        </div>
+        <div class="card-dates">à un moment</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte à compléter.</em>Pionnière chez IBM dans l'optimisation des compilateurs.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-17">
+    <div class="card-header"><h2>Radia Perlman</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><div class="pl-initiales">RP</div><div class="pl-label">Photo à placer</div></div>
+        </div>
+        <div class="card-dates">Née en 1951</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte à compléter.</em> Radia Perlman a conçu le protocole Spanning Tree, une brique fondamentale pour le fonctionnement d'Internet.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-18">
+    <div class="card-header"><h2>Adele Goldberg</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Adele_Goldberg.jpg" alt="Adele Goldberg"></div>
+        </div>
+        <div class="card-dates"></div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> A joué un rôle clé dans le développement des interfaces graphiques et de la programmation orientée objet.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-19">
+    <div class="card-header"><h2>Anita Borg</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Anita_Borg.jpg" alt="Anita Borg"></div>
+        </div>
+        <div class="card-dates"></div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> A fondé le mouvement "Women in Tech" pour soutenir les femmes dans le secteur technologique.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-20">
+    <div class="card-header"><h2>Sophie Wilson</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Sophie_Wilson.jpg" alt="Sophie Wilson"></div>
+        </div>
+        <div class="card-dates"></div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> A conçu l'architecture des processeurs ARM, aujourd'hui omniprésents dans les smartphones.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-21">
+    <div class="card-header"><h2>Susan Kare</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Susan_Kare.jpg" alt="Susan Kare"></div>
+        </div>
+        <div class="card-dates"></div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> A dessiné les icônes emblématiques et l'interface graphique du premier Macintosh d'Apple.</p></div>
+      </div>
+    </div>
+  </div>
+
+<div class="femme-card" id="card-22">
+  <div class="card-header"><h2>Carol Shaw</h2></div>
+  <div class="card-body">
+    <div class="card-left">
+      <div class="card-photo-frame">
+        <div class="card-photo-placeholder"><img src="Carol_Shaw.jpg" alt="Carol Shaw"></div>
+      </div>
+      <div class="card-dates"></div>
+    </div>
+    <div class="card-right">
+      <div class="card-text"><p><em>Texte encore à compléter.</em> Reconnue comme la première femme développeuse de jeux vidéo.</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="femme-card" id="card-23">
+  <div class="card-header"><h2>Shafi Goldwasser</h2></div>
+  <div class="card-body">
+    <div class="card-left">
+      <div class="card-photo-frame">
+        <div class="card-photo-placeholder"><img src="Shafi_Goldwasser.jpg" alt="Shafi Goldwasser"></div>
+      </div>
+      <div class="card-dates"></div>
+    </div>
+    <div class="card-right">
+      <div class="card-text"><p><em>Texte encore à compléter.</em> Figure majeure de la cryptographie moderne.</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="femme-card" id="card-24">
+  <div class="card-header"><h2>Mitchell Baker</h2></div>
+  <div class="card-body">
+    <div class="card-left">
+      <div class="card-photo-frame">
+        <div class="card-photo-placeholder"><img src="Mitchell_Baker.jpg" alt="Mitchell Baker"></div>
+      </div>
+      <div class="card-dates"></div>
+    </div>
+    <div class="card-right">
+      <div class="card-text"><p><em>Texte encore à compléter.</em> Dirigeante de Mozilla, elle a grandement influencé le développement de Firefox.</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="femme-card" id="card-25">
+  <div class="card-header"><h2>Marissa Mayer</h2></div>
+  <div class="card-body">
+    <div class="card-left">
+      <div class="card-photo-frame">
+        <div class="card-photo-placeholder"><img src="Marissa_Mayer.jpg" alt="Marissa Mayer"></div>
+      </div>
+      <div class="card-dates"></div>
+    </div>
+    <div class="card-right">
+      <div class="card-text"><p><em>Texte encore à compléter.</em> A participé au développement des premiers produits phares de Google.</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="femme-card" id="card-26">
+  <div class="card-header"><h2>Fei-Fei Li</h2></div>
+  <div class="card-body">
+    <div class="card-left">
+      <div class="card-photo-frame">
+        <div class="card-photo-placeholder"><img src="Fei-Fei_Li.jpg" alt="Fei-Fei Li"></div>
+      </div>
+      <div class="card-dates"></div>
+    </div>
+    <div class="card-right">
+      <div class="card-text"><p><em>Texte encore à compléter.</em> A lancé ImageNet, provoquant une révolution dans le domaine de la vision par ordinateur et de l'IA.</p></div>
+    </div>
+  </div>
+</div>
+
+  <div class="femme-card" id="card-27">
+    <div class="card-header"><h2>Cynthia Dwork</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Cynthia_Dwork.jpg" alt="Cynthia Dwork"></div>
+        </div>
+        <div class="card-dates"></div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Experte renommée pour ses travaux sur la confidentialité des données.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-28">
+    <div class="card-header"><h2>Daphne Koller</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Daphne_Koller.jpg" alt="Daphne Koller"></div>
+        </div>
+        <div class="card-dates"></div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> A innové dans l'apprentissage automatique et l'éducation en ligne.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-29">
+    <div class="card-header"><h2>Regina Barzilay</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Regina_Barzilay.jpg" alt="Regina Barzilay"></div>
+        </div>
+        <div class="card-dates"></div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Travaille sur l'application de l'intelligence artificielle pour transformer les soins de santé.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-30">
+    <div class="card-header"><h2>Joy Buolamwini et Timnit Gebru</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Joy_Buolamwini_Timnit_Gebru.jpg" alt="Joy Buolamwini et Timnit Gebru"></div>
+        </div>
+        <div class="card-dates"></div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Chercheuses de premier plan sur les biais algorithmiques et l'éthique de l'IA.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-31">
+    <div class="card-header"><h2>Parisa Tabriz</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Parisa_Tabriz.jpg" alt="Parisa Tabriz"></div>
+        </div>
+        <div class="card-dates"></div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Responsable de la sécurité web chez Google, surnommée la "Security Princess".</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-32">
+    <div class="card-header"><h2>Katie Bouman</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Katie_Bouman.jpg" alt="Katie Bouman"></div>
+        </div>
+        <div class="card-dates"></div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> A développé l'algorithme ayant permis de reconstituer la toute première image d'un trou noir.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-33">
+    <div class="card-header"><h2>Susan Landau</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Susan_Landau.jpg" alt="Susan Landau"></div>
+        </div>
+        <div class="card-dates">Née en 1954</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Spécialiste de la cybersécurité et des politiques publiques liées à la vie privée.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-34">
+    <div class="card-header"><h2>Dorothy Denning</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Dorothy_Denning.jpg" alt="Dorothy Denning"></div>
+        </div>
+        <div class="card-dates">Née en 1945</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Experte en sécurité informatique, pionnière de la détection d'intrusion et de la protection des données.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-35">
+    <div class="card-header"><h2>Joan Feigenbaum</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Joan_Feigenbaum.jpg" alt="Joan Feigenbaum"></div>
+        </div>
+        <div class="card-dates">Née en 1958</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Travaux sur la sécurité informatique, la cryptographie et les algorithmes de réseaux.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-36">
+    <div class="card-header"><h2>Silvia Mihailescu</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Silvia_Mihailescu.jpg" alt="Silvia Mihailescu"></div>
+        </div>
+        <div class="card-dates"></div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Chercheuse impliquée dans les réseaux et la sécurité.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-37">
+    <div class="card-header"><h2>Nancy Lynch</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Nancy_Lynch.jpg" alt="Nancy Lynch"></div>
+        </div>
+        <div class="card-dates">Née en 1948</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Spécialiste des systèmes distribués et de la théorie de l'informatique.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-38">
+    <div class="card-header"><h2>Roberta Williams</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Roberta_Williams.jpg" alt="Roberta Williams"></div>
+        </div>
+        <div class="card-dates">Née en 1953</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Pionnière du jeu d'aventure graphique (série King's Quest).</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-39">
+    <div class="card-header"><h2>Dona Bailey</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Dona_Bailey.jpg" alt="Dona Bailey"></div>
+        </div>
+        <div class="card-dates">Née en 1955</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Développeuse de jeux vidéo, co-créatrice du célèbre jeu d'arcade Centipede.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-40">
+    <div class="card-header"><h2>Brenda Laurel</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Brenda_Laurel.jpg" alt="Brenda Laurel"></div>
+        </div>
+        <div class="card-dates">Née en 1950</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Pionnière de l'interaction homme-machine et de la conception d'environnements virtuels.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-41">
+    <div class="card-header"><h2>Ellen Ullman</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Ellen_Ullman.jpg" alt="Ellen Ullman"></div>
+        </div>
+        <div class="card-dates">Née en 1948</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Programmeuse et écrivaine, connue pour ses réflexions critiques sur la culture informatique.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-42">
+    <div class="card-header"><h2>Meg Whitman</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Meg_Whitman.jpg" alt="Meg Whitman"></div>
+        </div>
+        <div class="card-dates">Née en 1956</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Dirigeante d'entreprise ayant eu une influence majeure dans l'industrie tech (notamment eBay et HP).</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-43">
+    <div class="card-header"><h2>Eva Tardos</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Eva_Tardos.jpg" alt="Eva Tardos"></div>
+        </div>
+        <div class="card-dates">Née en 1957</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Chercheuse reconnue pour ses contributions majeures à la théorie des algorithmes.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-44">
+    <div class="card-header"><h2>Rashmi Sinha</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Rashmi_Sinha.jpg" alt="Rashmi Sinha"></div>
+        </div>
+        <div class="card-dates">Née en 1970</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Co-fondatrice de SlideShare.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-45">
+    <div class="card-header"><h2>Caterina Fake</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Caterina_Fake.jpg" alt="Caterina Fake"></div>
+        </div>
+        <div class="card-dates">Née en 1969</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Co-fondatrice de Flickr et de Hunch.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-46">
+    <div class="card-header"><h2>Stormy Peters</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Stormy_Peters.jpg" alt="Stormy Peters"></div>
+        </div>
+        <div class="card-dates"></div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Figure de proue du logiciel libre, elle a dirigé la fondation GNOME.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-47">
+    <div class="card-header"><h2>Runa Sandvik</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Runa_Sandvik.jpg" alt="Runa Sandvik"></div>
+        </div>
+        <div class="card-dates"></div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Experte en sécurité informatique, connue pour ses travaux sur la vie privée et la protection des journalistes.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-48">
+    <div class="card-header"><h2>Sheryl Sandberg</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Sheryl_Sandberg.jpg" alt="Sheryl Sandberg"></div>
+        </div>
+        <div class="card-dates">Née en 1969</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Ancienne directrice des opérations (COO) de Facebook (Meta).</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-49">
+    <div class="card-header"><h2>Rachel Thomas</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Rachel_Thomas.jpg" alt="Rachel Thomas"></div>
+        </div>
+        <div class="card-dates"></div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Co-fondatrice de fast.ai, visant à démocratiser l'accès à l'apprentissage profond.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-50">
+    <div class="card-header"><h2>Hanna Wallach</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Hanna_Wallach.jpg" alt="Hanna Wallach"></div>
+        </div>
+        <div class="card-dates">Née en 1979</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Chercheuse en apprentissage automatique computationnel et sciences sociales.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-51">
+    <div class="card-header"><h2>Been Kim</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Been_Kim.jpg" alt="Been Kim"></div>
+        </div>
+        <div class="card-dates"></div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Chercheuse spécialisée dans l'interprétabilité des modèles d'intelligence artificielle.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-52">
+    <div class="card-header"><h2>Kate Crawford</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Kate_Crawford.jpg" alt="Kate Crawford"></div>
+        </div>
+        <div class="card-dates"></div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Chercheuse sur les implications sociales et politiques de l'intelligence artificielle.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-53">
+    <div class="card-header"><h2>Meredith Whittaker</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Meredith_Whittaker.jpg" alt="Meredith Whittaker"></div>
+        </div>
+        <div class="card-dates"></div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Co-fondatrice de l'AI Now Institute et présidente de Signal, experte en éthique de l'IA.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-54">
+    <div class="card-header"><h2>Ayanna Howard</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Ayanna_Howard.jpg" alt="Ayanna Howard"></div>
+        </div>
+        <div class="card-dates">Née en 1972</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Roboticienne de renom, ses travaux portent sur l'interaction humain-robot.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-55">
+    <div class="card-header"><h2>Manuela Veloso</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Manuela_Veloso.jpg" alt="Manuela Veloso"></div>
+        </div>
+        <div class="card-dates">Née en 1957</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Chercheuse en robotique et intelligence artificielle, connue pour ses travaux sur les robots autonomes.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-56">
+    <div class="card-header"><h2>Daniela Rus</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Daniela_Rus.jpg" alt="Daniela Rus"></div>
+        </div>
+        <div class="card-dates">Née en 1963</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Directrice du CSAIL au MIT, pionnière en robotique et systèmes autonomes.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-57">
+    <div class="card-header"><h2>Danielle Bunten Berry</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Danielle_Bunten_Berry.jpg" alt="Danielle Bunten Berry"></div>
+        </div>
+        <div class="card-dates">1949–1998</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Conceptrice de jeux vidéo, pionnière des jeux multijoueurs (comme M.U.L.E.).</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-58">
+    <div class="card-header"><h2>Whitney Wolfe Herd</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Whitney_Wolfe_Herd.jpg" alt="Whitney Wolfe Herd"></div>
+        </div>
+        <div class="card-dates">Née en 1989</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Fondatrice de Bumble, influenceuse majeure dans le secteur des plateformes technologiques.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-59">
+    <div class="card-header"><h2>Jean E. Sammet</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Jean_E_Sammet.jpg" alt="Jean E. Sammet"></div>
+        </div>
+        <div class="card-dates">1928–2017</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Développeuse du langage de programmation FORMAC et figure clé dans la création du COBOL.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-60">
+    <div class="card-header"><h2>Mary Shaw</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Mary_Shaw.jpg" alt="Mary Shaw"></div>
+        </div>
+        <div class="card-dates">Née en 1943</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Chercheuse en génie logiciel, connue pour son travail sur les architectures logicielles.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-61">
+    <div class="card-header"><h2>Lynn Conway</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Lynn_Conway.jpg" alt="Lynn Conway"></div>
+        </div>
+        <div class="card-dates">1938–2024</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Pionnière de la conception de puces microélectroniques (VLSI).</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-62">
+    <div class="card-header"><h2>Barbara Simons</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Barbara_Simons.jpg" alt="Barbara Simons"></div>
+        </div>
+        <div class="card-dates">Née en 1941</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Experte en informatique, ancienne présidente de l'ACM, connue pour ses travaux sur l'ordonnancement et le vote électronique.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-63">
+    <div class="card-header"><h2>Dorothy Vaughan</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Dorothy_Vaughan.jpg" alt="Dorothy Vaughan"></div>
+        </div>
+        <div class="card-dates">1910–2008</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Mathématicienne et calculatrice humaine à la NASA.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-64">
+    <div class="card-header"><h2>Mary Jackson</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Mary_Jackson.jpg" alt="Mary Jackson"></div>
+        </div>
+        <div class="card-dates">1921–2005</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Première ingénieure noire de la NASA.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-65">
+    <div class="card-header"><h2>Katherine Johnson</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Katherine_Johnson.jpg" alt="Katherine Johnson"></div>
+        </div>
+        <div class="card-dates">1918–2020</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Mathématicienne dont les calculs de trajectoire ont été cruciaux pour les missions Mercury et Apollo.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-66">
+    <div class="card-header"><h2>Evelyn Boyd Granville</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Evelyn_Boyd_Granville.jpg" alt="Evelyn Boyd Granville"></div>
+        </div>
+        <div class="card-dates">1924–2023</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> L'une des premières Afro-Américaines à obtenir un doctorat en mathématiques, elle a travaillé sur des logiciels informatiques pour le programme spatial.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-67">
+    <div class="card-header"><h2>Ida Rhodes</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Ida_Rhodes.jpg" alt="Ida Rhodes"></div>
+        </div>
+        <div class="card-dates">1900–1986</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Pionnière de l'analyse des systèmes de programmation et du développement de langages informatiques.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-68">
+    <div class="card-header"><h2>Gertrude Blanch</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Gertrude_Blanch.jpg" alt="Gertrude Blanch"></div>
+        </div>
+        <div class="card-dates">1897–1996</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Mathématicienne qui a dirigé le "Mathematical Tables Project", un groupe de calculatrices humaines.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-69">
+    <div class="card-header"><h2>Betty Holberton</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Betty_Holberton.jpg" alt="Betty Holberton"></div>
+        </div>
+        <div class="card-dates">1917–2001</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> L'une des six programmeuses originales de l'ENIAC ; elle a inventé les points d'arrêt (breakpoints) dans le débogage.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="femme-card" id="card-70">
+    <div class="card-header"><h2>Beatrice Worsley</h2></div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="card-photo-frame">
+          <div class="card-photo-placeholder"><img src="Beatrice_Worsley.jpg" alt="Beatrice Worsley"></div>
+        </div>
+        <div class="card-dates">1921–1972</div>
+      </div>
+      <div class="card-right">
+        <div class="card-text"><p><em>Texte encore à compléter.</em> Considérée comme la première informaticienne au Canada, elle a travaillé sur l'EDSAC.</p></div>
+      </div>
+    </div>
+  </div>
+
+
+<div class="page-footer">
+  « Le progrès scientifique est le fruit de toutes les intelligences, sans distinction de genre. »
+</div>
+
+<script>
+// ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+//  Données des femmes du carrousel
+//  imgSrc : chemin de l'image réelle à fournir
+//  cardId : index de la carte cible (pour le scroll au clic)
+// ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+const femmes = [
+  { nom: "Ada Lovelace",          dates: "1815 – 1852", imgSrc: "Ada_Lovelace.png", cardId: 0 },
+  { nom: "Henrietta Swan Leavitt",dates: "1868 – 1921", imgSrc: "Henrietta_Swan_Leavitt.jpg", cardId: 1 },
+  { nom: "Grace Hopper",          dates: "1906 – 1992", imgSrc: "Grace_Hopper(photoàplusieurs).jpg", cardId: 2 },
+  { nom: "Kathleen Booth",        dates: "1922 – 2022", imgSrc: "Kathleen_Booth.jpg", cardId: 3 },
+  { nom: "Jean Jennings Bartik",  dates: "1924 – 2011", imgSrc: "Jean-Jennings-Bartik.jpg", cardId: 4 },
+  { nom: "Frances Bilas Spence",                        imgSrc: "Frances_Bilas_Spence.png", cardId: 5 },
+  { nom: "Kathleen Antonelli",                          imgSrc: "Kathleen Antonelli.jpg", cardId: 6 },
+  { nom: "Ruth Teitelbaum",                             imgSrc: "Ruth_Teitelbaum.png", cardId: 8 },
+  { nom: "Joan Clarke",           dates: "1917 – 1996", imgSrc: "joan-clarke.jpg", cardId: 9 },
+  { nom: "Mary Allen Wilkes",     dates: "née en 1937", imgSrc: "mary_ellen_wilkes.png", cardId: 10 },
+  { nom: "Margaret Hamilton",     dates: "née en 1936", imgSrc: "margarethamilton_&soncode.png", cardId: 11 },
+  { nom: "Sister Mary Kenneth Keller",                  imgSrc: "sis_mary_kenneth_Keller.png", cardId: 12 },
+  { nom: "Hedy Lamarr",           dates: "1914 – 2000", imgSrc: "Hedy_Lamarr3.jpg", cardId: 13 },
+  { nom: "Karen Spärck Jones",    dates: "1935 – 2007", imgSrc: "Karen_Spärck.jpg", cardId: 14 },
+  { nom: "Barbara Liskov",        dates: "née en 1939", imgSrc: "Barbara_Liskov.jpg", cardId: 15 },
+  { nom: "Frances E. Allen",      dates: "1932 – 2020", imgSrc: "Frances-E-Allen.jpg", cardId: 16 },
+  { nom: "Radia Perlman",         dates: "née en 1951", imgSrc: "Radia-Perlman.jpg", cardId: 17 },
+  { nom: "Adele Goldberg",        dates: "née en 1945", imgSrc: "Adele_Goldberg.jpg", cardId: 18 },
+  { nom: "Anita Borg",            dates: "1949 – 2003", imgSrc: "Anita-Borg.jpg", cardId: 19 },
+  { nom: "Sophie Wilson",         dates: "née en 1957", imgSrc: "Sophie_Wilson.jpg", cardId: 20 },
+  { nom: "Susan Kare",            dates: "née en 1954", imgSrc: "Susan-Kare.jpg", cardId: 21 },
+  { nom: "Carol Shaw",            dates: "née en 1955", imgSrc: "carol_shaw.jpg", cardId: 22 },
+  { nom: "Shafi Goldwasser",      dates: "née en 1958", imgSrc: "Shafi-Goldwasser.jpg", cardId: 23 },
+  { nom: "Mitchell Baker",                              imgSrc: "Mitchell_Baker.jpg", cardId: 24 },
+  { nom: "Marissa Mayer",                               imgSrc: "Marissa_Mayer.jpg", cardId: 25 },
+  { nom: "Fei-Fei Li",            dates: "née en 1976", imgSrc: "fei-fei-li.jpg", cardId: 26 },
+  { nom: "Cynthia Dwork",         dates: "née en 1958", imgSrc: "cynthia-dwork.jpg", cardId: 27 },
+  { nom: "Daphne Koller",         dates: "née en 1968", imgSrc: "Daphne-Koller.jpg", cardId: 28 },
+  { nom: "Regina Barzilay",                             imgSrc: "Regina-Barzilay.jpg", cardId: 29 },
+  { nom: "Joy Buolamwini",                              imgSrc: "Joy_Buolamwini.jpg", cardId: 30 },
+  { nom: "Timnit Gebru",                                imgSrc: "Timnit_Gebru.jpg", cardId: 31 },
+  { nom: "Parisa Tabriz",                               imgSrc: "Parisa_Tabriz.jpg", cardId: 32 },
+  { nom: "Katie Bouman",          dates: "née en 1989", imgSrc: "Katie_Bouman.jpg", cardId: 33 },
+  { nom: "Susan Landau",                                imgSrc: "susan_landau.jpg", cardId: 34 },
+  { nom: "Dorothy Denning",                             imgSrc: "Dorothy_Denning.jpg", cardId: 35 },
+  { nom: "Joan Feigenbaum",                             imgSrc: "Joan-Feigenbaum.jpg", cardId: 36 },
+  { nom: "Nancy Lynch",                                 imgSrc: "Nancy_Lynch.jpg", cardId: 38 },
+  { nom: "Dona Bailey",                                 imgSrc: "Dona_Bailey.jpg", cardId: 40 },
+  { nom: "Ellen Ullman",                                imgSrc: "Ellen_Ullman.jpg", cardId: 42 },
+  { nom: "Eva Tardos",                                  imgSrc: "tardos_eva.jpg", cardId: 44 },
+  { nom: "Stormy Peters",                               imgSrc: "stormypeters.jpg", cardId: 47 },
+  { nom: "Runa Sandvik",                                imgSrc: "Runa-Sandvik.jpg", cardId: 48 },
+  { nom: "Hanna Wallach",                               imgSrc: "Hanna-Wallach.jpg", cardId: 51 },
+  { nom: "Been Kim",                                    imgSrc: "Been_Kim.jpg", cardId: 52 },
+  { nom: "Kate Crawford",                               imgSrc: "Kate_Crawford.jpg", cardId: 53 },
+  { nom: "Ayanna Howard",                               imgSrc: "ayanna_howard.jpg", cardId: 55 },
+  { nom: "Manuela Veloso",                              imgSrc: "Manuela-Veloso.jpg", cardId: 56 },
+  { nom: "Daniela Rus",                                 imgSrc: "Daniela-Rus.jpg", cardId: 57 },
+  { nom: "Danielle Bunten Berry",                       imgSrc: "Danielle_Bunten_Berry.jpg", cardId: 58 },
+  { nom: "Jean E. Sammet",        dates: "1928 – 2017", imgSrc: "Jean-E-Sammet.jpg", cardId: 60 },
+  { nom: "Mary Shaw",                                   imgSrc: "mary-shaw.jpg", cardId: 61 },
+  { nom: "Lynn Conway",           dates: "1938 – 2024", imgSrc: "Lynn-Conway.jpg", cardId: 62 },
+  { nom: "Dorothy Vaughan",       dates: "1910 – 2008", imgSrc: "Dorothy_Vaughan.jpg", cardId: 64 },
+  { nom: "Katherine Johnson",     dates: "1918 – 2020", imgSrc: "Katherine_Johnson.jpg", cardId: 66 },
+  { nom: "Evelyn Boyd Granville",                       imgSrc: "Evelyn_Boyd _Granville.jpg", cardId: 67 },
+  { nom: "Ida Rhodes",                                  imgSrc: "Ida_Rhodes.jpg", cardId: 68 },
+  { nom: "Gertrude Blanch",                             imgSrc: "Gertrude_Blanch.jpg", cardId: 69 },
+  { nom: "Betty Holberton",       dates: "1917 – 2001", imgSrc: "Betty-Holbeton.jpg", cardId: 70 },
+  { nom: "Beatrice Worsley",                            imgSrc: "Beatrice_Worsley.jpg", cardId: 71 },
+];
+
+let currentSlide = 0;
+let timer = null;
+const INTERVAL = 5000;
+
+const track    = document.getElementById('carouselTrack');
+const dotsEl   = document.getElementById('carouselDots');
+const nameEl   = document.getElementById('carouselName');
+
+// Construire les slides
+femmes.forEach((f, i) => {
+  const slide = document.createElement('div');
+  slide.className = 'carousel-slide';
+
+  if (f.imgSrc) {
+    const img = document.createElement('img');
+    img.src = f.imgSrc;
+    img.alt = f.nom;
+    slide.appendChild(img);
+  } else {
+    const ph = document.createElement('div');
+    ph.className = 'carousel-placeholder';
+    const initiales = f.nom.split(' ').map(w => w[0]).join('').slice(0, 3);
+    ph.innerHTML = `<div class="initiales">${initiales}</div><div>${f.nom}</div><div style="font-size:.75em;opacity:.5;font-style:italic">${f.dates}</div>`;
+    slide.appendChild(ph);
+  }
+
+  track.appendChild(slide);
+
+  // Points
+  const dot = document.createElement('div');
+  dot.className = 'dot' + (i === 0 ? ' active' : '');
+  dot.onclick = () => goToSlide(i);
+  dotsEl.appendChild(dot);
+});
+
+function goToSlide(idx) {
+  const slides = track.querySelectorAll('.carousel-slide');
+  slides.forEach((s, i) => {
+    s.style.display = i === idx ? 'flex' : 'none';
+  });
+  dotsEl.querySelectorAll('.dot').forEach((d, i) => {
+    d.classList.toggle('active', i === idx);
+  });
+  currentSlide = idx;
+  nameEl.textContent = femmes[idx].nom;
+  resetTimer();
+}
+
+function resetTimer() {
+  if (timer) clearInterval(timer);
+  timer = setInterval(() => goToSlide((currentSlide + 1) % femmes.length), INTERVAL);
+}
+
+function handleCarouselClick(e) {
+  // Ignorer les clics sur les boutons
+  if (e.target.closest('.carousel-arrow')) return;
+  const f = femmes[currentSlide];
+  if (f.cardId !== null) {
+    const card = document.getElementById('card-' + f.cardId);
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+// Révéler le séparateur uniquement quand il entre dans le viewport
+const divider = document.querySelector('.section-divider');
+if (divider) {
+  new IntersectionObserver(([e]) => {
+    if (e.isIntersecting) divider.classList.add('visible');
+  }, { threshold: 0.3 }).observe(divider);
+}
+
+// Initialiser
+goToSlide(0);
+resetTimer();
+</script>
+<button id="backToTop" title="Retour en haut" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+window.addEventListener('scroll', () => {
+  document.getElementById('backToTop').classList.toggle('visible', window.scrollY > 200);
+});
+</script>
+
+</body>
+</html>
