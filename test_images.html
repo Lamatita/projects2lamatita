@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+  <html><head><meta charset="UTF-8"><title>Test Images</title></head>
+  <body style="padding:40px;font-family:sans-serif">
+  <h2>Test direct des images</h2>
+  <p>Si une image s'affiche, son URL fonctionne :</p>
+
+  <h3>1. Ada Lovelace (PNG)</h3>
+  <img src="https://projets2lamatita.fr/Ada_Lovelace.png" alt="Ada" style="max-width:300px;border:2px solid red">
+  <br><small>URL: https://projets2lamatita.fr/Ada_Lovelace.png</small>
+
+  <h3>2. Anita Borg (JPG simple)</h3>
+  <img src="https://projets2lamatita.fr/Anita-Borg.jpg" alt="Anita" style="max-width:300px;border:2px solid red">
+  <br><small>URL: https://projets2lamatita.fr/Anita-Borg.jpg</small>
+
+  <h3>3. Grace Hopper (caractères spéciaux)</h3>
+  <img src="https://projets2lamatita.fr/Grace_Hopper(photo%C3%A0plusieurs).jpg" alt="Grace" style="max-width:300px;border:2px solid red">
+  <br><small>URL: https://projets2lamatita.fr/Grace_Hopper(photoàplusieurs).jpg</small>
+
+  <h3>4. Carol Shaw (minuscules)</h3>
+  <img src="https://projets2lamatita.fr/carol_shaw.jpg" alt="Carol" style="max-width:300px;border:2px solid red">
+  <br><small>URL: https://projets2lamatita.fr/carol_shaw.jpg</small>
+
+  <h3>5. Image via raw GitHub</h3>
+  <img src="https://raw.githubusercontent.com/Lamatita/projects2lamatita/main/Ada_Lovelace.png" alt="Ada via GitHub" style="max-width:300px;border:2px solid green">
+  <br><small>URL: via raw.githubusercontent.com</small>
+
+  <h3>6. Image via GitHub Pages CDN</h3>
+  <img src="https://raw.githubusercontent.com/Lamatita/projects2lamatita/main/Anita-Borg.jpg" alt="Anita via GitHub" style="max-width:300px;border:2px solid green">
+  <br><small>URL: via raw.githubusercontent.com</small>
+
+  <script>
+  document.querySelectorAll('img').forEach(function(img) {
+    img.onload = function() { this.style.borderColor = 'green'; };
+    img.onerror = function() { 
+      this.style.borderColor = 'red'; 
+      this.alt = 'ERREUR: ' + this.src;
+      var p = document.createElement('p');
+      p.style.color = 'red';
+      p.textContent = '❌ ERREUR de chargement !';
+      this.parentNode.insertBefore(p, this.nextSibling);
+    };
+  });
+  </script>
+  </body></html>
