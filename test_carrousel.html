@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+  <html><head><meta charset="UTF-8"><title>Test Carrousel</title>
+  <style>
+  body { margin: 0; font-family: sans-serif; background: #f7f3ff; display: flex; flex-direction: column; align-items: center; padding: 40px; }
+  .carousel-container { position: relative; width: 100%; max-width: 700px; overflow: hidden; border: 2px solid rgba(108,99,255,0.35); border-radius: 12px; background: #f0ecff; min-height: 400px; }
+  .carousel-track { position: relative; width: 100%; min-height: 400px; }
+  .carousel-slide { position: absolute; top: 0; left: 0; width: 100%; min-height: 400px; display: flex; justify-content: center; align-items: center; background: #f0ecff; opacity: 0; transition: opacity 0.5s; }
+  .carousel-slide.active { opacity: 1; }
+  .carousel-slide img { display: block; max-width: 100%; max-height: 480px; width: auto; height: auto; object-fit: contain; }
+  .carousel-name { text-align: center; padding: 10px; font-size: 1.2em; color: #6c63ff; font-weight: bold; }
+  .carousel-dots { display: flex; gap: 6px; justify-content: center; padding: 10px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; cursor: pointer; }
+  .dot.active { background: #6c63ff; }
+  button { margin: 10px; padding: 10px 20px; background: #6c63ff; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1em; }
+  #log { margin-top: 20px; padding: 20px; background: white; border-radius: 8px; max-width: 700px; width: 100%; font-family: monospace; font-size: 0.85em; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+  </style></head><body>
+  <h2>Test Carrousel - Images</h2>
+  <div class="carousel-container">
+    <div class="carousel-track" id="track"></div>
+  </div>
+  <div class="carousel-name" id="name"></div>
+  <div class="carousel-dots" id="dots"></div>
+  <div>
+    <button onclick="prev()">← Précédent</button>
+    <button onclick="next()">Suivant →</button>
+  </div>
+  <div id="log"></div>
+
+  <script>
+  var log = document.getElementById('log');
+  function addLog(msg) { log.textContent += msg + '\n'; log.scrollTop = log.scrollHeight; }
+
+  var images = [
+    { nom: "Ada Lovelace", src: "/Ada_Lovelace.png" },
+    { nom: "Henrietta Swan Leavitt", src: "/Henrietta_Swan_Leavitt.jpg" },
+    { nom: "Kathleen Booth", src: "/Kathleen_Booth.jpg" },
+    { nom: "Joan Clarke", src: "/joan-clarke.jpg" },
+    { nom: "Anita Borg", src: "/Anita-Borg.jpg" },
+    { nom: "Susan Kare", src: "/Susan-Kare.jpg" },
+    { nom: "Carol Shaw", src: "/carol_shaw.jpg" },
+    { nom: "Hedy Lamarr", src: "/Hedy_Lamarr3.jpg" },
+    { nom: "Katie Bouman", src: "/Katie_Bouman.jpg" },
+    { nom: "Betty Holberton", src: "/Betty-Holbeton.jpg" }
+  ];
+
+  var current = 0;
+  var track = document.getElementById('track');
+  var dots = document.getElementById('dots');
+  var nameEl = document.getElementById('name');
+
+  addLog('Création de ' + images.length + ' slides...');
+
+  images.forEach(function(img, i) {
+    var slide = document.createElement('div');
+    slide.className = 'carousel-slide' + (i === 0 ? ' active' : '');
+    
+    var imgEl = document.createElement('img');
+    imgEl.src = img.src;
+    imgEl.alt = img.nom;
+    imgEl.onload = function() { addLog('✅ Chargée: ' + img.nom + ' (' + img.src + ')'); };
+    imgEl.onerror = function() { addLog('❌ ERREUR: ' + img.nom + ' (' + img.src + ')'); };
+    slide.appendChild(imgEl);
+    track.appendChild(slide);
+    
+    var dot = document.createElement('div');
+    dot.className = 'dot' + (i === 0 ? ' active' : '');
+    dot.onclick = (function(idx) { return function() { goTo(idx); }; })(i);
+    dots.appendChild(dot);
+  });
+
+  nameEl.textContent = images[0].nom;
+  addLog('Slides créées. En attente du chargement des images...');
+
+  function goTo(idx) {
+    var slides = track.querySelectorAll('.carousel-slide');
+    slides.forEach(function(s, i) { s.classList.toggle('active', i === idx); });
+    dots.querySelectorAll('.dot').forEach(function(d, i) { d.classList.toggle('active', i === idx); });
+    current = idx;
+    nameEl.textContent = images[idx].nom;
+  }
+  function prev() { goTo((current - 1 + images.length) % images.length); }
+  function next() { goTo((current + 1) % images.length); }
+
+  setInterval(function() { next(); }, 5000);
+  </script>
+  </body></html>
