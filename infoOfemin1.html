@@ -421,71 +421,6 @@ body {
   color: #2a1a4a;
 }
 
-/* ── Effet Wikipedia ── */
-.wiki-word {
-  color: var(--principal);
-  border-bottom: 1px dotted var(--principal);
-  cursor: pointer;
-  position: relative;
-  transition: color .15s;
-}
-.wiki-word:hover { color: #845ec2; }
-
-.wiki-popup {
-  display: none;
-  position: absolute;
-  bottom: calc(100% + 10px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: 220px;
-  background: #fff;
-  border: 1px solid var(--principal);
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(108,99,255,0.25);
-  z-index: 200;
-  overflow: hidden;
-  pointer-events: none;
-}
-.wiki-word:hover .wiki-popup { display: block; }
-
-.wiki-popup img {
-  width: 100%;
-  height: 130px;
-  object-fit: cover;
-  display: block;
-}
-
-.wiki-popup-img-placeholder {
-  width: 100%;
-  height: 130px;
-  background: linear-gradient(135deg, #e8e0ff, #f7f3ff);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2.5em;
-  opacity: 0.7;
-}
-
-.wiki-popup-desc {
-  padding: 10px 12px;
-  font-family: 'EB Garamond', serif;
-  font-size: 0.82em;
-  line-height: 1.5;
-  color: #2a1a4a;
-  font-style: italic;
-}
-
-/* Flèche de la popup */
-.wiki-popup::after {
-  content: '';
-  position: absolute;
-  bottom: -7px;
-  left: 50%;
-  transform: translateX(-50%);
-  border-left: 7px solid transparent;
-  border-right: 7px solid transparent;
-  border-top: 7px solid var(--principal);
-}
 
 /* ── Bouton retour en haut ── */
 #backToTop {
@@ -657,21 +592,13 @@ body {
           <br>
           <p>
             C'est lors de ses échanges avec le mathématicien
-            <span class="wiki-word">Charles Babbage
-              <span class="wiki-popup">
-                <div class="wiki-popup-img-placeholder">⚙️</div>
-                <div class="wiki-popup-desc">Charles Babbage (1791–1871), mathématicien britannique, inventeur de la Machine Analytique — ancêtre mécanique de l'ordinateur moderne.</div>
-              </span>
-            </span>
+            Charles Babbage
+              
             qu'Ada Lovelace révéla l'étendue de son génie. En traduisant un article du mathématicien Luigi Menabrea
             consacré à la Machine Analytique, elle y ajouta ses propres annotations — trois fois plus longues que le
             texte original — dans lesquelles elle décrivit avec précision un
-            <span class="wiki-word">algorithme
-              <span class="wiki-popup">
-                <div class="wiki-popup-img-placeholder"><img src="https://projets2lamatita.fr/Ada_Lovelace.png?v=2" alt="Ada Lovelace"></div>
-                <div class="wiki-popup-desc">Un algorithme est une suite finie et non ambiguë d'opérations permettant de résoudre un problème ou d'accomplir une tâche. Ada Lovelace en formula l'un des tous premiers pour calculer les nombres de Bernoulli.</div>
-              </span>
-            </span>
+            algorithme
+              
             destiné à calculer les nombres de Bernoulli sur la Machine Analytique. C'est ce programme qui lui vaut
             d'être considérée comme la première programmeuse de l'humanité.
           </p>
@@ -680,12 +607,8 @@ body {
             Plus visionnaire encore, Ada comprit que la machine ne se limitait pas aux calculs numériques : elle
             entrevit la possibilité de composer de la musique, de manipuler des symboles, préfigurant ainsi l'idée
             même d'un
-            <span class="wiki-word">ordinateur universel
-              <span class="wiki-popup">
-                <div class="wiki-popup-img-placeholder">💻</div>
-                <div class="wiki-popup-desc">La notion d'ordinateur universel (machine de Turing) désigne une machine capable de simuler toute autre machine algorithmique. Turing formalisera ce concept un siècle après les intuitions d'Ada.</div>
-              </span>
-            </span>
+            ordinateur universel
+              
             — concept que Alan Turing ne formalisera qu'un siècle plus tard. Elle mourut à seulement 36 ans, laissant
             derrière elle une œuvre que l'humanité ne reconnut à sa juste valeur qu'au milieu du XX<sup>e</sup> siècle.
             En son honneur, le langage de programmation Ada fut baptisé en 1983.
@@ -708,34 +631,22 @@ body {
         <div class="card-text">
           <p>
             Henrietta Swan Leavitt était une astronome américaine travaillant à l’observatoire de Harvard, où elle faisait partie des
-            <span class="wiki-word">calculatrices humaines
-              <span class="wiki-popup">
-                <div class="wiki-popup-img-placeholder">📊</div>
-                <div class="wiki-popup-desc">Les calculatrices humaines étaient des femmes chargées d’effectuer à la main des calculs scientifiques complexes avant l’arrivée des ordinateurs.</div>
-              </span>
-            </span>.
+            calculatrices humaines
+              .
             Son travail consistait à analyser minutieusement des plaques photographiques du ciel.
           </p>
           <br>
           <p>
             Elle étudia particulièrement les
-            <span class="wiki-word">étoiles Céphéides
-              <span class="wiki-popup">
-                <div class="wiki-popup-img-placeholder">✨</div>
-                <div class="wiki-popup-desc">Les Céphéides sont des étoiles variables dont la luminosité fluctue de manière régulière, ce qui permet de mesurer les distances astronomiques.</div>
-              </span>
-            </span>
+            étoiles Céphéides
+              
             et découvrit une relation fondamentale entre leur période de variation et leur luminosité.
           </p>
           <br>
           <p>
             Cette découverte devint un outil essentiel pour mesurer l’univers et fut utilisée par
-            <span class="wiki-word">Edwin Hubble
-              <span class="wiki-popup">
-                <div class="wiki-popup-img-placeholder">🌌</div>
-                <div class="wiki-popup-desc">Edwin Hubble est l’astronome qui démontra que l’univers est en expansion grâce à l’observation des galaxies.</div>
-              </span>
-            </span>,
+            Edwin Hubble
+              ,
             ouvrant la voie à l’astronomie moderne et aux calculs scientifiques automatisés.
           </p>
         </div>
@@ -753,16 +664,8 @@ body {
         <div class="card-dates">1906 — 1992</div>
       </div>
       <div class="card-right">
-        <div class="card-text"><p><em>Texte à compléter.</em> Grace Hopper a créé le tout premier <span class="wiki-word">compilateur
-  <span class="wiki-popup">
-    <div class="wiki-popup-img-placeholder">
-      
-    </div>
-    <div class="wiki-popup-desc">
-      Un compilateur est un programme qui traduit un langage de programmation en langage machine compréhensible par l’ordinateur.
-    </div>
-  </span>
-</span> et a exercé une influence majeure sur le langage COBOL.</p></div>
+        <div class="card-text"><p><em>Texte à compléter.</em> Grace Hopper a créé le tout premier compilateur
+   et a exercé une influence majeure sur le langage COBOL.</p></div>
       </div>
     </div>
   </div>
