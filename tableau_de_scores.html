@@ -794,7 +794,70 @@ tbody td {
         if (currentGame === 'demineur') return renderDemineurTable();
         if (currentGame === 'ppg') return renderPPGTable(scores, showGroup);
         if (currentGame === 'lamarunner') return renderLamaRunnerTable();
+        if (currentGame === 'froggy_jump') return renderGenericScoreTable(scores, showGroup, 'froggy_jump.html');
+        if (currentGame === 'flappy_lama') return renderGenericScoreTable(scores, showGroup, 'flappy_lama.html');
+        if (currentGame === 'memoire')     return renderGenericScoreTable(scores, showGroup, 'jeu2mémoire.html');
+        if (currentGame === 'labyrinthe')  return renderGenericTimeTable(scores, showGroup, 'labyrinthe.html', false);
+        if (currentGame === 'sudoku')      return renderGenericTimeTable(scores, showGroup, 'sudoku.html', true);
         return renderSolitaireTable(scores, showGroup);
+    }
+
+    function renderGenericScoreTable(scores, showGroup, link) {
+        var statsRow = document.getElementById('stats-row');
+        var content = document.getElementById('scores-content');
+        var actionsRow = document.getElementById('actions-row');
+        if (!scores || scores.length === 0) {
+            statsRow.innerHTML = '';
+            content.innerHTML = '<div class="empty-state"><div class="emoji">🎯</div><p>Aucun score pour le moment !</p><a href="' + link + '" class="btn-play">▶ Jouer</a></div>';
+            actionsRow.innerHTML = '';
+            return;
+        }
+        var sorted = scores.slice().sort(function(a, b) { return (b.score||0) - (a.score||0); });
+        var bestScore = sorted[0].score || 0;
+        var totalEntries = sorted.length;
+        var avgScore = Math.round(sorted.reduce(function(s, x) { return s + (x.score||0); }, 0) / totalEntries);
+        statsRow.innerHTML = '<div class="stat-box"><div class="stat-value">' + totalEntries + '</div><div class="stat-label">' + (currentView === 'personal' ? 'Parties' : 'Joueurs') + '</div></div>' + '<div class="stat-box"><div class="stat-value">' + bestScore + '</div><div class="stat-label">Meilleur score</div></div>' + '<div class="stat-box"><div class="stat-value">' + avgScore + '</div><div class="stat-label">Score moyen</div></div>';
+        var html = '<table data-testid="table-scores"><thead><tr><th>#</th><th>Joueur</th><th>Score</th><th>Date</th></tr></thead><tbody>';
+        for (var i = 0; i < sorted.length; i++) {
+            var s = sorted[i];
+            var rankClass = i === 0 ? ' rank-1' : i === 1 ? ' rank-2' : i === 2 ? ' rank-3' : '';
+            var playerDisplay = s.player;
+            if (showGroup && s.groupName) playerDisplay += ' <span class="group-label">(' + s.groupName + ')</span>';
+            html += '<tr><td class="rank-cell' + rankClass + '">' + getRankIcon(i + 1) + '</td><td>' + playerDisplay + '</td><td><strong>' + (s.score||0) + '</strong></td><td>' + formatDate(s.date) + '</td></tr>';
+        }
+        html += '</tbody></table>';
+        content.innerHTML = html;
+        actionsRow.innerHTML = '<a href="' + link + '" class="btn-play">▶ Jouer</a>';
+    }
+
+    function renderGenericTimeTable(scores, showGroup, link, hasDifficulty) {
+        var statsRow = document.getElementById('stats-row');
+        var content = document.getElementById('scores-content');
+        var actionsRow = document.getElementById('actions-row');
+        if (!scores || scores.length === 0) {
+            statsRow.innerHTML = '';
+            content.innerHTML = '<div class="empty-state"><div class="emoji">⏱</div><p>Aucun temps enregistré pour le moment !</p><a href="' + link + '" class="btn-play">▶ Jouer</a></div>';
+            actionsRow.innerHTML = '';
+            return;
+        }
+        var sorted = scores.slice().sort(function(a, b) { return a.time - b.time; });
+        var bestTime = sorted[0].time;
+        var totalEntries = sorted.length;
+        var avgTime = Math.round(sorted.reduce(function(s, x) { return s + x.time; }, 0) / totalEntries);
+        statsRow.innerHTML = '<div class="stat-box"><div class="stat-value">' + totalEntries + '</div><div class="stat-label">' + (currentView === 'personal' ? 'Parties' : 'Joueurs') + '</div></div>' + '<div class="stat-box"><div class="stat-value">' + formatTime(bestTime) + '</div><div class="stat-label">Meilleur temps</div></div>' + '<div class="stat-box"><div class="stat-value">' + formatTime(avgTime) + '</div><div class="stat-label">Temps moyen</div></div>';
+        var diffCol = hasDifficulty ? '<th>Difficulté</th>' : '';
+        var html = '<table data-testid="table-scores"><thead><tr><th>#</th><th>Joueur</th><th>Temps</th>' + diffCol + '<th>Date</th></tr></thead><tbody>';
+        for (var i = 0; i < sorted.length; i++) {
+            var s = sorted[i];
+            var rankClass = i === 0 ? ' rank-1' : i === 1 ? ' rank-2' : i === 2 ? ' rank-3' : '';
+            var playerDisplay = s.player;
+            if (showGroup && s.groupName) playerDisplay += ' <span class="group-label">(' + s.groupName + ')</span>';
+            var diffCell = hasDifficulty ? '<td><span class="badge">' + (s.difficulty || '—') + '</span></td>' : '';
+            html += '<tr><td class="rank-cell' + rankClass + '">' + getRankIcon(i + 1) + '</td><td>' + playerDisplay + '</td><td><strong>' + formatTime(s.time) + '</strong></td>' + diffCell + '<td>' + formatDate(s.date) + '</td></tr>';
+        }
+        html += '</tbody></table>';
+        content.innerHTML = html;
+        actionsRow.innerHTML = '<a href="' + link + '" class="btn-play">▶ Jouer</a>';
     }
 
     // ── Démineur : scores locaux (localStorage) ───────────────────────────────
