@@ -826,7 +826,7 @@ let niveauIdx = 1;
 function reinit() {
     sequence   = [];
     idxJoueur  = 0;
-    niveau     = 0;
+    niveau     = 0; lamatitaResetScore();
     aceso      = -1;
     erreur     = -1;
     modoActual = proxModo;
@@ -961,7 +961,7 @@ canvas.addEventListener('mousedown', function(e) {
                     }
                 } else {
                     erreur=clique; tErreur=performance.now()+700;
-                    etat=PERDU;
+                      etat=PERDU; lamatitaSaveScore({ game: 'memoire', score: niveau });
                 }
             }
         } else {
@@ -979,7 +979,7 @@ canvas.addEventListener('mousedown', function(e) {
                         }
                     } else {
                         erreur=i; tErreur=performance.now()+700;
-                        etat=PERDU;
+                          etat=PERDU; lamatitaSaveScore({ game: 'memoire', score: niveau });
                     }
                     break;
                 }
@@ -993,6 +993,21 @@ requestAnimationFrame(draw);
 requestAnimationFrame(tick);
 
 })();
+
+  // ── Sauvegarde du score ───────────────────────────────────────────
+  window._lamatitaScoreSaved = false;
+  function lamatitaSaveScore(payload) {
+    if (window._lamatitaScoreSaved) return;
+    window._lamatitaScoreSaved = true;
+    fetch('/api/scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload)
+    }).catch(function(){});
+  }
+  function lamatitaResetScore() { window._lamatitaScoreSaved = false; }
+  
 </script>
 </body>
 </html>
