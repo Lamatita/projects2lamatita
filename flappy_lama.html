@@ -445,7 +445,7 @@ function demarrerPartie() {
     resetLama();
     nuages  = Array.from({ length: 7 }, () => new Nuage(Math.random() * W));
     tuyaux  = Array.from({ length: 3 }, (_, i) => new Tuyau(W + i * PIPE_SPACING));
-    score   = 0;
+    score   = 0; lamatitaResetScore();
     offset  = 0;
     started = false;
     etat    = 'playing';
@@ -466,7 +466,7 @@ function updateJeu() {
     if (mort) {
         if (score > meilleur) meilleur = score;
         etat = 'dying';
-        setTimeout(() => { etat = 'gameover'; }, 700);
+        lamatitaSaveScore({ game: 'flappy_lama', score: score }); setTimeout(() => { etat = 'gameover'; }, 700);
     }
 }
 
@@ -593,6 +593,21 @@ tuyaux = Array.from({ length: 3 }, (_, i) => new Tuyau(W + i * PIPE_SPACING));
 requestAnimationFrame(loop);
 
 })();
+
+  // ── Sauvegarde du score ───────────────────────────────────────────
+  window._lamatitaScoreSaved = false;
+  function lamatitaSaveScore(payload) {
+    if (window._lamatitaScoreSaved) return;
+    window._lamatitaScoreSaved = true;
+    fetch('/api/scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload)
+    }).catch(function(){});
+  }
+  function lamatitaResetScore() { window._lamatitaScoreSaved = false; }
+  
 </script>
 </body>
 </html>
