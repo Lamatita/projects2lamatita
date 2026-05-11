@@ -791,6 +791,7 @@ function loop(now) {
             tempsVictoire = (performance.now() - momentDepart) / 1000;
             pasVictoire   = nombreDePas;
             etat = 'win';
+              lamatitaSaveScore({ game: 'labyrinthe', timeSeconds: Math.round(tempsVictoire), score: pasVictoire });
         }
     } else if (etat === 'menu') {
         dessiner_menu(sourisX, sourisY);
@@ -966,6 +967,21 @@ canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false }
 requestAnimationFrame(loop);
 
 })();
+
+  // ── Sauvegarde du score ───────────────────────────────────────────
+  window._lamatitaScoreSaved = false;
+  function lamatitaSaveScore(payload) {
+    if (window._lamatitaScoreSaved) return;
+    window._lamatitaScoreSaved = true;
+    fetch('/api/scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload)
+    }).catch(function(){});
+  }
+  function lamatitaResetScore() { window._lamatitaScoreSaved = false; }
+  
 </script>
 </body>
 </html>
