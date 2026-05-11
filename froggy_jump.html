@@ -305,7 +305,7 @@ function initPlayer(){
 
 // ── Init ─────────────────────────────────────────────────────────────
 function initGame(){
-  score=0; camY=0; paused=false; particles=[];
+  score=0; camY=0; paused=false; particles=[]; lamatitaResetScore();
   lastLevelIdx=0; levelTransition=null;
   etat='playing';
   document.getElementById('btnPause').textContent='⏸';
@@ -538,7 +538,7 @@ function update(){
     if(score>meilleur) meilleur=score;
   }
   extendPlatforms();
-  if(player.y-camY>H+60) etat='gameover';
+  if(player.y-camY>H+60) { etat='gameover'; lamatitaSaveScore({ game: 'froggy_jump', score: score }); }
 
   // Détection changement de niveau
   var curLvlIdx = LEVELS.findIndex(function(l){return score>=l.min&&score<=l.max;});
@@ -700,6 +700,21 @@ window.addEventListener('load', function(){
   if(pl) drawLama(pl.getContext('2d'),48,56,'right');
   requestAnimationFrame(loop); // démarrage unique de la boucle
 });
+
+  // ── Sauvegarde du score ───────────────────────────────────────────
+  window._lamatitaScoreSaved = false;
+  function lamatitaSaveScore(payload) {
+    if (window._lamatitaScoreSaved) return;
+    window._lamatitaScoreSaved = true;
+    fetch('/api/scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload)
+    }).catch(function(){});
+  }
+  function lamatitaResetScore() { window._lamatitaScoreSaved = false; }
+  
 </script>
 </body>
 </html>
