@@ -440,7 +440,7 @@ body {
     board=puzzle.map(r=>[...r]);
     given=puzzle.map(r=>r.map(v=>v!==0));
     notes=Array.from({length:9},()=>Array.from({length:9},()=>new Set()));
-    selected=null; errors=new Set(); mistakes=0; won=false; noteMode=false;
+    selected=null; errors=new Set(); mistakes=0; won=false; noteMode=false; lamatitaResetScore();
     paused=false; hintCount=0; playerPlacedAny=false;
     clearInterval(timerInterval);
     startTime=Date.now(); elapsed=0;
@@ -477,7 +477,7 @@ body {
   }
   function checkWin() {
     for (let r=0;r<9;r++) for (let c=0;c<9;c++) if (board[r][c]!==solution[r][c]) return false;
-    won=true;
+    won=true; lamatitaSaveScore({ game: 'sudoku', timeSeconds: elapsed, difficulty: difficulty });
     clearInterval(timerInterval);
     showWin(); return true;
   }
@@ -634,6 +634,21 @@ body {
 
   newGame();
 })();
+
+  // ── Sauvegarde du score ───────────────────────────────────────────
+  window._lamatitaScoreSaved = false;
+  function lamatitaSaveScore(payload) {
+    if (window._lamatitaScoreSaved) return;
+    window._lamatitaScoreSaved = true;
+    fetch('/api/scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload)
+    }).catch(function(){});
+  }
+  function lamatitaResetScore() { window._lamatitaScoreSaved = false; }
+  
 </script>
 </body>
 </html>
