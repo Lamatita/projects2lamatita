@@ -791,7 +791,7 @@ function loop(now) {
             tempsVictoire = (performance.now() - momentDepart) / 1000;
             pasVictoire   = nombreDePas;
             etat = 'win';
-              lamatitaSaveScore({ game: 'labyrinthe', timeSeconds: Math.round(tempsVictoire), score: pasVictoire });
+              lamatitaSaveScore({ game: 'labyrinthe', timeSeconds: Math.round(tempsVictoire), score: pasVictoire, difficulty: niveauChoisi });
         }
     } else if (etat === 'menu') {
         dessiner_menu(sourisX, sourisY);
