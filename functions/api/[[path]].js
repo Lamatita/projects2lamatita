@@ -149,14 +149,14 @@ const TIME_BASED_GAMES = new Set(['solitaire', 'labyrinthe', 'sudoku']);
     const key = s.player_name;
     if (!best[key]) {
       best[key] = s;
-    } else if (game === 'solitaire') {
+    } else if (isTimeBased(game)) {
       if (s.time_seconds < best[key].time_seconds) best[key] = s;
     } else {
       if ((s.score || 0) > (best[key].score || 0)) best[key] = s;
     }
   }
   const result = Object.values(best);
-  if (game === 'solitaire') {
+  if (isTimeBased(game)) {
     result.sort((a, b) => a.time_seconds - b.time_seconds);
   } else {
     result.sort((a, b) => (b.score || 0) - (a.score || 0));
@@ -379,7 +379,7 @@ export async function onRequest(context) {
           formatted.anonymous = false;
           if (!addedPlayers[leader.player_name]) {
             addedPlayers[leader.player_name] = formatted;
-          } else if (gameFilter === 'solitaire') {
+          } else if (isTimeBased(gameFilter)) {
             if (leader.time_seconds < addedPlayers[leader.player_name].time) addedPlayers[leader.player_name] = formatted;
           } else {
             if ((leader.score || 0) > (addedPlayers[leader.player_name].score || 0)) addedPlayers[leader.player_name] = formatted;
@@ -390,7 +390,7 @@ export async function onRequest(context) {
       const anonFormatted = anonBest.map(s => formatScore(s));
 
       const combined = [...anonFormatted, ...Object.values(addedPlayers)];
-      if (gameFilter === 'solitaire') {
+      if (isTimeBased(gameFilter)) {
         combined.sort((a, b) => a.time - b.time);
       } else {
         combined.sort((a, b) => (b.score || 0) - (a.score || 0));
