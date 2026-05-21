@@ -399,8 +399,23 @@ export async function onRequest(context) {
       const score = body.score || 0;
       const difficulty = body.difficulty || '';
       const rounds = body.rounds || 0;
+        const submittedToken = body.token || '';
 
-      const user = await getSessionUser(request, db);
+        const tokenCheck = await verifyScoreToken(env, submittedToken, game);
+        if (!tokenCheck.ok) {
+          return jsonResponse({ error: 'Token de score invalide ou expiré (' + tokenCheck.reason + ')' }, 400);
+        }
+        const elapsedSinceTokenSec = (Date.now() - tokenCheck.issuedAt) / 1000;
+        const caps = SCORE_CAPS[game];
+        if (caps.minElapsed !== undefined && elapsedSinceTokenSec < caps.minElapsed) {
+          return jsonResponse({ error: 'Score soumis trop rapidement' }, 400);
+        }
+        const plaus = validateScorePlausibility(game, timeSeconds, score);
+        if (!plaus.ok) {
+          return jsonResponse({ error: 'Score invalide (' + plaus.reason + ')' }, 400);
+        }
+
+        const user = await getSessionUser(request, db);
       let userId = null;
       let playerName = '';
       let anonymous = 0;
