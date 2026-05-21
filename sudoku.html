@@ -650,5 +650,35 @@ body {
   function lamatitaResetScore() { window._lamatitaScoreSaved = false; }
   
 </script>
-</body>
+<script>
+  // ── Lamatita: token sécurité scores ──
+  window.__lamatitaGame = 'sudoku';
+  window.__lamatitaToken = null;
+  (function() {
+    function fetchToken() {
+      return fetch('/api/scores/token?game=' + window.__lamatitaGame)
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(j) { if (j && j.token) window.__lamatitaToken = j.token; })
+        .catch(function() {});
+    }
+    fetchToken();
+    window.__lamatitaRefreshToken = fetchToken;
+    var _origFetch = window.fetch;
+    window.fetch = function(input, init) {
+      try {
+        var url = typeof input === 'string' ? input : (input && input.url) || '';
+        if (url.indexOf('/api/scores') === 0 && url.indexOf('/api/scores/token') !== 0 && init && init.method === 'POST' && typeof init.body === 'string') {
+          var b = JSON.parse(init.body);
+          if (!b.token && window.__lamatitaToken) {
+            b.token = window.__lamatitaToken;
+            if (!b.game) b.game = window.__lamatitaGame;
+            init = Object.assign({}, init, { body: JSON.stringify(b) });
+          }
+        }
+      } catch(e) {}
+      return _origFetch.call(this, input, init);
+    };
+  })();
+  </script>
+  </body>
 </html>
