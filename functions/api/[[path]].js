@@ -140,7 +140,10 @@ async function getSessionUser(request, db) {
   return user;
 }
 
-function bestPerPlayer(scores, game) {
+const TIME_BASED_GAMES = new Set(['solitaire', 'labyrinthe', 'sudoku']);
+  function isTimeBased(game) { return TIME_BASED_GAMES.has(game); }
+
+  function bestPerPlayer(scores, game) {
   const best = {};
   for (const s of scores) {
     const key = s.player_name;
@@ -401,7 +404,7 @@ export async function onRequest(context) {
       if (!user) return jsonResponse({ message: 'Non connecte' }, 401);
       const gameFilter = url.searchParams.get('game') || 'solitaire';
 
-      const orderBy = gameFilter === 'solitaire' ? 'time_seconds ASC' : 'score DESC';
+      const orderBy = isTimeBased(gameFilter) ? 'time_seconds ASC' : 'score DESC';
       const scores = await db.prepare('SELECT * FROM game_scores WHERE user_id = ? AND game = ? ORDER BY ' + orderBy).bind(user.id, gameFilter).all();
       const formatted = scores.results.map(s => formatScore(s));
       return jsonResponse(formatted);
