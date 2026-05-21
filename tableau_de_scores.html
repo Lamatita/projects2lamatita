@@ -880,8 +880,10 @@ tbody td {
           var tabsHtml = '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">';
           difficulties.forEach(function(d) {
               var isActive = d === activeDiff;
+              var dEsc = d.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+              var dHtml = d.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
               tabsHtml += '<button class="view-tab' + (isActive ? ' active' : '') + '" ' +
-                  'onclick="switchGameDifficulty(\'' + game + '\', \'' + d + '\')">' + d + '</button>';
+                  'onclick="switchGameDifficulty(\'' + game + '\', \'' + dEsc + '\')">' + dHtml + '</button>';
           });
           tabsHtml += '</div>';
 
