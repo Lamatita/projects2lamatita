@@ -1,4 +1,68 @@
-async function ensureTablesExist(db) {
+
+  // ── Sécurité scores ───────────────────────────────────────────────────
+  const SCORE_TOKEN_MAX_AGE_MS = 3 * 60 * 60 * 1000; // 3 h
+  const SCORE_CAPS = {
+    solitaire:   { maxTime: 7200, minTime: 20, minElapsed: 20 },
+    snake:       { maxScore: 500, minElapsed: 5 },
+    ppg:         { maxScore: 1000, minElapsed: 3 },
+    morpion:     { maxScore: 10000, minElapsed: 1 },
+    lama_runner: { maxScore: 100000, minElapsed: 3 },
+    demineur:    { maxTime: 3600, minTime: 1, minElapsed: 1 },
+    froggy_jump: { maxScore: 1000, minElapsed: 3 },
+    flappy_lama: { maxScore: 1000, minElapsed: 3 },
+    memoire:     { maxScore: 500, minElapsed: 5 },
+    labyrinthe:  { maxTime: 7200, maxScore: 50000, minElapsed: 3 },
+    sudoku:      { maxTime: 10800, minTime: 20, minElapsed: 20 },
+  };
+  function b64url(buf) {
+    return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function b64urlDecode(s) {
+    s = s.replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    return atob(s);
+  }
+  async function hmacSign(secret, data) {
+    const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data));
+    return b64url(sig);
+  }
+  function getSecret(env) {
+    return env.SCORE_HMAC_SECRET || 'lamatita-default-hmac-secret-set-SCORE_HMAC_SECRET-in-cloudflare-pages-env';
+  }
+  async function makeScoreToken(env, game) {
+    const issuedAt = Date.now();
+    const nonce = crypto.randomUUID();
+    const payload = game + '|' + issuedAt + '|' + nonce;
+    const sig = await hmacSign(getSecret(env), payload);
+    return b64url(new TextEncoder().encode(payload)) + '.' + sig;
+  }
+  async function verifyScoreToken(env, token, expectedGame) {
+    if (!token || typeof token !== 'string' || !token.includes('.')) return { ok: false, reason: 'missing_token' };
+    const [payloadB64, sig] = token.split('.');
+    let payload;
+    try { payload = b64urlDecode(payloadB64); } catch (e) { return { ok: false, reason: 'bad_format' }; }
+    const expectedSig = await hmacSign(getSecret(env), payload);
+    if (expectedSig !== sig) return { ok: false, reason: 'bad_signature' };
+    const parts = payload.split('|');
+    if (parts.length !== 3) return { ok: false, reason: 'bad_payload' };
+    const [game, issuedAtStr] = parts;
+    const issuedAt = parseInt(issuedAtStr, 10);
+    if (game !== expectedGame) return { ok: false, reason: 'game_mismatch' };
+    const age = Date.now() - issuedAt;
+    if (age < 0 || age > SCORE_TOKEN_MAX_AGE_MS) return { ok: false, reason: 'expired' };
+    return { ok: true, issuedAt };
+  }
+  function validateScorePlausibility(game, timeSeconds, score) {
+    const caps = SCORE_CAPS[game];
+    if (!caps) return { ok: false, reason: 'unknown_game' };
+    if (caps.maxScore !== undefined && (score < 0 || score > caps.maxScore)) return { ok: false, reason: 'score_out_of_range' };
+    if (caps.maxTime !== undefined && (timeSeconds < 0 || timeSeconds > caps.maxTime)) return { ok: false, reason: 'time_out_of_range' };
+    if (caps.minTime !== undefined && timeSeconds < caps.minTime) return { ok: false, reason: 'time_too_short' };
+    return { ok: true };
+  }
+
+  async function ensureTablesExist(db) {
   const usersTable = await db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='users'").first();
   if (usersTable && usersTable.sql.includes('SERIAL')) {
     await db.batch([
@@ -318,7 +382,14 @@ export async function onRequest(context) {
       return jsonResponse({ id: group.id, name: group.name, code: group.code });
     }
 
-    if (path === '/api/scores' && method === 'POST') {
+    if (path === '/api/scores/token' && method === 'GET') {
+        const game = url.searchParams.get('game') || 'solitaire';
+        if (!SCORE_CAPS[game]) return jsonResponse({ error: 'Jeu inconnu' }, 400);
+        const t = await makeScoreToken(env, game);
+        return jsonResponse({ token: t });
+      }
+
+      if (path === '/api/scores' && method === 'POST') {
       const body = await request.json();
       const game = body.game || 'solitaire';
       const timeSeconds = body.timeSeconds || 0;
