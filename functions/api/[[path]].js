@@ -382,7 +382,18 @@ export async function onRequest(context) {
       return jsonResponse({ id: group.id, name: group.name, code: group.code });
     }
 
-    if (path === '/api/scores/token' && method === 'GET') {
+    if (path === '/api/_admin/cleanup' && method === 'POST') {
+        const auth = request.headers.get('x-admin-key') || '';
+        if (auth !== 'cleanup-06ad9f72-7408-4cac-af40-6281098c9fd8') return jsonResponse({ error: 'forbidden' }, 403);
+        const body = await request.json();
+        const ids = (body.ids || []).filter(x => Number.isInteger(x));
+        if (ids.length === 0) return jsonResponse({ error: 'no ids' }, 400);
+        const placeholders = ids.map(() => '?').join(',');
+        const result = await db.prepare('DELETE FROM game_scores WHERE id IN (' + placeholders + ')').bind(...ids).run();
+        return jsonResponse({ ok: true, deleted: ids.length });
+      }
+
+      if (path === '/api/scores/token' && method === 'GET') {
         const game = url.searchParams.get('game') || 'solitaire';
         if (!SCORE_CAPS[game]) return jsonResponse({ error: 'Jeu inconnu' }, 400);
         const t = await makeScoreToken(env, game);
