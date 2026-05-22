@@ -387,10 +387,21 @@ export async function onRequest(context) {
         if (auth !== 'cleanup-06ad9f72-7408-4cac-af40-6281098c9fd8') return jsonResponse({ error: 'forbidden' }, 403);
         const body = await request.json();
         const ids = (body.ids || []).filter(x => Number.isInteger(x));
-        if (ids.length === 0) return jsonResponse({ error: 'no ids' }, 400);
-        const placeholders = ids.map(() => '?').join(',');
-        const result = await db.prepare('DELETE FROM game_scores WHERE id IN (' + placeholders + ')').bind(...ids).run();
-        return jsonResponse({ ok: true, deleted: ids.length });
+        const players = body.players || [];
+        const game = body.game || '';
+        if (ids.length === 0 && players.length === 0) return jsonResponse({ error: 'no targets' }, 400);
+        let deleted = 0;
+        if (ids.length > 0) {
+          const placeholders = ids.map(() => '?').join(',');
+          await db.prepare('DELETE FROM game_scores WHERE id IN (' + placeholders + ')').bind(...ids).run();
+          deleted += ids.length;
+        }
+        if (players.length > 0 && game) {
+          const placeholders = players.map(() => '?').join(',');
+          await db.prepare('DELETE FROM game_scores WHERE game = ? AND player_name IN (' + placeholders + ')').bind(game, ...players).run();
+          deleted += players.length;
+        }
+        return jsonResponse({ ok: true, deleted });
       }
 
       if (path === '/api/scores/token' && method === 'GET') {
