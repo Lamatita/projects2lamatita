@@ -466,7 +466,7 @@ function drawBackground(off){
       ctx.fillStyle='rgba(255,200,60,0.15)'; ctx.beginPath(); ctx.ellipse(ax,ay-17,16,7,Math.sin(t+i)*.2,0,Math.PI*2); ctx.fill();
     }
   }
-  if(score<300){
+  if(score>=50 && score<300){
     clouds.forEach(function(c){
       c.x+=c.vx; if(c.x>W+80)c.x=-80; if(c.x<-80)c.x=W+80;
       var sy=c.y-off; if(sy>H+60||sy<-60) return;
