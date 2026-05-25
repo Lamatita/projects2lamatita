@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jeu Piano</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: "Segoe UI", sans-serif;
+  background: linear-gradient(135deg, #f7f3ff, #e6e1ff);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+@keyframes confetti-fall {
+  0%   { transform: translateY(-10vh) rotate(0deg); opacity: 0.9; }
+  100% { transform: translateY(115vh) rotate(var(--rot)); opacity: 0.5; }
+}
+.confetti-piece {
+  position: fixed;
+  top: -30px;
+  animation: confetti-fall var(--dur) linear infinite;
+  animation-delay: var(--delay);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.page-wrapper {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 960px;
+  padding: 32px 24px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.nav-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border: 2px solid #e0dce8;
+  border-radius: 999px;
+  background: transparent;
+  color: #6b5f8a;
+  font-size: 0.8em;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: "Segoe UI", sans-serif;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.nav-btn:hover {
+  border-color: #6c63ff;
+  color: #6c63ff;
+  background: rgba(108,99,255,0.06);
+}
+.nav-btn svg {
+  width: 14px; height: 14px;
+  stroke: currentColor; fill: none; stroke-width: 2.5;
+  flex-shrink: 0;
+}
+
+.page-title {
+  text-align: center;
+  width: 100%;
+}
+.page-title h1 {
+  font-size: 2em;
+  font-weight: 800;
+  color: #6c63ff;
+  letter-spacing: -0.5px;
+}
+.page-title p {
+  color: #9992bb;
+  font-size: 0.95em;
+  margin-top: 6px;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 28px 28px 24px;
+  box-shadow: 0 15px 45px rgba(0,0,0,0.12);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.rec-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-rec {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 999px;
+  font-family: "Segoe UI", sans-serif;
+  font-weight: 700;
+  font-size: 0.82em;
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+  background: #6c63ff;
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(108,99,255,0.3);
+}
+.btn-rec:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.btn-rec:active { transform: scale(0.97); }
+
+.btn-stop {
+  background: #ef4444;
+  color: #fff;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 999px;
+  font-size: 0.82em;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transition: all 0.18s;
+  box-shadow: 0 3px 10px rgba(239,68,68,0.3);
+}
+.btn-stop:hover { filter: brightness(1.1); }
+
+.btn-pause-rec {
+  background: #ffb703;
+  color: #1a1000;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 999px;
+  font-size: 0.82em;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.18s;
+}
+.btn-pause-rec:hover { filter: brightness(1.1); }
+
+.rec-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: blink 1s infinite;
+  flex-shrink: 0;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.15} }
+
+.fall-zone {
+  height: 200px;
+  position: relative;
+  background: #f7f3ff;
+  border-radius: 12px;
+  border: 2px solid #e0dce8;
+  overflow: hidden;
+  display: none;
+}
+#fallCanvas { width: 100%; height: 100%; display: block; }
+
+.piano-hint {
+  font-size: 0.72em;
+  color: #9992bb;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.keyboard-outer {
+  overflow-x: auto;
+  display: flex;
+  justify-content: center;
+  padding-bottom: 4px;
+}
+
+.keyboard {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.key-white {
+  width: 62px;
+  height: 168px;
+  background: #fff;
+  border: 2px solid #d4cef5;
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.07s, transform 0.07s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 10px;
+  z-index: 1;
+  box-shadow: 0 5px 10px rgba(108,99,255,0.08), inset 0 -2px 4px rgba(0,0,0,0.05);
+}
+.key-white:hover { background: #ede8ff; }
+.key-white.active {
+  background: #ede8ff;
+  box-shadow: inset 0 4px 10px rgba(108,99,255,0.2), 0 1px 2px rgba(0,0,0,0.08);
+  transform: translateY(2px);
+}
+.key-white.replay-ok  { background: #bbf7d0 !important; }
+.key-white.replay-err { background: #fecaca !important; }
+
+.key-black {
+  width: 40px;
+  height: 108px;
+  background: linear-gradient(180deg, #3a2f5e 0%, #1a1030 100%);
+  border-radius: 0 0 6px 6px;
+  position: absolute;
+  cursor: pointer;
+  z-index: 2;
+  top: 0;
+  box-shadow: 2px 5px 12px rgba(0,0,0,0.45), inset 0 -2px 4px rgba(255,255,255,0.07);
+  transition: background 0.07s, transform 0.07s;
+}
+.key-black:hover { background: linear-gradient(180deg,#4a3f7e 0%,#2a2050 100%); }
+.key-black.active {
+  background: linear-gradient(180deg,#6c63ff 0%,#3a2f8a 100%);
+  transform: translateY(2px);
+  box-shadow: 1px 2px 6px rgba(0,0,0,0.4);
+}
+.key-black.replay-ok  { background: linear-gradient(180deg,#4ade80 0%,#16a34a 100%) !important; }
+.key-black.replay-err { background: linear-gradient(180deg,#f87171 0%,#b91c1c 100%) !important; }
+
+.key-label {
+  font-size: 0.62em;
+  font-weight: 700;
+  color: #6b5f8a;
+  line-height: 1;
+  text-align: center;
+}
+.key-label-kb {
+  font-size: 0.57em;
+  color: #b0a8d8;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.nom-morceau-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.nom-morceau-input {
+  flex: 1;
+  padding: 6px 12px;
+  border: 2px solid #e0dce8;
+  border-radius: 999px;
+  font-family: "Segoe UI", sans-serif;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: #2a2040;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.18s;
+}
+.nom-morceau-input:focus { border-color: #6c63ff; }
+.nom-morceau-label {
+  font-size: 0.72em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #9992bb;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.post-rec {
+  display: none;
+  background: #f7f3ff;
+  border-radius: 12px;
+  padding: 14px 18px;
+  border: 2px solid #e0dce8;
+}
+.post-rec-title {
+  font-size: 0.75em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #9992bb;
+  margin-bottom: 10px;
+}
+.post-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.post-btn {
+  padding: 7px 18px;
+  border: none;
+  border-radius: 999px;
+  font-family: "Segoe UI", sans-serif;
+  font-weight: 700;
+  font-size: 0.8em;
+  cursor: pointer;
+  transition: all 0.18s;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+.post-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.post-btn.listen  { background: #6c63ff; }
+.post-btn.score   { background: #00c9a7; }
+.post-btn.replay  { background: #ff6f91; }
+.post-btn.discard { background: #94a3b8; }
+
+.score-view {
+  display: none;
+  background: #f7f3ff;
+  border-radius: 12px;
+  padding: 14px 18px;
+  border: 2px solid #e0dce8;
+  max-height: 130px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.score-view-title {
+  font-size: 0.75em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #9992bb;
+  margin-bottom: 10px;
+}
+.score-line {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  min-width: max-content;
+}
+.score-note {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fff;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-weight: 700;
+  font-size: 0.85em;
+  color: #6c63ff;
+  border: 1.5px solid #d4cef5;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.score-chord {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.score-chord .score-note { font-size: 0.75em; padding: 3px 6px; }
+.score-gap {
+  align-self: center;
+  font-size: 0.7em;
+  color: #c8c3de;
+  flex-shrink: 0;
+  padding: 0 2px;
+}
+
+.toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: #333;
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 999px;
+  font-size: 0.83em;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+  opacity: 0;
+  z-index: 9999;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+#replayOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(42,32,64,0.6);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+#replayOverlay.visible { display: flex; }
+.overlay-box {
+  background: #fff;
+  border-radius: 20px;
+  padding: 28px 36px;
+  text-align: center;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+  border: 2px solid #e0dce8;
+  max-width: 360px;
+  width: 90%;
+}
+.overlay-box h2 { color: #6c63ff; font-size: 1.3em; margin-bottom: 8px; }
+.overlay-box p  { color: #9992bb; font-size: 0.9em; margin-bottom: 20px; }
+.overlay-ok {
+  padding: 9px 28px;
+  border: none;
+  border-radius: 999px;
+  background: #6c63ff;
+  color: #fff;
+  font-family: "Segoe UI", sans-serif;
+  font-weight: 700;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: all 0.18s;
+  box-shadow: 0 3px 10px rgba(108,99,255,0.3);
+}
+.overlay-ok:hover { filter: brightness(1.1); transform: translateY(-1px); }
+</style>
+</head>
+<body>
+
+<div id="confetti-container"></div>
+
+<div class="page-wrapper">
+
+  <div class="nav-row">
+    <a class="nav-btn" href="index.html">
+      <svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 12 15 12 15 21"/></svg>
+      Accueil
+    </a>
+    <button class="nav-btn" onclick="history.back()">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      Retour
+    </button>
+  </div>
+
+  <div class="page-title">
+    <h1>Jeu Piano</h1>
+    <p>Jouez, enregistrez et apprenez vos morceaux</p>
+  </div>
+
+  <div class="card">
+
+    <div class="card-top-row">
+      <div class="rec-controls" id="recControls">
+        <button class="btn-rec" onclick="demarrerEnregistrement()">
+          <span style="width:9px;height:9px;border-radius:50%;background:#fff;opacity:.8;flex-shrink:0;display:inline-block;"></span>
+          Enregistrer un morceau
+        </button>
+      </div>
+    </div>
+
+    <div class="fall-zone" id="fallZone">
+      <canvas id="fallCanvas"></canvas>
+    </div>
+
+    <div class="score-view" id="scoreView">
+      <div class="score-view-title">Partition</div>
+      <div class="score-line" id="scoreLine"></div>
+    </div>
+
+    <div class="post-rec" id="postRec">
+      <div class="post-rec-title">Morceau enregistre</div>
+      <div class="nom-morceau-row">
+        <span class="nom-morceau-label">Nom</span>
+        <input class="nom-morceau-input" id="nomMorceau" type="text" placeholder="Mon morceau" maxlength="60" />
+      </div>
+      <div class="post-buttons">
+        <button class="post-btn listen"  onclick="ecouterMorceau()">Ecouter</button>
+        <button class="post-btn score"   onclick="afficherPartition()">Voir la partition</button>
+        <button class="post-btn replay"  onclick="demarrerModeRejouer()">Rejouer</button>
+        <button class="post-btn discard" onclick="supprimerEnregistrement()">Supprimer</button>
+      </div>
+    </div>
+
+    <div class="piano-hint">Cliquez sur les touches ou utilisez le clavier : C D E F G A B (Maj+C = Do aigu)</div>
+    <div class="keyboard-outer">
+      <div class="keyboard" id="keyboard"></div>
+    </div>
+
+  </div>
+</div>
+
+<div id="replayOverlay">
+  <div class="overlay-box">
+    <h2 id="overlayTitre">Bravo !</h2>
+    <p id="overlayMsg">Vous avez rejoue tout le morceau !</p>
+    <button class="overlay-ok" onclick="fermerOverlay()">OK</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const NOTES = [
+  { id:'C4',  fr:'Do',   touche:'c', fichier:'Do.m4a',         noir:false },
+  { id:'Db4', fr:'Do#',  touche:'',  fichier:null,              noir:true  },
+  { id:'D4',  fr:'Re',   touche:'d', fichier:'Ré.m4a',          noir:false },
+  { id:'Eb4', fr:'Re#',  touche:'',  fichier:null,              noir:true  },
+  { id:'E4',  fr:'Mi',   touche:'e', fichier:'Mi.m4a',          noir:false },
+  { id:'F4',  fr:'Fa',   touche:'f', fichier:'Fa.m4a',          noir:false },
+  { id:'Gb4', fr:'Fa#',  touche:'',  fichier:null,              noir:true  },
+  { id:'G4',  fr:'Sol',  touche:'g', fichier:'Sol.m4a',         noir:false },
+  { id:'Ab4', fr:'Sol#', touche:'',  fichier:null,              noir:true  },
+  { id:'A4',  fr:'La',   touche:'a', fichier:'La.m4a',          noir:false },
+  { id:'Bb4', fr:'La#',  touche:'',  fichier:null,              noir:true  },
+  { id:'B4',  fr:'Si',   touche:'b', fichier:'Si.m4a',          noir:false },
+  { id:'C5',  fr:'Do2',  touche:'C', fichier:'Do_l_autre.m4a',  noir:false },
+];
+
+const NOTES_BLANCHES = NOTES.filter(n => !n.noir);
+const LARGEUR_BLANCHE = 62;
+
+const contexteAudio = new (window.AudioContext || window.webkitAudioContext)();
+const tamponsAudio = {};
+
+async function chargerSons() {
+  for (const note of NOTES) {
+    if (!note.fichier) continue;
+    try {
+      const reponse = await fetch(note.fichier);
+      if (!reponse.ok) continue;
+      const donnees = await reponse.arrayBuffer();
+      tamponsAudio[note.id] = await contexteAudio.decodeAudioData(donnees);
+    } catch(e) {
+      console.warn('Son introuvable :', note.fichier, e);
+    }
+  }
+}
+
+const sourcesActives = {};
+
+function jouerNote(noteId, duree = 9) {
+  if (contexteAudio.state === 'suspended') contexteAudio.resume();
+  const tampon = tamponsAudio[noteId];
+  if (!tampon) return;
+
+  arreterNote(noteId, 0.03);
+
+  const source = contexteAudio.createBufferSource();
+  const gain = contexteAudio.createGain();
+  source.buffer = tampon;
+  source.connect(gain);
+  gain.connect(contexteAudio.destination);
+
+  const dureeReelle = Math.min(duree, tampon.duration, 9);
+  gain.gain.setValueAtTime(1, contexteAudio.currentTime);
+  gain.gain.setTargetAtTime(0, contexteAudio.currentTime + dureeReelle - 0.15, 0.08);
+  source.start(0);
+  source.stop(contexteAudio.currentTime + dureeReelle);
+
+  sourcesActives[noteId] = { source, gain };
+}
+
+function arreterNote(noteId, tempsFondu = 0.12) {
+  const s = sourcesActives[noteId];
+  if (!s) return;
+  try {
+    s.gain.gain.cancelScheduledValues(contexteAudio.currentTime);
+    s.gain.gain.setTargetAtTime(0, contexteAudio.currentTime, tempsFondu / 3);
+    s.source.stop(contexteAudio.currentTime + tempsFondu);
+  } catch(e) {}
+  delete sourcesActives[noteId];
+}
+
+function construireClavier() {
+  const clavier = document.getElementById('keyboard');
+  clavier.innerHTML = '';
+
+  const offsetsNoires = { 'Db4':0.67, 'Eb4':1.67, 'Gb4':3.67, 'Ab4':4.67, 'Bb4':5.67 };
+
+  for (const note of NOTES) {
+    if (note.noir) continue;
+    const el = document.createElement('div');
+    el.className = 'key-white';
+    el.dataset.note = note.id;
+    el.innerHTML = `<span class="key-label">${note.fr}</span>
+      ${note.touche ? `<span class="key-label-kb">${note.touche.toUpperCase()}</span>` : ''}`;
+    el.addEventListener('mousedown',  e => { e.preventDefault(); appuiTouche(note.id); });
+    el.addEventListener('mouseup',    e => { e.preventDefault(); relacheTouche(note.id); });
+    el.addEventListener('mouseleave', () => { if (touchesAppuyees.has(note.id)) relacheTouche(note.id); });
+    el.addEventListener('touchstart', e => { e.preventDefault(); appuiTouche(note.id); }, {passive:false});
+    el.addEventListener('touchend',   e => { e.preventDefault(); relacheTouche(note.id); }, {passive:false});
+    clavier.appendChild(el);
+  }
+
+  for (const note of NOTES) {
+    if (!note.noir) continue;
+    const offset = offsetsNoires[note.id];
+    if (offset === undefined) continue;
+    const el = document.createElement('div');
+    el.className = 'key-black';
+    el.dataset.note = note.id;
+    el.style.left = (offset * LARGEUR_BLANCHE + (LARGEUR_BLANCHE - 40) / 2) + 'px';
+    el.addEventListener('mousedown',  e => { e.preventDefault(); e.stopPropagation(); appuiTouche(note.id); });
+    el.addEventListener('mouseup',    e => { e.preventDefault(); e.stopPropagation(); relacheTouche(note.id); });
+    el.addEventListener('mouseleave', () => { if (touchesAppuyees.has(note.id)) relacheTouche(note.id); });
+    el.addEventListener('touchstart', e => { e.preventDefault(); appuiTouche(note.id); }, {passive:false});
+    el.addEventListener('touchend',   e => { e.preventDefault(); relacheTouche(note.id); }, {passive:false});
+    clavier.appendChild(el);
+  }
+}
+
+const touchesAppuyees = new Set();
+const tempsAppui = {};
+
+function appuiTouche(noteId) {
+  if (touchesAppuyees.has(noteId)) return;
+  touchesAppuyees.add(noteId);
+  tempsAppui[noteId] = Date.now();
+
+  const el = document.querySelector(`[data-note="${noteId}"]`);
+  if (el) el.classList.add('active');
+
+  jouerNote(noteId, 9);
+
+  if (enEnregistrement && !enPause) {
+    enregistrerAppui(noteId, performance.now());
+  }
+
+  if (modeRejouerActif) {
+    verifierToucheRejouer(noteId);
+  }
+}
+
+function relacheTouche(noteId) {
+  if (!touchesAppuyees.has(noteId)) return;
+  touchesAppuyees.delete(noteId);
+
+  const el = document.querySelector(`[data-note="${noteId}"]`);
+  if (el) el.classList.remove('active');
+
+  arreterNote(noteId, 0.15);
+
+  if (enEnregistrement && !enPause) {
+    enregistrerRelache(noteId, performance.now());
+  }
+}
+
+const correspondanceTouches = {};
+for (const note of NOTES) {
+  if (note.touche) correspondanceTouches[note.touche.toLowerCase()] = note.id;
+}
+
+document.addEventListener('keydown', e => {
+  if (e.repeat) return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  const k = e.key.toLowerCase();
+  let noteId = null;
+  if (e.shiftKey && k === 'c') {
+    noteId = 'C5';
+  } else if (!e.shiftKey && correspondanceTouches[k]) {
+    noteId = correspondanceTouches[k];
+  }
+  if (noteId) appuiTouche(noteId);
+});
+
+document.addEventListener('keyup', e => {
+  const k = e.key.toLowerCase();
+  let noteId = null;
+  if (k === 'c' && touchesAppuyees.has('C5')) {
+    noteId = 'C5';
+  } else if (correspondanceTouches[k]) {
+    noteId = correspondanceTouches[k];
+  }
+  if (noteId) relacheTouche(noteId);
+});
+
+let enEnregistrement = false;
+let enPause = false;
+let debutEnregistrement = 0;
+let evenementsRec = [];
+let debutPause = 0;
+let totalPauseMs = 0;
+
+function demarrerEnregistrement() {
+  enEnregistrement = true;
+  enPause = false;
+  evenementsRec = [];
+  debutEnregistrement = performance.now();
+  totalPauseMs = 0;
+  document.getElementById('postRec').style.display = 'none';
+  document.getElementById('scoreView').style.display = 'none';
+  document.getElementById('fallZone').style.display = 'none';
+  mettreAJourBoutonsRec(true);
+  afficherToast('Enregistrement demarre...');
+}
+
+function enregistrerAppui(noteId, maintenant) {
+  const t = maintenant - debutEnregistrement - totalPauseMs;
+  evenementsRec.push({ type:'appui', noteId, temps:t });
+}
+
+function enregistrerRelache(noteId, maintenant) {
+  const t = maintenant - debutEnregistrement - totalPauseMs;
+  evenementsRec.push({ type:'relache', noteId, temps:t });
+}
+
+function arreterEnregistrement() {
+  if (!enEnregistrement) return;
+  enEnregistrement = false;
+  enPause = false;
+  mettreAJourBoutonsRec(false);
+  document.getElementById('postRec').style.display = 'block';
+  afficherToast('Enregistrement termine !');
+}
+
+function basculerPause() {
+  if (!enEnregistrement) return;
+  enPause = !enPause;
+  if (enPause) {
+    debutPause = performance.now();
+  } else {
+    totalPauseMs += performance.now() - debutPause;
+  }
+  mettreAJourBoutonsRec(true);
+}
+
+function mettreAJourBoutonsRec(actif) {
+  const ctrl = document.getElementById('recControls');
+  if (!actif) {
+    ctrl.innerHTML = `<button class="btn-rec" onclick="demarrerEnregistrement()">
+      <span style="width:9px;height:9px;border-radius:50%;background:#fff;opacity:.8;flex-shrink:0;display:inline-block;"></span>
+      Enregistrer un morceau
+    </button>`;
+  } else {
+    const iconePause = enPause ? '&#9654;' : '&#9646;&#9646;';
+    ctrl.innerHTML = `
+      <button class="btn-pause-rec" onclick="basculerPause()">${iconePause}</button>
+      <button class="btn-stop" onclick="arreterEnregistrement()">
+        <span style="display:inline-block;width:11px;height:11px;background:#fff;border-radius:2px;flex-shrink:0;"></span>
+        Stop
+      </button>
+      ${!enPause ? '<span class="rec-dot"></span>' : '<span style="color:#9992bb;font-size:.75em;font-weight:700;">EN PAUSE</span>'}
+    `;
+  }
+}
+
+function analyserEnregistrement() {
+  if (!evenementsRec.length) return [];
+
+  const segments = [];
+  const appuis = {};
+
+  for (const ev of evenementsRec) {
+    if (ev.type === 'appui') {
+      appuis[ev.noteId] = ev.temps;
+    } else {
+      if (appuis[ev.noteId] !== undefined) {
+        segments.push({
+          noteId: ev.noteId,
+          debut: appuis[ev.noteId],
+          fin: ev.temps,
+          duree: ev.temps - appuis[ev.noteId]
+        });
+        delete appuis[ev.noteId];
+      }
+    }
+  }
+
+  const dernierTemps = evenementsRec[evenementsRec.length - 1].temps;
+  for (const [noteId, debut] of Object.entries(appuis)) {
+    segments.push({ noteId, debut, fin:dernierTemps, duree:dernierTemps - debut });
+  }
+
+  if (!segments.length) return [];
+  segments.sort((a, b) => a.debut - b.debut);
+
+  const SEUIL_ACCORD = 80;
+  const groupes = [];
+  let groupeCourant = [segments[0]];
+
+  for (let i = 1; i < segments.length; i++) {
+    const seg = segments[i];
+    if (seg.debut - groupeCourant[0].debut <= SEUIL_ACCORD) {
+      groupeCourant.push(seg);
+    } else {
+      groupes.push(groupeCourant);
+      groupeCourant = [seg];
+    }
+  }
+  groupes.push(groupeCourant);
+
+  const resultat = [];
+  for (let i = 0; i < groupes.length; i++) {
+    const grp = groupes[i];
+    const debutGroupe = grp[0].debut;
+    const dureeGroupe = Math.max(...grp.map(s => s.duree));
+    const silenceAvant = i === 0
+      ? debutGroupe
+      : debutGroupe - (groupes[i-1][0].debut + Math.max(...groupes[i-1].map(s => s.duree)));
+    resultat.push({
+      notes: grp.map(s => s.noteId),
+      debutAbsolu: debutGroupe,
+      duree: Math.min(dureeGroupe, 9000),
+      silenceAvant: Math.max(0, silenceAvant)
+    });
+  }
+  return resultat;
+}
+
+function ecouterMorceau() {
+  const parsed = analyserEnregistrement();
+  if (!parsed.length) { afficherToast('Aucune note enregistree !'); return; }
+  afficherToast('Lecture du morceau...');
+  lireMorceau(parsed);
+}
+
+function lireMorceau(parsed, surNote, surFin) {
+  let t = 0;
+  parsed.forEach((ev, i) => {
+    t += ev.silenceAvant;
+    const tCapture = t;
+    const evCapture = ev;
+    const iCapture = i;
+    setTimeout(() => {
+      for (const nid of evCapture.notes) jouerNote(nid, evCapture.duree / 1000);
+      if (surNote) surNote(evCapture, iCapture);
+    }, tCapture);
+    t += evCapture.duree;
+  });
+  const total = t;
+  setTimeout(() => { if (surFin) surFin(); }, total + 200);
+}
+
+function afficherPartition() {
+  const parsed = analyserEnregistrement();
+  const ligne = document.getElementById('scoreLine');
+  ligne.innerHTML = '';
+  if (!parsed.length) { afficherToast('Aucune note enregistree !'); return; }
+
+  for (let i = 0; i < parsed.length; i++) {
+    const ev = parsed[i];
+    if (ev.silenceAvant > 150 && i > 0) {
+      const gap = document.createElement('span');
+      gap.className = 'score-gap';
+      gap.textContent = '\u00b7'.repeat(Math.max(1, Math.min(8, Math.round(ev.silenceAvant / 200))));
+      gap.style.width = Math.min(60, ev.silenceAvant / 30) + 'px';
+      ligne.appendChild(gap);
+    }
+    if (ev.notes.length === 1) {
+      const el = document.createElement('div');
+      el.className = 'score-note';
+      el.textContent = labelNote(ev.notes[0]);
+      ligne.appendChild(el);
+    } else {
+      const accord = document.createElement('div');
+      accord.className = 'score-chord';
+      for (const nid of ev.notes) {
+        const el = document.createElement('div');
+        el.className = 'score-note';
+        el.textContent = labelNote(nid);
+        accord.appendChild(el);
+      }
+      ligne.appendChild(accord);
+    }
+  }
+
+  const sv = document.getElementById('scoreView');
+  sv.style.display = sv.style.display === 'block' ? 'none' : 'block';
+}
+
+function labelNote(noteId) {
+  const n = NOTES.find(n => n.id === noteId);
+  return n ? n.fr : noteId;
+}
+
+function supprimerEnregistrement() {
+  evenementsRec = [];
+  document.getElementById('postRec').style.display = 'none';
+  document.getElementById('scoreView').style.display = 'none';
+  document.getElementById('fallZone').style.display = 'none';
+  modeRejouerActif = false;
+  afficherToast('Enregistrement supprime.');
+}
+
+let modeRejouerActif = false;
+let parsedRejouer = [];
+let indexRejouer = 0;
+let notesAttendues = null;
+let animationRejouerRef = null;
+let blocsChute = [];
+let dernierTempsAnim = null;
+
+const VITESSE_CHUTE = 130;
+
+function demarrerModeRejouer() {
+  parsedRejouer = analyserEnregistrement();
+  if (!parsedRejouer.length) { afficherToast('Aucune note !'); return; }
+  modeRejouerActif = true;
+  indexRejouer = 0;
+  compteurEchecs = 0;
+  notesAttendues = null;
+  blocsChute = [];
+  document.getElementById('fallZone').style.display = 'block';
+  document.getElementById('scoreView').style.display = 'none';
+  document.getElementById('postRec').style.display = 'none';
+
+  redimensionnerCanvas();
+  lancerSequenceRejouer();
+  afficherToast('Appuyez sur les touches quand elles arrivent !');
+}
+
+function redimensionnerCanvas() {
+  const canvas = document.getElementById('fallCanvas');
+  const zone = document.getElementById('fallZone');
+  canvas.width = zone.clientWidth;
+  canvas.height = zone.clientHeight;
+}
+
+let minuteriesRejouer = [];
+
+function lancerSequenceRejouer() {
+  indexRejouer = 0;
+  notesAttendues = null;
+  blocsChute = [];
+  dernierTempsAnim = null;
+
+  for (const id of minuteriesRejouer) clearTimeout(id);
+  minuteriesRejouer = [];
+
+  if (animationRejouerRef) cancelAnimationFrame(animationRejouerRef);
+
+  planifierBlocChute(0);
+  animer();
+}
+
+function planifierBlocChute(evIdx) {
+  if (evIdx >= parsedRejouer.length) return;
+  const ev = parsedRejouer[evIdx];
+  const fallZone = document.getElementById('fallZone');
+  const hauteurZone = fallZone.clientHeight;
+
+  function xNote(noteId) {
+    const noteEl = document.querySelector(`[data-note="${noteId}"]`);
+    if (!noteEl) return 0;
+    const rNote = noteEl.getBoundingClientRect();
+    const rZone = fallZone.getBoundingClientRect();
+    return rNote.left - rZone.left + rNote.width / 2;
+  }
+
+  function largeurNote(noteId) {
+    const noteEl = document.querySelector(`[data-note="${noteId}"]`);
+    if (!noteEl) return 40;
+    return noteEl.getBoundingClientRect().width * 0.82;
+  }
+
+  const tempsParcours = (hauteurZone / VITESSE_CHUTE) * 1000;
+  let delaiAbsolu = 0;
+  for (let i = 0; i < evIdx; i++) {
+    delaiAbsolu += parsedRejouer[i].silenceAvant + parsedRejouer[i].duree;
+  }
+  delaiAbsolu += ev.silenceAvant;
+  const delaiSpawn = Math.max(0, delaiAbsolu - tempsParcours);
+
+  const hauteurBloc = Math.max(16, Math.min(hauteurZone * 0.55, ev.duree / 1000 * VITESSE_CHUTE));
+
+  const id1 = setTimeout(() => {
+    if (!modeRejouerActif) return;
+    for (const noteId of ev.notes) {
+      blocsChute.push({
+        noteId,
+        x: xNote(noteId),
+        y: -hauteurBloc,
+        w: largeurNote(noteId),
+        h: hauteurBloc,
+        vitesse: VITESSE_CHUTE,
+        evIdx,
+        actif: true,
+        couleur: couleurBloc(noteId)
+      });
+    }
+    planifierBlocChute(evIdx + 1);
+
+    const id2 = setTimeout(() => {
+      if (!modeRejouerActif) return;
+      indexRejouer = evIdx;
+      notesAttendues = new Set(ev.notes);
+
+      const id3 = setTimeout(() => {
+        if (!modeRejouerActif) return;
+        if (notesAttendues && notesAttendues.size > 0) {
+          echecRejouer();
+        }
+      }, ev.duree + 300);
+      minuteriesRejouer.push(id3);
+    }, tempsParcours);
+    minuteriesRejouer.push(id2);
+  }, delaiSpawn);
+  minuteriesRejouer.push(id1);
+}
+
+function couleurBloc(noteId) {
+  const couleurs = ['#6c63ff','#ffb703','#ff6f91','#00c9a7','#845ec2','#ff9671','#ffc75f'];
+  const idx = NOTES.findIndex(n => n.id === noteId);
+  return couleurs[idx % couleurs.length];
+}
+
+function animer() {
+  if (!modeRejouerActif) return;
+  const canvas = document.getElementById('fallCanvas');
+  const ctx = canvas.getContext('2d');
+  const maintenant = performance.now();
+  const dt = dernierTempsAnim ? (maintenant - dernierTempsAnim) / 1000 : 0;
+  dernierTempsAnim = maintenant;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const fallZone = document.getElementById('fallZone');
+
+  ctx.strokeStyle = 'rgba(108,99,255,.06)';
+  ctx.lineWidth = 1;
+  for (const note of NOTES) {
+    const noteEl = document.querySelector(`[data-note="${note.id}"]`);
+    if (!noteEl) continue;
+    const rNote = noteEl.getBoundingClientRect();
+    const rZone = fallZone.getBoundingClientRect();
+    const cx = rNote.left - rZone.left + rNote.width / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, 0);
+    ctx.lineTo(cx, canvas.height);
+    ctx.stroke();
+  }
+
+  for (const bloc of blocsChute) {
+    if (!bloc.actif) continue;
+    bloc.y += bloc.vitesse * dt;
+
+    ctx.save();
+    ctx.fillStyle = bloc.couleur;
+    ctx.globalAlpha = 0.88;
+    ctx.beginPath();
+    ctx.roundRect(bloc.x - bloc.w / 2, bloc.y, bloc.w, bloc.h, 6);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${Math.min(13, bloc.w * 0.28)}px Segoe UI`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(labelNote(bloc.noteId), bloc.x, bloc.y + bloc.h / 2);
+    ctx.restore();
+
+    if (bloc.y > canvas.height + 10) bloc.actif = false;
+  }
+
+  blocsChute = blocsChute.filter(b => b.actif || b.y <= canvas.height + 10);
+
+  if (indexRejouer >= parsedRejouer.length - 1 && blocsChute.every(b => !b.actif)) {
+    modeRejouerActif = false;
+    dernierTempsAnim = null;
+    montrerOverlay('Bravo !', 'Vous avez rejoue tout le morceau !');
+    return;
+  }
+
+  animationRejouerRef = requestAnimationFrame(animer);
+}
+
+function verifierToucheRejouer(noteId) {
+  if (notesAttendues === null) {
+    echecRejouer();
+    return;
+  }
+  if (notesAttendues.has(noteId)) {
+    notesAttendues.delete(noteId);
+    const el = document.querySelector(`[data-note="${noteId}"]`);
+    if (el) {
+      el.classList.add('replay-ok');
+      setTimeout(() => el.classList.remove('replay-ok'), 280);
+    }
+  } else {
+    echecRejouer();
+  }
+}
+
+let compteurEchecs = 0;
+
+const commentairesMechants = [
+  "Rate. Encore. Surprenant.",
+  "C'etait pourtant pas complique...",
+  "Mon chat jouerait mieux, et il n'a pas de mains.",
+  "On dirait que tu joues avec tes coudes.",
+  "Beethoven vient de se retourner dans sa tombe.",
+  "T'as essaye de regarder les touches avant d'appuyer ?",
+  "Fascinant. Un nouveau record de nullite.",
+  "Les blocs tombent LENTEMENT. Tu les vois venir de loin.",
+  "Je commence a douter que tu aies deja entendu de la musique.",
+  "Meme un metronome serait gene pour toi.",
+  "Tu confonds piano et clavier de machine a ecrire ?",
+  "C'est pas du jazz, l'improvisation c'est pas demande.",
+  "Rappel : appuyer sur la bonne touche, au bon moment. Les deux.",
+  "Patience. Non, en fait, au stade ou tu en es, bonne chance.",
+  "A ce rythme tu finiras d'ici 2047.",
+  "Tu recommences depuis le debut. Comme toujours.",
+  "Incroyable. Meme rate differemment a chaque fois.",
+];
+
+function echecRejouer() {
+  modeRejouerActif = false;
+  dernierTempsAnim = null;
+  if (animationRejouerRef) cancelAnimationFrame(animationRejouerRef);
+  for (const id of minuteriesRejouer) clearTimeout(id);
+  minuteriesRejouer = [];
+
+  for (const noteId of touchesAppuyees) {
+    const el = document.querySelector(`[data-note="${noteId}"]`);
+    if (el) {
+      el.classList.add('replay-err');
+      setTimeout(() => el.classList.remove('replay-err'), 400);
+    }
+  }
+
+  compteurEchecs++;
+  const idx = (compteurEchecs - 1) % commentairesMechants.length;
+  afficherToast(commentairesMechants[idx]);
+
+  setTimeout(() => {
+    modeRejouerActif = true;
+    lancerSequenceRejouer();
+  }, 1400);
+}
+
+function montrerOverlay(titre, msg) {
+  const nom = document.getElementById('nomMorceau').value.trim() || 'votre morceau';
+  document.getElementById('overlayTitre').textContent = titre;
+  document.getElementById('overlayMsg').textContent = 'Vous avez rejoue "' + nom + '" sans faute. Impressionnant.';
+  document.getElementById('replayOverlay').classList.add('visible');
+}
+
+function fermerOverlay() {
+  document.getElementById('replayOverlay').classList.remove('visible');
+  document.getElementById('postRec').style.display = 'block';
+}
+
+let timerToast;
+function afficherToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(timerToast);
+  timerToast = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+(function genererConfettis() {
+  const couleurs = ['#6c63ff','#ffb703','#00c9a7','#ff6b6b','#a18cd1','#ffd93d'];
+  const conteneur = document.getElementById('confetti-container');
+  for (let i = 0; i < 28; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    const taille = 6 + Math.random() * 8;
+    const couleur = couleurs[Math.floor(Math.random() * couleurs.length)];
+    el.style.cssText = `
+      left: ${Math.random() * 100}vw;
+      width: ${taille}px; height: ${taille}px;
+      background: ${couleur};
+      border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+      --dur: ${4 + Math.random() * 8}s;
+      --delay: -${Math.random() * 10}s;
+      --rot: ${Math.random() > 0.5 ? '' : '-'}${180 + Math.random() * 360}deg;
+      opacity: 0.4;
+    `;
+    conteneur.appendChild(el);
+  }
+})();
+
+construireClavier();
+chargerSons().then(() => afficherToast('Piano pret ! Jouez en cliquant ou avec les touches C D E F G A B'));
+
+window.addEventListener('resize', () => {
+  if (modeRejouerActif) redimensionnerCanvas();
+});
+</script>
+</body>
+</html>
