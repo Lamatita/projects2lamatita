@@ -125,6 +125,7 @@
     db.prepare("CREATE TABLE IF NOT EXISTS user_presence (user_id INTEGER PRIMARY KEY, last_seen TEXT NOT NULL DEFAULT (datetime('now')))"),
     db.prepare("CREATE TABLE IF NOT EXISTS morpion_invites (id INTEGER PRIMARY KEY AUTOINCREMENT, from_user_id INTEGER NOT NULL, from_username TEXT NOT NULL, to_user_id INTEGER NOT NULL, to_username TEXT NOT NULL, room_code TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', created_at TEXT NOT NULL DEFAULT (datetime('now')))"),
     db.prepare("CREATE TABLE IF NOT EXISTS morpion_matches (id INTEGER PRIMARY KEY AUTOINCREMENT, player_x_id INTEGER, player_x_name TEXT NOT NULL, player_o_id INTEGER, player_o_name TEXT NOT NULL, winner TEXT, mode TEXT NOT NULL DEFAULT 'classic', room_code TEXT, created_at TEXT NOT NULL DEFAULT (datetime('now')))"),
+    db.prepare("CREATE TABLE IF NOT EXISTS piano_morceaux (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, author TEXT NOT NULL, name TEXT NOT NULL, events TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')))"),
   ]);
 
   try { await db.prepare("ALTER TABLE morpion_rooms ADD COLUMN player_x_id INTEGER").run(); } catch(e) {}
@@ -747,6 +748,49 @@ export async function onRequest(context) {
         mode: m.mode,
         date: m.created_at
       })));
+    }
+
+
+    if (path === '/api/piano/morceaux' && method === 'GET') {
+      const rows = await db.prepare("SELECT id, user_id, author, name, created_at FROM piano_morceaux ORDER BY created_at DESC LIMIT 200").all();
+      return jsonResponse(rows.results.map(r => ({ id: r.id, user_id: r.user_id, author: r.author, name: r.name, created_at: r.created_at })));
+    }
+
+    const pianoOneMatch = path.match(/^\/api\/piano\/morceaux\/(\d+)$/);
+    if (pianoOneMatch && method === 'GET') {
+      const id = parseInt(pianoOneMatch[1]);
+      const row = await db.prepare("SELECT id, user_id, author, name, events, created_at FROM piano_morceaux WHERE id = ?").bind(id).first();
+      if (!row) return jsonResponse({ message: 'Introuvable' }, 404);
+      let events = [];
+      try { events = JSON.parse(row.events); } catch(e) {}
+      return jsonResponse({ id: row.id, user_id: row.user_id, author: row.author, name: row.name, events, created_at: row.created_at });
+    }
+
+    if (path === '/api/piano/morceaux' && method === 'POST') {
+      const user = await getSessionUser(request, db);
+      if (!user) return jsonResponse({ message: 'Connectez-vous pour enregistrer un morceau' }, 401);
+      const body = await request.json();
+      const name = String(body.name || '').trim().slice(0, 60) || 'Sans titre';
+      const events = Array.isArray(body.events) ? body.events : [];
+      if (!events.length) return jsonResponse({ message: 'Morceau vide' }, 400);
+      if (events.length > 5000) return jsonResponse({ message: 'Morceau trop long' }, 400);
+      const eventsJson = JSON.stringify(events);
+      if (eventsJson.length > 200000) return jsonResponse({ message: 'Morceau trop volumineux' }, 400);
+      const countRow = await db.prepare("SELECT COUNT(*) as cnt FROM piano_morceaux WHERE user_id = ?").bind(user.id).first();
+      if (countRow && countRow.cnt >= 50) return jsonResponse({ message: 'Limite de 50 morceaux par utilisateur atteinte' }, 400);
+      await db.prepare("INSERT INTO piano_morceaux (user_id, author, name, events) VALUES (?, ?, ?, ?)").bind(user.id, user.username, name, eventsJson).run();
+      return jsonResponse({ ok: true });
+    }
+
+    if (pianoOneMatch && method === 'DELETE') {
+      const user = await getSessionUser(request, db);
+      if (!user) return jsonResponse({ message: 'Connectez-vous' }, 401);
+      const id = parseInt(pianoOneMatch[1]);
+      const row = await db.prepare("SELECT user_id FROM piano_morceaux WHERE id = ?").bind(id).first();
+      if (!row) return jsonResponse({ message: 'Introuvable' }, 404);
+      if (row.user_id !== user.id) return jsonResponse({ message: 'Vous n\'êtes pas propriétaire de ce morceau' }, 403);
+      await db.prepare("DELETE FROM piano_morceaux WHERE id = ?").bind(id).run();
+      return jsonResponse({ ok: true });
     }
 
     return jsonResponse({ message: 'Not found' }, 404);
