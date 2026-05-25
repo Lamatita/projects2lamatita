@@ -456,6 +456,25 @@ body {
   box-shadow: 0 3px 10px rgba(108,99,255,0.3);
 }
 .overlay-ok:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+.auth-notice { background:#fff8e1; border:2px dashed #ffb703; border-radius:12px; padding:10px 16px; color:#7a5a00; font-size:.85em; font-weight:600; text-align:center; }
+.auth-notice a { color:#6c63ff; text-decoration:none; font-weight:700; }
+.btn-save { background:#16a34a !important; color:#fff; }
+.biblio-card { margin-top:6px; }
+.biblio-title { font-size:1.1em; font-weight:800; color:#6c63ff; margin-bottom:14px; }
+.biblio-empty { text-align:center; color:#9992bb; font-size:.9em; padding:18px; font-style:italic; }
+.biblio-list { display:flex; flex-direction:column; gap:10px; }
+.biblio-item { background:#f7f3ff; border:2px solid #e0dce8; border-radius:12px; padding:12px 16px; display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+.biblio-info { flex:1; min-width:180px; }
+.biblio-name { font-weight:700; color:#2a2040; font-size:.95em; }
+.biblio-author { font-size:.78em; color:#9992bb; margin-top:2px; }
+.biblio-actions { display:flex; flex-wrap:wrap; gap:6px; }
+.biblio-btn { padding:6px 14px; border:none; border-radius:999px; font-family:"Segoe UI",sans-serif; font-weight:700; font-size:.75em; cursor:pointer; transition:all .18s; color:#fff; }
+.biblio-btn:hover { filter:brightness(1.1); transform:translateY(-1px); }
+.biblio-btn.listen { background:#6c63ff; }
+.biblio-btn.score  { background:#00c9a7; }
+.biblio-btn.replay { background:#ff6f91; }
+.biblio-btn.del    { background:#94a3b8; }
 </style>
 </head>
 <body>
@@ -469,7 +488,7 @@ body {
       <svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 12 15 12 15 21"/></svg>
       Accueil
     </a>
-    <button class="nav-btn" onclick="history.back()">
+    <button class="nav-btn" onclick="retourArriere()">
       <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
       Retour
     </button>
@@ -510,6 +529,7 @@ body {
         <button class="post-btn listen"  onclick="ecouterMorceau()">Ecouter</button>
         <button class="post-btn score"   onclick="afficherPartition()">Voir la partition</button>
         <button class="post-btn replay"  onclick="demarrerModeRejouer()">Rejouer</button>
+        <button class="post-btn btn-save" id="btnSauvegarder" style="display:none" onclick="sauvegarderMorceau()">Sauvegarder</button>
         <button class="post-btn discard" onclick="supprimerEnregistrement()">Supprimer</button>
       </div>
     </div>
@@ -519,6 +539,14 @@ body {
       <div class="keyboard" id="keyboard"></div>
     </div>
 
+  </div>
+
+  <div class="card biblio-card">
+    <div class="biblio-title">Bibliothèque de morceaux</div>
+    <div id="authNotice" class="auth-notice" style="display:none">
+      Connectez-vous depuis <a href="index.html">l'accueil</a> pour enregistrer vos propres morceaux. Sans compte vous pouvez quand même écouter ceux des autres.
+    </div>
+    <div id="biblioList" class="biblio-list"></div>
   </div>
 </div>
 
@@ -546,7 +574,7 @@ const NOTES = [
   { id:'A4',  fr:'La',   touche:'a', fichier:'La.m4a',          noir:false },
   { id:'Bb4', fr:'La#',  touche:'',  fichier:null,              noir:true  },
   { id:'B4',  fr:'Si',   touche:'b', fichier:'Si.m4a',          noir:false },
-  { id:'C5',  fr:'Do2',  touche:'C', fichier:'Do_l_autre.m4a',  noir:false },
+  { id:'C5',  fr:'Do2',  touche:'C', fichier:"Do l'autre.m4a",  noir:false },
 ];
 
 const NOTES_BLANCHES = NOTES.filter(n => !n.noir);
@@ -555,28 +583,46 @@ const LARGEUR_BLANCHE = 62;
 const contexteAudio = new (window.AudioContext || window.webkitAudioContext)();
 const tamponsAudio = {};
 
+const FREQ_HZ = { C4:261.63, Db4:277.18, D4:293.66, Eb4:311.13, E4:329.63, F4:349.23, Gb4:369.99, G4:392.00, Ab4:415.30, A4:440.00, Bb4:466.16, B4:493.88, C5:523.25 };
+
 async function chargerSons() {
-  for (const note of NOTES) {
-    if (!note.fichier) continue;
+  await Promise.all(NOTES.map(async note => {
+    if (!note.fichier) return;
     try {
-      const reponse = await fetch(note.fichier);
-      if (!reponse.ok) continue;
+      const reponse = await fetch(encodeURI(note.fichier));
+      if (!reponse.ok) return;
       const donnees = await reponse.arrayBuffer();
       tamponsAudio[note.id] = await contexteAudio.decodeAudioData(donnees);
     } catch(e) {
       console.warn('Son introuvable :', note.fichier, e);
     }
-  }
+  }));
+}
+
+function jouerNoteSynth(noteId, duree) {
+  const freq = FREQ_HZ[noteId]; if (!freq) return;
+  const t0 = contexteAudio.currentTime;
+  const dur = Math.max(0.15, Math.min(duree, 4));
+  const o1 = contexteAudio.createOscillator(); o1.type='triangle'; o1.frequency.value=freq;
+  const o2 = contexteAudio.createOscillator(); o2.type='sine'; o2.frequency.value=freq*2;
+  const g = contexteAudio.createGain();
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(0.32, t0+0.012);
+  g.gain.exponentialRampToValueAtTime(0.12, t0+0.25);
+  g.gain.exponentialRampToValueAtTime(0.0008, t0+dur);
+  const g2 = contexteAudio.createGain(); g2.gain.value=0.08;
+  o1.connect(g); o2.connect(g2); g2.connect(g); g.connect(contexteAudio.destination);
+  o1.start(t0); o2.start(t0); o1.stop(t0+dur+0.05); o2.stop(t0+dur+0.05);
+  sourcesActives[noteId] = { source: o1, source2: o2, gain: g };
 }
 
 const sourcesActives = {};
 
 function jouerNote(noteId, duree = 9) {
   if (contexteAudio.state === 'suspended') contexteAudio.resume();
-  const tampon = tamponsAudio[noteId];
-  if (!tampon) return;
-
   arreterNote(noteId, 0.03);
+  const tampon = tamponsAudio[noteId];
+  if (!tampon) { jouerNoteSynth(noteId, duree); return; }
 
   const source = contexteAudio.createBufferSource();
   const gain = contexteAudio.createGain();
@@ -600,6 +646,7 @@ function arreterNote(noteId, tempsFondu = 0.12) {
     s.gain.gain.cancelScheduledValues(contexteAudio.currentTime);
     s.gain.gain.setTargetAtTime(0, contexteAudio.currentTime, tempsFondu / 3);
     s.source.stop(contexteAudio.currentTime + tempsFondu);
+    if (s.source2) s.source2.stop(contexteAudio.currentTime + tempsFondu);
   } catch(e) {}
   delete sourcesActives[noteId];
 }
@@ -906,6 +953,13 @@ function labelNote(noteId) {
   return n ? n.fr : noteId;
 }
 
+function labelTouche(noteId) {
+  const n = NOTES.find(n => n.id === noteId);
+  if (!n) return noteId;
+  if (n.touche) return n.touche === 'C' ? 'Maj+C' : n.touche.toUpperCase();
+  return n.fr;
+}
+
 function supprimerEnregistrement() {
   evenementsRec = [];
   document.getElementById('postRec').style.display = 'none';
@@ -1078,7 +1132,7 @@ function animer() {
     ctx.font = `bold ${Math.min(13, bloc.w * 0.28)}px Segoe UI`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(labelNote(bloc.noteId), bloc.x, bloc.y + bloc.h / 2);
+    ctx.fillText(labelTouche(bloc.noteId), bloc.x, bloc.y + bloc.h / 2);
     ctx.restore();
 
     if (bloc.y > canvas.height + 10) bloc.actif = false;
@@ -1209,6 +1263,141 @@ chargerSons().then(() => afficherToast('Piano pret ! Jouez en cliquant ou avec l
 window.addEventListener('resize', () => {
   if (modeRejouerActif) redimensionnerCanvas();
 });
+
+function retourArriere() {
+  if (document.referrer && new URL(document.referrer, location.href).pathname !== location.pathname) {
+    history.back();
+  } else {
+    location.href = 'index.html';
+  }
+}
+
+let utilisateurCourant = null;
+
+async function chargerUtilisateur() {
+  try {
+    const r = await fetch('/api/auth/me', { credentials:'same-origin' });
+    if (r.ok) utilisateurCourant = await r.json();
+  } catch(e) {}
+  appliquerEtatAuth();
+}
+
+function appliquerEtatAuth() {
+  const recCtrl = document.getElementById('recControls');
+  const notice = document.getElementById('authNotice');
+  const btnSauv = document.getElementById('btnSauvegarder');
+  if (utilisateurCourant) {
+    notice.style.display = 'none';
+    if (btnSauv) btnSauv.style.display = '';
+    recCtrl.style.display = '';
+  } else {
+    notice.style.display = '';
+    if (btnSauv) btnSauv.style.display = 'none';
+    recCtrl.style.display = 'none';
+  }
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+}
+
+async function chargerBibliotheque() {
+  const list = document.getElementById('biblioList');
+  list.innerHTML = '<div class="biblio-empty">Chargement…</div>';
+  try {
+    const r = await fetch('/api/piano/morceaux', { credentials:'same-origin' });
+    if (!r.ok) throw new Error('http');
+    const morceaux = await r.json();
+    if (!morceaux.length) {
+      list.innerHTML = '<div class="biblio-empty">Aucun morceau pour le moment. Soyez le premier à en enregistrer !</div>';
+      return;
+    }
+    list.innerHTML = '';
+    for (const m of morceaux) {
+      const el = document.createElement('div');
+      el.className = 'biblio-item';
+      const peutSupprimer = utilisateurCourant && utilisateurCourant.id === m.user_id;
+      el.innerHTML =
+        '<div class="biblio-info">' +
+          '<div class="biblio-name">' + escapeHtml(m.name || 'Sans titre') + '</div>' +
+          '<div class="biblio-author">par ' + escapeHtml(m.author || 'inconnu') + '</div>' +
+        '</div>' +
+        '<div class="biblio-actions">' +
+          '<button class="biblio-btn listen" data-id="' + m.id + '" data-action="listen">Écouter</button>' +
+          '<button class="biblio-btn score" data-id="' + m.id + '" data-action="score">Partition</button>' +
+          '<button class="biblio-btn replay" data-id="' + m.id + '" data-action="replay">Rejouer</button>' +
+          (peutSupprimer ? '<button class="biblio-btn del" data-id="' + m.id + '" data-action="del">Supprimer</button>' : '') +
+        '</div>';
+      list.appendChild(el);
+    }
+    list.querySelectorAll('button[data-action]').forEach(btn => {
+      btn.addEventListener('click', () => actionMorceau(parseInt(btn.dataset.id), btn.dataset.action));
+    });
+  } catch(e) {
+    list.innerHTML = '<div class="biblio-empty">Impossible de charger la bibliothèque.</div>';
+  }
+}
+
+const morceauxCache = {};
+
+async function chargerMorceauComplet(id) {
+  if (morceauxCache[id]) return morceauxCache[id];
+  const r = await fetch('/api/piano/morceaux/' + id, { credentials:'same-origin' });
+  if (!r.ok) throw new Error('not_found');
+  const data = await r.json();
+  morceauxCache[id] = data;
+  return data;
+}
+
+async function actionMorceau(id, action) {
+  try {
+    if (action === 'del') {
+      if (!confirm('Supprimer ce morceau ?')) return;
+      const r = await fetch('/api/piano/morceaux/' + id, { method:'DELETE', credentials:'same-origin' });
+      if (r.ok) { afficherToast('Morceau supprimé.'); delete morceauxCache[id]; chargerBibliotheque(); }
+      else afficherToast('Suppression impossible.');
+      return;
+    }
+    const m = await chargerMorceauComplet(id);
+    evenementsRec = m.events || [];
+    if (contexteAudio.state === 'suspended') contexteAudio.resume();
+    document.getElementById('nomMorceau').value = m.name || '';
+    if (action === 'listen') {
+      const parsed = analyserEnregistrement();
+      if (!parsed.length) { afficherToast('Morceau vide.'); return; }
+      afficherToast('Lecture : ' + m.name);
+      lireMorceau(parsed);
+    } else if (action === 'score') {
+      document.getElementById('postRec').style.display = 'block';
+      afficherPartition();
+    } else if (action === 'replay') {
+      document.getElementById('postRec').style.display = 'block';
+      demarrerModeRejouer();
+    }
+  } catch(e) {
+    afficherToast('Erreur : ' + (e.message || 'inconnue'));
+  }
+}
+
+async function sauvegarderMorceau() {
+  if (!utilisateurCourant) { afficherToast('Connectez-vous pour sauvegarder.'); return; }
+  if (!evenementsRec.length) { afficherToast('Rien à sauvegarder !'); return; }
+  const nom = (document.getElementById('nomMorceau').value || '').trim() || 'Mon morceau';
+  try {
+    const r = await fetch('/api/piano/morceaux', {
+      method:'POST',
+      credentials:'same-origin',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ name: nom, events: evenementsRec })
+    });
+    if (r.ok) { afficherToast('Morceau sauvegardé !'); chargerBibliotheque(); }
+    else { const d = await r.json().catch(()=>({})); afficherToast('Échec : ' + (d.message || r.status)); }
+  } catch(e) {
+    afficherToast('Erreur réseau.');
+  }
+}
+
+chargerUtilisateur().then(() => chargerBibliotheque());
 </script>
 </body>
 </html>
