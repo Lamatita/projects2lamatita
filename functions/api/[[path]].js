@@ -273,11 +273,7 @@ export async function onRequest(context) {
 
       const existing = await db.prepare('SELECT id FROM users WHERE username = ?').bind(username).first();
       if (existing) {
-        await db.batch([
-          db.prepare('UPDATE users SET password = ? WHERE id = ?').bind(hashed, existing.id),
-          db.prepare('INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)').bind(sessionId, existing.id, expires),
-        ]);
-        return jsonResponse({ id: existing.id, username }, 200, { 'Set-Cookie': setSessionCookie(sessionId) });
+        return jsonResponse({ message: "Ce nom d'utilisateur est déjà pris" }, 409);
       }
 
       const results = await db.batch([
