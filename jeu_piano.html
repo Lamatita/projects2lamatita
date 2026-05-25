@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jeu Piano</title>
+<title>Pianophilie</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -460,6 +460,13 @@ body {
 .auth-notice { background:#fff8e1; border:2px dashed #ffb703; border-radius:12px; padding:10px 16px; color:#7a5a00; font-size:.85em; font-weight:600; text-align:center; }
 .auth-notice a { color:#6c63ff; text-decoration:none; font-weight:700; }
 .btn-save { background:#16a34a !important; color:#fff; }
+.barre-lecture { display:flex; flex-wrap:wrap; align-items:center; gap:10px; background:#f7f3ff; border:2px solid #d6cffc; border-radius:14px; padding:10px 16px; margin-bottom:14px; }
+.barre-lecture-label { font-weight:700; color:#6c63ff; font-size:.9em; flex:1; min-width:120px; }
+.barre-btn { padding:7px 18px; border:none; border-radius:999px; font-family:"Segoe UI",sans-serif; font-weight:700; font-size:.85em; cursor:pointer; transition:all .18s; color:#fff; background:#6c63ff; }
+.barre-btn:hover { filter:brightness(1.1); transform:translateY(-1px); }
+.barre-btn.stop { background:#94a3b8; }
+.quit-replay-btn { position:absolute; top:10px; right:12px; padding:7px 16px; border:none; border-radius:999px; background:rgba(148,163,184,.92); color:#fff; font-family:"Segoe UI",sans-serif; font-weight:700; font-size:.78em; cursor:pointer; z-index:10; box-shadow:0 3px 10px rgba(0,0,0,.18); }
+.quit-replay-btn:hover { background:#64748b; }
 .biblio-card { margin-top:6px; }
 .biblio-title { font-size:1.1em; font-weight:800; color:#6c63ff; margin-bottom:14px; }
 .biblio-empty { text-align:center; color:#9992bb; font-size:.9em; padding:18px; font-style:italic; }
@@ -495,11 +502,17 @@ body {
   </div>
 
   <div class="page-title">
-    <h1>Jeu Piano</h1>
+    <h1>Pianophilie</h1>
     <p>Jouez, enregistrez et apprenez vos morceaux</p>
   </div>
 
   <div class="card">
+
+    <div id="barreLecture" class="barre-lecture" style="display:none">
+      <span class="barre-lecture-label">Ecoute en cours</span>
+      <button class="barre-btn" id="btnPauseReprendre" onclick="togglePauseReprendre()">Pause</button>
+      <button class="barre-btn stop" onclick="arreterLecture(false)">Arreter l'ecoute</button>
+    </div>
 
     <div class="card-top-row">
       <div class="rec-controls" id="recControls">
@@ -510,7 +523,8 @@ body {
       </div>
     </div>
 
-    <div class="fall-zone" id="fallZone">
+    <div class="fall-zone" id="fallZone" style="position:relative;">
+      <button id="btnQuitterRejouer" class="quit-replay-btn" style="display:none" onclick="quitterModeRejouer()">Quitter le mode rejouer</button>
       <canvas id="fallCanvas"></canvas>
     </div>
 
@@ -534,7 +548,7 @@ body {
       </div>
     </div>
 
-    <div class="piano-hint">Cliquez sur les touches ou utilisez le clavier : C D E F G A B (Maj+C = Do aigu)</div>
+    <div class="piano-hint">Cliquez sur les touches ou utilisez le clavier : C D E F G A B (C+2 = Do aigu)</div>
     <div class="keyboard-outer">
       <div class="keyboard" id="keyboard"></div>
     </div>
@@ -915,21 +929,109 @@ function ecouterMorceau() {
   lireMorceau(parsed);
 }
 
+let lectureEnCours = null;
+
 function lireMorceau(parsed, surNote, surFin) {
+  arreterLecture(true);
+  const planning = [];
   let t = 0;
-  parsed.forEach((ev, i) => {
-    t += ev.silenceAvant;
-    const tCapture = t;
-    const evCapture = ev;
-    const iCapture = i;
-    setTimeout(() => {
-      for (const nid of evCapture.notes) jouerNote(nid, evCapture.duree / 1000);
-      if (surNote) surNote(evCapture, iCapture);
-    }, tCapture);
-    t += evCapture.duree;
-  });
-  const total = t;
-  setTimeout(() => { if (surFin) surFin(); }, total + 200);
+  for (let i = 0; i < parsed.length; i++) {
+    t += parsed[i].silenceAvant;
+    planning.push({ t, ev: parsed[i], i });
+    t += parsed[i].duree;
+  }
+  const dureeTotale = t;
+  lectureEnCours = {
+    planning, surNote, surFin,
+    idx: 0,
+    debut: 0,
+    pauseDebut: 0,
+    enPause: false,
+    timeouts: [],
+    finTimeout: null,
+    dureeTotale,
+    progres: 0,
+  };
+  afficherBarreLecture();
+  reprendreLectureInterne(0);
+}
+
+function reprendreLectureInterne(offsetMs) {
+  const l = lectureEnCours;
+  if (!l) return;
+  l.debut = performance.now() - offsetMs;
+  l.enPause = false;
+  for (let k = l.idx; k < l.planning.length; k++) {
+    const item = l.planning[k];
+    const delai = item.t - offsetMs;
+    if (delai < 0) continue;
+    const idx = k;
+    const to = setTimeout(() => {
+      if (!lectureEnCours) return;
+      lectureEnCours.idx = idx + 1;
+      lectureEnCours.progres = item.t + item.ev.duree;
+      for (const nid of item.ev.notes) jouerNote(nid, item.ev.duree / 1000);
+      if (l.surNote) l.surNote(item.ev, idx);
+    }, delai);
+    l.timeouts.push(to);
+  }
+  const finDelai = Math.max(0, l.dureeTotale - offsetMs) + 200;
+  l.finTimeout = setTimeout(() => {
+    if (l.surFin) l.surFin();
+    finirLecture();
+  }, finDelai);
+  majBoutonsLecture();
+}
+
+function pauseLecture() {
+  const l = lectureEnCours;
+  if (!l || l.enPause) return;
+  l.enPause = true;
+  l.pauseDebut = performance.now();
+  for (const id of l.timeouts) clearTimeout(id);
+  l.timeouts = [];
+  if (l.finTimeout) { clearTimeout(l.finTimeout); l.finTimeout = null; }
+  for (const noteId of NOTES.map(n => n.id)) arreterNote(noteId, 0.05);
+  majBoutonsLecture();
+}
+
+function reprendreLecture() {
+  const l = lectureEnCours;
+  if (!l || !l.enPause) return;
+  const offset = l.pauseDebut - l.debut;
+  reprendreLectureInterne(offset);
+}
+
+function arreterLecture(silencieux) {
+  const l = lectureEnCours;
+  if (!l) { if (!silencieux) cacherBarreLecture(); return; }
+  for (const id of l.timeouts) clearTimeout(id);
+  if (l.finTimeout) clearTimeout(l.finTimeout);
+  for (const noteId of NOTES.map(n => n.id)) arreterNote(noteId, 0.05);
+  lectureEnCours = null;
+  cacherBarreLecture();
+  if (!silencieux) afficherToast('Lecture arretee.');
+}
+
+function finirLecture() { lectureEnCours = null; cacherBarreLecture(); }
+
+function afficherBarreLecture() {
+  const b = document.getElementById('barreLecture');
+  if (b) { b.style.display = 'flex'; majBoutonsLecture(); }
+}
+function cacherBarreLecture() {
+  const b = document.getElementById('barreLecture');
+  if (b) b.style.display = 'none';
+}
+function majBoutonsLecture() {
+  const btn = document.getElementById('btnPauseReprendre');
+  if (!btn || !lectureEnCours) return;
+  btn.textContent = lectureEnCours.enPause ? 'Reprendre' : 'Pause';
+}
+function togglePauseReprendre() {
+  if (!lectureEnCours) return;
+  if (lectureEnCours.enPause) reprendreLecture();
+  else pauseLecture();
 }
 
 function afficherPartition() {
@@ -1012,6 +1114,7 @@ function demarrerModeRejouer() {
   document.getElementById('fallZone').style.display = 'block';
   document.getElementById('scoreView').style.display = 'none';
   document.getElementById('postRec').style.display = 'none';
+  const btnQ = document.getElementById('btnQuitterRejouer'); if (btnQ) btnQ.style.display = 'block';
 
   redimensionnerCanvas();
   lancerSequenceRejouer();
@@ -1165,6 +1268,7 @@ function animer() {
   if (indexRejouer >= parsedRejouer.length - 1 && blocsChute.every(b => !b.actif)) {
     modeRejouerActif = false;
     dernierTempsAnim = null;
+    const bq = document.getElementById('btnQuitterRejouer'); if (bq) bq.style.display = 'none';
     montrerOverlay('Bravo !', 'Vous avez rejoue tout le morceau !');
     return;
   }
@@ -1277,14 +1381,48 @@ function afficherToast(msg) {
     `;
     conteneur.appendChild(el);
   }
+  for (let i = 0; i < 14; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    const taille = 18 + Math.random() * 16;
+    el.textContent = '\uD83E\uDD99';
+    el.style.cssText = `
+      left: ${Math.random() * 100}vw;
+      width: ${taille}px; height: ${taille}px;
+      font-size: ${taille}px;
+      line-height: ${taille}px;
+      text-align: center;
+      background: transparent;
+      --dur: ${6 + Math.random() * 10}s;
+      --delay: -${Math.random() * 14}s;
+      --rot: ${Math.random() > 0.5 ? '' : '-'}${180 + Math.random() * 360}deg;
+      opacity: 0.55;
+    `;
+    conteneur.appendChild(el);
+  }
 })();
 
 construireClavier();
-chargerSons().then(() => afficherToast('Piano pret ! Jouez en cliquant ou avec les touches C D E F G A B'));
+chargerSons().then(() => afficherToast('Pianophilie prete ! Jouez en cliquant ou avec les touches C D E F G A B'));
 
 window.addEventListener('resize', () => {
   if (modeRejouerActif) redimensionnerCanvas();
 });
+
+function quitterModeRejouer() {
+  modeRejouerActif = false;
+  dernierTempsAnim = null;
+  if (animationRejouerRef) cancelAnimationFrame(animationRejouerRef);
+  for (const id of minuteriesRejouer) clearTimeout(id);
+  minuteriesRejouer = [];
+  blocsChute = [];
+  notesAttendues = null;
+  for (const noteId of NOTES.map(n => n.id)) arreterNote(noteId, 0.05);
+  const btnQ = document.getElementById('btnQuitterRejouer'); if (btnQ) btnQ.style.display = 'none';
+  document.getElementById('fallZone').style.display = 'none';
+  document.getElementById('postRec').style.display = 'block';
+  afficherToast('Retour au menu de Pianophilie.');
+}
 
 function retourArriere() {
   if (document.referrer && new URL(document.referrer, location.href).pathname !== location.pathname) {
