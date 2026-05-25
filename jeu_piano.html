@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pianophilie</title>
+<title>Jeu Piano</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -495,7 +495,7 @@ body {
   </div>
 
   <div class="page-title">
-    <h1>Pianophilie</h1>
+    <h1>Jeu Piano</h1>
     <p>Jouez, enregistrez et apprenez vos morceaux</p>
   </div>
 
@@ -574,7 +574,7 @@ const NOTES = [
   { id:'A4',  fr:'La',   touche:'a', fichier:'La.m4a',          noir:false },
   { id:'Bb4', fr:'La#',  touche:'',  fichier:null,              noir:true  },
   { id:'B4',  fr:'Si',   touche:'b', fichier:'Si.m4a',          noir:false },
-  { id:'C5',  fr:'Do2',  touche:'C', fichier:"Do l'autre.m4a",  noir:false },
+  { id:'C5',  fr:'Do2',  touche:'',  fichier:"Do l'autre.m4a",  noir:false },
 ];
 
 const NOTES_BLANCHES = NOTES.filter(n => !n.noir);
@@ -730,28 +730,49 @@ for (const note of NOTES) {
   if (note.touche) correspondanceTouches[note.touche.toLowerCase()] = note.id;
 }
 
+const touchesClavierEnfoncees = new Set();
+
+function recalculerComboDo() {
+  const cActive = touchesClavierEnfoncees.has('c');
+  const deuxActive = touchesClavierEnfoncees.has('2');
+  const veutDo2 = cActive && deuxActive;
+  const veutDo = cActive && !deuxActive;
+  if (veutDo2) {
+    if (touchesAppuyees.has('C4')) relacheTouche('C4');
+    if (!touchesAppuyees.has('C5')) appuiTouche('C5');
+  } else if (veutDo) {
+    if (touchesAppuyees.has('C5')) relacheTouche('C5');
+    if (!touchesAppuyees.has('C4')) appuiTouche('C4');
+  } else {
+    if (touchesAppuyees.has('C5')) relacheTouche('C5');
+    if (touchesAppuyees.has('C4')) relacheTouche('C4');
+  }
+}
+
 document.addEventListener('keydown', e => {
   if (e.repeat) return;
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   const k = e.key.toLowerCase();
-  let noteId = null;
-  if (e.shiftKey && k === 'c') {
-    noteId = 'C5';
-  } else if (!e.shiftKey && correspondanceTouches[k]) {
-    noteId = correspondanceTouches[k];
+  if (k === 'c' || k === '2') {
+    touchesClavierEnfoncees.add(k);
+    recalculerComboDo();
+    return;
   }
-  if (noteId) appuiTouche(noteId);
+  if (!e.shiftKey && correspondanceTouches[k]) {
+    appuiTouche(correspondanceTouches[k]);
+  }
 });
 
 document.addEventListener('keyup', e => {
   const k = e.key.toLowerCase();
-  let noteId = null;
-  if (k === 'c' && touchesAppuyees.has('C5')) {
-    noteId = 'C5';
-  } else if (correspondanceTouches[k]) {
-    noteId = correspondanceTouches[k];
+  if (k === 'c' || k === '2') {
+    touchesClavierEnfoncees.delete(k);
+    recalculerComboDo();
+    return;
   }
-  if (noteId) relacheTouche(noteId);
+  if (correspondanceTouches[k]) {
+    relacheTouche(correspondanceTouches[k]);
+  }
 });
 
 let enEnregistrement = false;
@@ -954,9 +975,10 @@ function labelNote(noteId) {
 }
 
 function labelTouche(noteId) {
+  if (noteId === 'C5') return 'C+2';
   const n = NOTES.find(n => n.id === noteId);
   if (!n) return noteId;
-  if (n.touche) return n.touche === 'C' ? 'Maj+C' : n.touche.toUpperCase();
+  if (n.touche) return n.touche.toUpperCase();
   return n.fr;
 }
 
