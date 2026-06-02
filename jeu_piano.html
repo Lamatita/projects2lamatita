@@ -108,8 +108,20 @@ body {
 .card-top-row {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
 }
+.mode-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.btn-mode {
+  padding: 8px 16px; border: 2px solid #d4cef5; border-radius: 999px;
+  background: #fff; color: #6c63ff; font-family: "Segoe UI", sans-serif;
+  font-weight: 700; font-size: 0.8em; cursor: pointer; transition: all 0.18s;
+}
+.btn-mode:hover { background: #f0ecff; transform: translateY(-1px); }
+.btn-mode.actif { background: #6c63ff; color: #fff; border-color: #6c63ff; }
+.btn-paysage { display: none; }
+@media (max-width: 700px) { .btn-paysage { display: inline-block; } }
 
 .rec-controls {
   display: flex;
@@ -482,6 +494,34 @@ body {
 .biblio-btn.score  { background:#00c9a7; }
 .biblio-btn.replay { background:#ff6f91; }
 .biblio-btn.del    { background:#94a3b8; }
+
+body.landscape-mode { overflow: hidden; }
+body.landscape-mode #confetti-container,
+body.landscape-mode .nav-row,
+body.landscape-mode .page-title,
+body.landscape-mode .biblio-card,
+body.landscape-mode .card-top-row,
+body.landscape-mode .post-rec,
+body.landscape-mode .score-view,
+body.landscape-mode .piano-hint,
+body.landscape-mode .barre-lecture { display: none !important; }
+body.landscape-mode .page-wrapper { padding: 0; max-width: 100%; margin: 0; gap: 0; }
+body.landscape-mode .card {
+  border-radius: 0; padding: 0; margin: 0; box-shadow: none;
+  height: 100vh; height: 100dvh; display: flex; flex-direction: column;
+  background: #f7f3ff; gap: 0;
+}
+body.landscape-mode .fall-zone {
+  display: block !important; flex: 1; height: auto; min-height: 0;
+  border-radius: 0; border: none; border-bottom: 2px solid #e0dce8;
+}
+body.landscape-mode .keyboard-outer { overflow: visible; padding: 0; flex-shrink: 0; }
+body.landscape-mode .keyboard { width: 100vw; }
+body.landscape-mode .key-white {
+  flex: 1 1 0; width: auto; height: 34vh; height: 34dvh;
+  border-radius: 0; border-bottom: none;
+}
+body.landscape-mode .key-black { height: 20vh; height: 20dvh; }
 </style>
 </head>
 <body>
@@ -515,6 +555,10 @@ body {
     </div>
 
     <div class="card-top-row">
+      <div class="mode-controls">
+        <button class="btn-mode" id="btnSynth" onclick="basculerSynth()">Mode synthé : OFF</button>
+        <button class="btn-mode btn-paysage" id="btnPaysage" onclick="basculerPaysage()">🔄 Plein écran</button>
+      </div>
       <div class="rec-controls" id="recControls">
         <button class="btn-rec" onclick="demarrerEnregistrement()">
           <span style="width:9px;height:9px;border-radius:50%;background:#fff;opacity:.8;flex-shrink:0;display:inline-block;"></span>
@@ -576,19 +620,19 @@ body {
 
 <script>
 const NOTES = [
-  { id:'C4',  fr:'Do',   touche:'c', fichier:'Do.m4a',         noir:false },
-  { id:'Db4', fr:'Do#',  touche:'',  fichier:null,              noir:true  },
-  { id:'D4',  fr:'Re',   touche:'d', fichier:'Ré.m4a',          noir:false },
-  { id:'Eb4', fr:'Re#',  touche:'',  fichier:null,              noir:true  },
-  { id:'E4',  fr:'Mi',   touche:'e', fichier:'Mi.m4a',          noir:false },
-  { id:'F4',  fr:'Fa',   touche:'f', fichier:'Fa.m4a',          noir:false },
-  { id:'Gb4', fr:'Fa#',  touche:'',  fichier:null,              noir:true  },
-  { id:'G4',  fr:'Sol',  touche:'g', fichier:'Sol.m4a',         noir:false },
-  { id:'Ab4', fr:'Sol#', touche:'',  fichier:null,              noir:true  },
-  { id:'A4',  fr:'La',   touche:'a', fichier:'La.m4a',          noir:false },
-  { id:'Bb4', fr:'La#',  touche:'',  fichier:null,              noir:true  },
-  { id:'B4',  fr:'Si',   touche:'b', fichier:'Si.m4a',          noir:false },
-  { id:'C5',  fr:'Do2',  touche:'',  fichier:"Do l'autre.m4a",  noir:false },
+  { id:'C4',  fr:'Do',   touche:'c', fichier:'Do4.m4a',       noir:false },
+  { id:'Db4', fr:'Ré♭',  touche:'',  fichier:'Re-bemol.m4a',  noir:true  },
+  { id:'D4',  fr:'Re',   touche:'d', fichier:'Ré4.m4a',       noir:false },
+  { id:'Eb4', fr:'Mi♭',  touche:'',  fichier:null,            noir:true  },
+  { id:'E4',  fr:'Mi',   touche:'e', fichier:'Mi4.m4a',       noir:false },
+  { id:'F4',  fr:'Fa',   touche:'f', fichier:'Fa4.m4a',       noir:false },
+  { id:'Gb4', fr:'Sol♭', touche:'',  fichier:'sol-bemol.m4a', noir:true  },
+  { id:'G4',  fr:'Sol',  touche:'g', fichier:'Sol4.m4a',      noir:false },
+  { id:'Ab4', fr:'La♭',  touche:'',  fichier:'la-bemol.m4a',  noir:true  },
+  { id:'A4',  fr:'La',   touche:'a', fichier:'La5.m4a',       noir:false },
+  { id:'Bb4', fr:'Si♭',  touche:'',  fichier:null,            noir:true  },
+  { id:'B4',  fr:'Si',   touche:'b', fichier:'Si5.m4a',       noir:false },
+  { id:'C5',  fr:'Do2',  touche:'',  fichier:'Do5.m4a',       noir:false },
 ];
 
 const NOTES_BLANCHES = NOTES.filter(n => !n.noir);
@@ -631,12 +675,13 @@ function jouerNoteSynth(noteId, duree) {
 }
 
 const sourcesActives = {};
+let modeSynthActif = false;
 
 function jouerNote(noteId, duree = 9) {
   if (contexteAudio.state === 'suspended') contexteAudio.resume();
   arreterNote(noteId, 0.03);
   const tampon = tamponsAudio[noteId];
-  if (!tampon) { jouerNoteSynth(noteId, duree); return; }
+  if (modeSynthActif || !tampon) { jouerNoteSynth(noteId, duree); return; }
 
   const source = contexteAudio.createBufferSource();
   const gain = contexteAudio.createGain();
@@ -693,7 +738,9 @@ function construireClavier() {
     const el = document.createElement('div');
     el.className = 'key-black';
     el.dataset.note = note.id;
-    el.style.left = (offset * LARGEUR_BLANCHE + (LARGEUR_BLANCHE - 40) / 2) + 'px';
+    const totalBlanches = NOTES_BLANCHES.length;
+    el.style.left = ((offset * LARGEUR_BLANCHE + (LARGEUR_BLANCHE - 40) / 2) / (totalBlanches * LARGEUR_BLANCHE) * 100) + '%';
+    el.style.width = (40 / (totalBlanches * LARGEUR_BLANCHE) * 100) + '%';
     el.addEventListener('mousedown',  e => { e.preventDefault(); e.stopPropagation(); appuiTouche(note.id); });
     el.addEventListener('mouseup',    e => { e.preventDefault(); e.stopPropagation(); relacheTouche(note.id); });
     el.addEventListener('mouseleave', () => { if (touchesAppuyees.has(note.id)) relacheTouche(note.id); });
@@ -736,6 +783,10 @@ function relacheTouche(noteId) {
 
   if (enEnregistrement && !enPause) {
     enregistrerRelache(noteId, performance.now());
+  }
+
+  if (modeRejouerActif) {
+    verifierRelacheRejouer(noteId);
   }
 }
 
@@ -1103,6 +1154,43 @@ let dernierTempsAnim = null;
 
 const VITESSE_CHUTE = 130;
 
+function basculerSynth() {
+  modeSynthActif = !modeSynthActif;
+  const b = document.getElementById('btnSynth');
+  if (b) {
+    b.textContent = 'Mode synthé : ' + (modeSynthActif ? 'ON' : 'OFF');
+    b.classList.toggle('actif', modeSynthActif);
+  }
+}
+
+let estPaysage = false;
+function basculerPaysage() {
+  if (!estPaysage) {
+    const el = document.documentElement;
+    if (el.requestFullscreen) el.requestFullscreen().catch(function(){});
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(function(){});
+    document.body.classList.add('landscape-mode');
+    estPaysage = true;
+    const b = document.getElementById('btnPaysage'); if (b) b.textContent = '✕ Quitter le plein écran';
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen().catch(function(){});
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+    document.body.classList.remove('landscape-mode');
+    estPaysage = false;
+    const b = document.getElementById('btnPaysage'); if (b) b.textContent = '🔄 Plein écran';
+  }
+  setTimeout(function(){ if (modeRejouerActif) redimensionnerCanvas(); }, 280);
+}
+document.addEventListener('fullscreenchange', function(){
+  if (!document.fullscreenElement && estPaysage) {
+    document.body.classList.remove('landscape-mode');
+    estPaysage = false;
+    const b = document.getElementById('btnPaysage'); if (b) b.textContent = '🔄 Plein écran';
+  }
+});
+
 function demarrerModeRejouer() {
   parsedRejouer = analyserEnregistrement();
   if (!parsedRejouer.length) { afficherToast('Aucune note !'); return; }
@@ -1110,6 +1198,7 @@ function demarrerModeRejouer() {
   indexRejouer = 0;
   compteurEchecs = 0;
   notesAttendues = null;
+  notesEnCoursRejouer = {};
   blocsChute = [];
   document.getElementById('fallZone').style.display = 'block';
   document.getElementById('scoreView').style.display = 'none';
@@ -1134,6 +1223,7 @@ function lancerSequenceRejouer() {
   indexRejouer = 0;
   notesAttendues = null;
   blocsChute = [];
+  viderNotesEnCours();
   dernierTempsAnim = null;
 
   for (const id of minuteriesRejouer) clearTimeout(id);
@@ -1196,6 +1286,7 @@ function planifierBlocChute(evIdx) {
       if (!modeRejouerActif) return;
       indexRejouer = evIdx;
       notesAttendues = new Set(ev.notes);
+      dureeEvenementCourant = ev.duree;
 
       const id3 = setTimeout(() => {
         if (!modeRejouerActif) return;
@@ -1265,7 +1356,7 @@ function animer() {
 
   blocsChute = blocsChute.filter(b => b.actif || b.y <= canvas.height + 10);
 
-  if (indexRejouer >= parsedRejouer.length - 1 && blocsChute.every(b => !b.actif)) {
+  if (indexRejouer >= parsedRejouer.length - 1 && blocsChute.every(b => !b.actif) && Object.keys(notesEnCoursRejouer).length === 0) {
     modeRejouerActif = false;
     dernierTempsAnim = null;
     const bq = document.getElementById('btnQuitterRejouer'); if (bq) bq.style.display = 'none';
@@ -1284,16 +1375,48 @@ function verifierToucheRejouer(noteId) {
   if (notesAttendues.has(noteId)) {
     notesAttendues.delete(noteId);
     const el = document.querySelector(`[data-note="${noteId}"]`);
-    if (el) {
-      el.classList.add('replay-ok');
-      setTimeout(() => el.classList.remove('replay-ok'), 280);
-    }
+    if (el) el.classList.add('replay-ok');
+    const dureeAttendue = dureeEvenementCourant;
+    const maxOk = Math.max(450, dureeAttendue * 2 + 500);
+    const to = setTimeout(() => {
+      if (modeRejouerActif && notesEnCoursRejouer[noteId]) {
+        echecRejouer('Note tenue trop longtemps !');
+      }
+    }, maxOk);
+    notesEnCoursRejouer[noteId] = { pressTime: performance.now(), dureeAttendue, timeoutTropLong: to };
   } else {
     echecRejouer();
   }
 }
 
+function verifierRelacheRejouer(noteId) {
+  const info = notesEnCoursRejouer[noteId];
+  if (!info) return;
+  clearTimeout(info.timeoutTropLong);
+  delete notesEnCoursRejouer[noteId];
+  const el = document.querySelector(`[data-note="${noteId}"]`);
+  const hold = performance.now() - info.pressTime;
+  const minOk = Math.max(120, info.dureeAttendue * 0.4);
+  const maxOk = Math.max(450, info.dureeAttendue * 2 + 500);
+  if (hold < minOk) {
+    echecRejouer('Note relâchée trop tôt !');
+  } else if (hold > maxOk) {
+    echecRejouer('Note tenue trop longtemps !');
+  } else if (el) {
+    el.classList.remove('replay-ok');
+  }
+}
+
 let compteurEchecs = 0;
+let notesEnCoursRejouer = {};
+let dureeEvenementCourant = 0;
+
+function viderNotesEnCours() {
+  for (const k in notesEnCoursRejouer) {
+    if (notesEnCoursRejouer[k].timeoutTropLong) clearTimeout(notesEnCoursRejouer[k].timeoutTropLong);
+  }
+  notesEnCoursRejouer = {};
+}
 
 const commentairesMechants = [
   "Rate. Encore. Surprenant.",
@@ -1315,12 +1438,13 @@ const commentairesMechants = [
   "Incroyable. Meme rate differemment a chaque fois.",
 ];
 
-function echecRejouer() {
+function echecRejouer(messagePerso) {
   modeRejouerActif = false;
   dernierTempsAnim = null;
   if (animationRejouerRef) cancelAnimationFrame(animationRejouerRef);
   for (const id of minuteriesRejouer) clearTimeout(id);
   minuteriesRejouer = [];
+  viderNotesEnCours();
 
   for (const noteId of touchesAppuyees) {
     const el = document.querySelector(`[data-note="${noteId}"]`);
@@ -1332,7 +1456,7 @@ function echecRejouer() {
 
   compteurEchecs++;
   const idx = (compteurEchecs - 1) % commentairesMechants.length;
-  afficherToast(commentairesMechants[idx]);
+  afficherToast(messagePerso ? messagePerso + ' On recommence.' : commentairesMechants[idx]);
 
   setTimeout(() => {
     modeRejouerActif = true;
