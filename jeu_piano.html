@@ -1459,6 +1459,12 @@ function echecRejouer(messagePerso) {
   afficherToast(messagePerso ? messagePerso + ' On recommence.' : commentairesMechants[idx]);
 
   setTimeout(() => {
+    for (const noteId of Array.from(touchesAppuyees)) {
+      arreterNote(noteId, 0.05);
+      const el = document.querySelector(`[data-note="${noteId}"]`);
+      if (el) el.classList.remove('active', 'replay-ok', 'replay-err');
+    }
+    touchesAppuyees.clear();
     modeRejouerActif = true;
     lancerSequenceRejouer();
   }, 1400);
