@@ -345,7 +345,15 @@ export async function onRequest(context) {
       const id = parseInt(adminResetMatch[1]);
       const target = await db.prepare('SELECT id, username FROM users WHERE id = ?').bind(id).first();
       if (!target) return jsonResponse({ message: 'Utilisateur introuvable' }, 404);
-      const temp = genTempPassword();
+      let body = {};
+      try { body = await request.json(); } catch (e) {}
+      let temp;
+      if (body && body.password != null && String(body.password).trim() !== '') {
+        temp = String(body.password).trim();
+        if (temp.length < 4) return jsonResponse({ message: 'Le mot de passe doit contenir au moins 4 caractères' }, 400);
+      } else {
+        temp = genTempPassword();
+      }
       const hashed = await hashPassword(temp);
       await db.prepare('UPDATE users SET password = ? WHERE id = ?').bind(hashed, id).run();
       await db.prepare('DELETE FROM sessions WHERE user_id = ?').bind(id).run();
@@ -359,8 +367,9 @@ export async function onRequest(context) {
       if (!ADMIN_USERNAMES.includes(user.username)) return jsonResponse({ message: 'Accès refusé' }, 403);
       const id = parseInt(adminUserMatch[1]);
       if (id === user.id) return jsonResponse({ message: 'Vous ne pouvez pas supprimer votre propre compte' }, 400);
-      const target = await db.prepare('SELECT id FROM users WHERE id = ?').bind(id).first();
+      const target = await db.prepare('SELECT id, username FROM users WHERE id = ?').bind(id).first();
       if (!target) return jsonResponse({ message: 'Utilisateur introuvable' }, 404);
+      if (ADMIN_USERNAMES.includes(target.username)) return jsonResponse({ message: 'Ce compte ne peut pas être supprimé' }, 403);
       await db.prepare('DELETE FROM sessions WHERE user_id = ?').bind(id).run();
       await db.prepare('DELETE FROM group_members WHERE user_id = ?').bind(id).run();
       await db.prepare('UPDATE game_scores SET user_id = NULL WHERE user_id = ?').bind(id).run();
