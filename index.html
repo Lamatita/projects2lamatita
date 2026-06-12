@@ -1352,7 +1352,10 @@ function loadAdminUsers() {
     var box = document.getElementById("admin-content");
     box.innerHTML = '<div style="text-align:center;padding:20px;color:#888;">' + t("loading") + '</div>';
     fetch("/api/admin/users", { credentials: "include" })
-        .then(function(r) { return r.ok ? r.json() : []; })
+        .then(function(r) {
+            if (!r.ok) { return r.json().then(function(d) { throw new Error(d.message || "Erreur"); }); }
+            return r.json();
+        })
         .then(function(users) {
             adminUsersCache = users || [];
             if (!adminUsersCache.length) {
@@ -1370,8 +1373,8 @@ function loadAdminUsers() {
             });
             box.innerHTML = html;
         })
-        .catch(function() {
-            box.innerHTML = '<div style="text-align:center;padding:20px;color:#e74c3c;">' + t("loadError") + '</div>';
+        .catch(function(err) {
+            box.innerHTML = '<div style="text-align:center;padding:20px;color:#e74c3c;">' + escapeHtml((err && err.message) || t("loadError")) + '</div>';
         });
 }
 
