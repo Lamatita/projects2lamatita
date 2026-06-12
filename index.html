@@ -38,6 +38,8 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .top-btn {
@@ -428,6 +430,14 @@ body {
 }
 
 .group-modal { width: 480px; }
+.admin-modal { width: 540px; max-width: 95vw; }
+.admin-user-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border:1px solid #ece8f7; border-radius:12px; margin-bottom:8px; }
+.admin-user-name { font-weight:700; color:#2a2040; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.admin-user-actions { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.admin-btn-reset { background: var(--principal); color:#fff; border:none; border-radius:999px; padding:7px 14px; font-family:"Segoe UI",sans-serif; font-weight:700; font-size:.78em; cursor:pointer; transition:filter .15s; }
+.admin-btn-reset:hover { filter:brightness(1.1); }
+.admin-btn-del { background:#fdecec; color:#e74c3c; border:none; border-radius:10px; padding:7px 11px; font-size:1em; cursor:pointer; transition:background .15s; }
+.admin-btn-del:hover { background:#fbd5d5; }
 
 .group-tabs {
     display: flex;
@@ -641,6 +651,7 @@ body {
         <span class="username-label" id="username-label" data-testid="text-username" style="display:none;"></span>
         <button class="top-btn" id="btn-profile" data-testid="button-profile" onclick="openProfileModal()" style="display:none;" data-i18n="myProfile">Mon Profil</button>
         <button class="top-btn" id="btn-logout" data-testid="button-logout" onclick="doLogout()" style="display:none;" data-i18n="logout">Se déconnecter</button>
+        <button class="top-btn" id="btn-admin" data-testid="button-admin" onclick="openAdminModal()" style="display:none; flex-basis:100%; margin-top:6px;">🛠️ Gestion des utilisateurs</button>
         <button class="top-btn" id="btn-auth" data-testid="button-login" onclick="openAuthModal()" data-i18n="login">Se Connecter</button>
     </div>
 </div>
@@ -782,6 +793,17 @@ body {
             <h2 data-i18n="myProfile">Mon Profil</h2>
         </div>
         <div id="profile-content" data-testid="profile-content"></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="admin-overlay">
+    <div class="modal admin-modal">
+        <button class="modal-close" onclick="closeAdminModal()">&times;</button>
+        <div class="modal-header">
+            <div class="icon">🛠️</div>
+            <h2>Gestion des utilisateurs</h2>
+        </div>
+        <div id="admin-content" data-testid="admin-content"></div>
     </div>
 </div>
 
@@ -1218,6 +1240,7 @@ function updateUI() {
     document.getElementById("btn-groups").style.display = loggedIn ? "inline-block" : "none";
     document.getElementById("btn-profile").style.display = loggedIn ? "inline-block" : "none";
     document.getElementById("btn-logout").style.display = loggedIn ? "inline-block" : "none";
+    document.getElementById("btn-admin").style.display = (loggedIn && isAdminUser()) ? "inline-block" : "none";
     document.getElementById("username-label").style.display = loggedIn ? "inline" : "none";
     if (loggedIn) {
         document.getElementById("username-label").textContent = "\uD83D\uDC4B " + currentUser;
@@ -1301,6 +1324,91 @@ function doLogout() {
             currentUser = null;
             updateUI();
         });
+}
+
+function isAdminUser() {
+    return currentUser === "admin" || currentUser === "Lamatita";
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function(c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+}
+
+var adminUsersCache = [];
+
+function openAdminModal() {
+    if (!isAdminUser()) { showToast(t("error"), "Accès refusé", true); return; }
+    document.getElementById("admin-overlay").classList.add("active");
+    loadAdminUsers();
+}
+
+function closeAdminModal() {
+    document.getElementById("admin-overlay").classList.remove("active");
+}
+
+function loadAdminUsers() {
+    var box = document.getElementById("admin-content");
+    box.innerHTML = '<div style="text-align:center;padding:20px;color:#888;">' + t("loading") + '</div>';
+    fetch("/api/admin/users", { credentials: "include" })
+        .then(function(r) { return r.ok ? r.json() : []; })
+        .then(function(users) {
+            adminUsersCache = users || [];
+            if (!adminUsersCache.length) {
+                box.innerHTML = '<div style="text-align:center;padding:20px;color:#888;">Aucun utilisateur.</div>';
+                return;
+            }
+            var html = "";
+            adminUsersCache.forEach(function(u) {
+                html += '<div class="admin-user-row" data-testid="row-user-' + u.id + '">' +
+                    '<span class="admin-user-name" data-testid="text-username-' + u.id + '">' + escapeHtml(u.username) + '</span>' +
+                    '<div class="admin-user-actions">' +
+                    '<button class="admin-btn-reset" data-testid="button-reset-' + u.id + '" onclick="resetUserPassword(' + u.id + ')">Réinitialiser le mot de passe</button>' +
+                    '<button class="admin-btn-del" data-testid="button-delete-' + u.id + '" title="Supprimer le compte" onclick="deleteUser(' + u.id + ')">🗑️</button>' +
+                    '</div></div>';
+            });
+            box.innerHTML = html;
+        })
+        .catch(function() {
+            box.innerHTML = '<div style="text-align:center;padding:20px;color:#e74c3c;">' + t("loadError") + '</div>';
+        });
+}
+
+function findAdminUser(id) {
+    for (var i = 0; i < adminUsersCache.length; i++) {
+        if (adminUsersCache[i].id === id) return adminUsersCache[i];
+    }
+    return null;
+}
+
+function resetUserPassword(id) {
+    var u = findAdminUser(id);
+    var name = u ? u.username : "";
+    if (!confirm('Réinitialiser le mot de passe de "' + name + '" ?')) return;
+    fetch("/api/admin/users/" + id + "/reset-password", { method: "POST", credentials: "include" })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+        .then(function(res) {
+            if (!res.ok) { showToast(t("error"), res.data.message || "Erreur", true); return; }
+            alert('Nouveau mot de passe pour "' + name + '" :\n\n' + res.data.password +
+                '\n\nNotez-le et communiquez-le à l\'utilisateur. Il ne sera plus affiché.');
+            showToast("Mot de passe réinitialisé", name);
+        })
+        .catch(function() { showToast(t("error"), t("serverError"), true); });
+}
+
+function deleteUser(id) {
+    var u = findAdminUser(id);
+    var name = u ? u.username : "";
+    if (!confirm('Supprimer définitivement le compte "' + name + '" ?\nCette action est irréversible.')) return;
+    fetch("/api/admin/users/" + id, { method: "DELETE", credentials: "include" })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+        .then(function(res) {
+            if (!res.ok) { showToast(t("error"), res.data.message || "Erreur", true); return; }
+            showToast("Compte supprimé", name);
+            loadAdminUsers();
+        })
+        .catch(function() { showToast(t("error"), t("serverError"), true); });
 }
 
 function openGroupModal() {
