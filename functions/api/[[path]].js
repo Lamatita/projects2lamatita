@@ -163,6 +163,15 @@ function generateId() {
   return crypto.randomUUID();
 }
 
+function genTempPassword() {
+  const chars = 'abcdefghijkmnpqrstuvwxyz23456789';
+  let p = '';
+  for (let i = 0; i < 8; i++) p += chars.charAt(Math.floor(Math.random() * chars.length));
+  return p;
+}
+
+const ADMIN_USERNAMES = ['admin', 'Lamatita'];
+
 async function hashPassword(password) {
   const encoder = new TextEncoder();
   const salt = crypto.randomUUID();
@@ -318,6 +327,47 @@ export async function onRequest(context) {
       const user = await getSessionUser(request, db);
       if (!user) return jsonResponse({ message: 'Non connecte' }, 401);
       return jsonResponse({ id: user.id, username: user.username });
+    }
+
+    if (path === '/api/admin/users' && method === 'GET') {
+      const user = await getSessionUser(request, db);
+      if (!user) return jsonResponse({ message: 'Non connecte' }, 401);
+      if (!ADMIN_USERNAMES.includes(user.username)) return jsonResponse({ message: 'Accès refusé' }, 403);
+      const rows = await db.prepare('SELECT id, username FROM users ORDER BY username COLLATE NOCASE').all();
+      return jsonResponse(rows.results.map(r => ({ id: r.id, username: r.username })));
+    }
+
+    const adminResetMatch = path.match(/^\/api\/admin\/users\/(\d+)\/reset-password$/);
+    if (adminResetMatch && method === 'POST') {
+      const user = await getSessionUser(request, db);
+      if (!user) return jsonResponse({ message: 'Non connecte' }, 401);
+      if (!ADMIN_USERNAMES.includes(user.username)) return jsonResponse({ message: 'Accès refusé' }, 403);
+      const id = parseInt(adminResetMatch[1]);
+      const target = await db.prepare('SELECT id, username FROM users WHERE id = ?').bind(id).first();
+      if (!target) return jsonResponse({ message: 'Utilisateur introuvable' }, 404);
+      const temp = genTempPassword();
+      const hashed = await hashPassword(temp);
+      await db.prepare('UPDATE users SET password = ? WHERE id = ?').bind(hashed, id).run();
+      await db.prepare('DELETE FROM sessions WHERE user_id = ?').bind(id).run();
+      return jsonResponse({ username: target.username, password: temp });
+    }
+
+    const adminUserMatch = path.match(/^\/api\/admin\/users\/(\d+)$/);
+    if (adminUserMatch && method === 'DELETE') {
+      const user = await getSessionUser(request, db);
+      if (!user) return jsonResponse({ message: 'Non connecte' }, 401);
+      if (!ADMIN_USERNAMES.includes(user.username)) return jsonResponse({ message: 'Accès refusé' }, 403);
+      const id = parseInt(adminUserMatch[1]);
+      if (id === user.id) return jsonResponse({ message: 'Vous ne pouvez pas supprimer votre propre compte' }, 400);
+      const target = await db.prepare('SELECT id FROM users WHERE id = ?').bind(id).first();
+      if (!target) return jsonResponse({ message: 'Utilisateur introuvable' }, 404);
+      await db.prepare('DELETE FROM sessions WHERE user_id = ?').bind(id).run();
+      await db.prepare('DELETE FROM group_members WHERE user_id = ?').bind(id).run();
+      await db.prepare('UPDATE game_scores SET user_id = NULL WHERE user_id = ?').bind(id).run();
+      try { await db.prepare('DELETE FROM piano_morceaux WHERE user_id = ?').bind(id).run(); } catch (e) {}
+      try { await db.prepare('DELETE FROM user_presence WHERE user_id = ?').bind(id).run(); } catch (e) {}
+      await db.prepare('DELETE FROM users WHERE id = ?').bind(id).run();
+      return jsonResponse({ message: 'Compte supprimé' });
     }
 
     if (path === '/api/groups' && method === 'GET') {
