@@ -651,7 +651,9 @@ body {
         <span class="username-label" id="username-label" data-testid="text-username" style="display:none;"></span>
         <button class="top-btn" id="btn-profile" data-testid="button-profile" onclick="openProfileModal()" style="display:none;" data-i18n="myProfile">Mon Profil</button>
         <button class="top-btn" id="btn-logout" data-testid="button-logout" onclick="doLogout()" style="display:none;" data-i18n="logout">Se déconnecter</button>
-        <button class="top-btn" id="btn-admin" data-testid="button-admin" onclick="openAdminModal()" style="display:none; flex-basis:100%; margin-top:6px;">🛠️ Gestion des utilisateurs</button>
+        <div id="admin-btn-wrap" style="display:none; flex-basis:100%; text-align:right; margin-top:6px;">
+            <button class="top-btn" id="btn-admin" data-testid="button-admin" onclick="openAdminModal()">Gestion des utilisateurs</button>
+        </div>
         <button class="top-btn" id="btn-auth" data-testid="button-login" onclick="openAuthModal()" data-i18n="login">Se Connecter</button>
     </div>
 </div>
@@ -1240,7 +1242,7 @@ function updateUI() {
     document.getElementById("btn-groups").style.display = loggedIn ? "inline-block" : "none";
     document.getElementById("btn-profile").style.display = loggedIn ? "inline-block" : "none";
     document.getElementById("btn-logout").style.display = loggedIn ? "inline-block" : "none";
-    document.getElementById("btn-admin").style.display = (loggedIn && isAdminUser()) ? "inline-block" : "none";
+    document.getElementById("admin-btn-wrap").style.display = (loggedIn && isAdminUser()) ? "block" : "none";
     document.getElementById("username-label").style.display = loggedIn ? "inline" : "none";
     if (loggedIn) {
         document.getElementById("username-label").textContent = "\uD83D\uDC4B " + currentUser;
@@ -1364,11 +1366,12 @@ function loadAdminUsers() {
             }
             var html = "";
             adminUsersCache.forEach(function(u) {
+                var isProtected = (u.username === "admin" || u.username === "Lamatita");
                 html += '<div class="admin-user-row" data-testid="row-user-' + u.id + '">' +
                     '<span class="admin-user-name" data-testid="text-username-' + u.id + '">' + escapeHtml(u.username) + '</span>' +
                     '<div class="admin-user-actions">' +
                     '<button class="admin-btn-reset" data-testid="button-reset-' + u.id + '" onclick="resetUserPassword(' + u.id + ')">Réinitialiser le mot de passe</button>' +
-                    '<button class="admin-btn-del" data-testid="button-delete-' + u.id + '" title="Supprimer le compte" onclick="deleteUser(' + u.id + ')">🗑️</button>' +
+                    (isProtected ? '' : '<button class="admin-btn-del" data-testid="button-delete-' + u.id + '" title="Supprimer le compte" onclick="deleteUser(' + u.id + ')">🗑️</button>') +
                     '</div></div>';
             });
             box.innerHTML = html;
@@ -1388,8 +1391,21 @@ function findAdminUser(id) {
 function resetUserPassword(id) {
     var u = findAdminUser(id);
     var name = u ? u.username : "";
-    if (!confirm('Réinitialiser le mot de passe de "' + name + '" ?')) return;
-    fetch("/api/admin/users/" + id + "/reset-password", { method: "POST", credentials: "include" })
+    var input = prompt('Réinitialiser le mot de passe de "' + name + '".\n\n' +
+        '• Tapez un nouveau mot de passe (4 caractères minimum)\n' +
+        '• Ou laissez vide pour en générer un automatiquement', "");
+    if (input === null) return;
+    var custom = input.trim();
+    if (custom && custom.length < 4) {
+        showToast(t("error"), "Le mot de passe doit contenir au moins 4 caractères", true);
+        return;
+    }
+    fetch("/api/admin/users/" + id + "/reset-password", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(custom ? { password: custom } : {})
+    })
         .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
         .then(function(res) {
             if (!res.ok) { showToast(t("error"), res.data.message || "Erreur", true); return; }
