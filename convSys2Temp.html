@@ -108,7 +108,7 @@ body {
 
 .converter-table {
   width: 100%;
-  min-width: 860px;
+  min-width: 980px;
   border: 2px solid #e0dce8;
   border-radius: 16px;
   overflow: hidden;
@@ -307,7 +307,8 @@ body {
       <div class="base-badge"><div class="dot" style="background:#e74c3c"></div> Celsius — °C</div>
       <div class="base-badge"><div class="dot" style="background:#e67e22"></div> Centigrade — °C</div>
       <div class="base-badge"><div class="dot" style="background:#f1c40f"></div> Fahrenheit — °F</div>
-      <div class="base-badge"><div class="dot" style="background:#2ecc71"></div> Rankine — °R</div>
+      <div class="base-badge"><div class="dot" style="background:#2ecc71"></div> Kelvin — K</div>
+      <div class="base-badge"><div class="dot" style="background:#1abc9c"></div> Rankine — °R</div>
       <div class="base-badge"><div class="dot" style="background:#3498db"></div> Réaumur — °Ré</div>
       <div class="base-badge"><div class="dot" style="background:#4b0082"></div> Rømer — °Rø</div>
       <div class="base-badge"><div class="dot" style="background:#9b59b6"></div> Ressenti humain</div>
@@ -320,7 +321,8 @@ body {
           <th><span class="col-dot-inline" style="background:#e74c3c"></span>Celsius</th>
           <th><span class="col-dot-inline" style="background:#e67e22"></span>Centigrade</th>
           <th><span class="col-dot-inline" style="background:#f1c40f"></span>Fahrenheit</th>
-          <th><span class="col-dot-inline" style="background:#2ecc71"></span>Rankine</th>
+          <th><span class="col-dot-inline" style="background:#2ecc71"></span>Kelvin</th>
+          <th><span class="col-dot-inline" style="background:#1abc9c"></span>Rankine</th>
           <th><span class="col-dot-inline" style="background:#3498db"></span>Réaumur</th>
           <th><span class="col-dot-inline" style="background:#4b0082"></span>Rømer</th>
           <th><span class="col-dot-inline" style="background:#9b59b6"></span>Ressenti</th>
@@ -331,6 +333,7 @@ body {
           <td><textarea class="base-input" id="celsius"    placeholder="ex: 20"    spellcheck="false" rows="3"></textarea></td>
           <td><textarea class="base-input" id="centigrade" placeholder="ex: 20"    spellcheck="false" rows="3"></textarea></td>
           <td><textarea class="base-input" id="fahrenheit" placeholder="ex: 68"    spellcheck="false" rows="3"></textarea></td>
+          <td><textarea class="base-input" id="kelvin"     placeholder="ex: 293.15" spellcheck="false" rows="3"></textarea></td>
           <td><textarea class="base-input" id="rankine"    placeholder="ex: 527.67" spellcheck="false" rows="3"></textarea></td>
           <td><textarea class="base-input" id="reaumur"    placeholder="ex: 16"    spellcheck="false" rows="3"></textarea></td>
           <td><textarea class="base-input" id="romer"      placeholder="ex: 18"    spellcheck="false" rows="3"></textarea></td>
@@ -342,6 +345,7 @@ body {
           <td>Eau gèle à 0</td>
           <td>= Celsius</td>
           <td>Eau gèle à 32</td>
+          <td>Zéro absolu = 0</td>
           <td>Zéro absolu = 0</td>
           <td>Eau gèle à 0</td>
           <td>Eau gèle à 7,5</td>
@@ -369,6 +373,7 @@ const ABS_ZERO_C = -273.15;
 const celsiusEl    = document.getElementById('celsius');
 const centigradeEl = document.getElementById('centigrade');
 const fahrenheitEl = document.getElementById('fahrenheit');
+const kelvinEl      = document.getElementById('kelvin');
 const rankineEl    = document.getElementById('rankine');
 const reaumurEl    = document.getElementById('reaumur');
 const romerEl      = document.getElementById('romer');
@@ -380,6 +385,7 @@ const fields = [
   { el: celsiusEl,    id: 'celsius' },
   { el: centigradeEl, id: 'centigrade' },
   { el: fahrenheitEl, id: 'fahrenheit' },
+  { el: kelvinEl,     id: 'kelvin' },
   { el: rankineEl,    id: 'rankine' },
   { el: reaumurEl,    id: 'reaumur' },
   { el: romerEl,      id: 'romer' },
@@ -489,6 +495,7 @@ function parseValue(id, raw) {
     case 'celsius':    celsius = n; break;
     case 'centigrade': celsius = n; break;
     case 'fahrenheit': celsius = (n - 32) * 5 / 9; break;
+    case 'kelvin':     celsius = n - 273.15; break;
     case 'rankine':    celsius = (n - 491.67) * 5 / 9; break;
     case 'reaumur':    celsius = n * 5 / 4; break;
     case 'romer':      celsius = (n - 7.5) * 40 / 21; break;
@@ -506,6 +513,7 @@ function toDisplay(id, celsius) {
     case 'celsius':    return String(round(celsius));
     case 'centigrade': return String(round(celsius));
     case 'fahrenheit': return String(round(celsius * 9 / 5 + 32));
+    case 'kelvin':     return String(round(celsius + 273.15));
     case 'rankine':    return String(round((celsius + 273.15) * 9 / 5));
     case 'reaumur':    return String(round(celsius * 4 / 5));
     case 'romer':      return String(round(celsius * 21 / 40 + 7.5));
