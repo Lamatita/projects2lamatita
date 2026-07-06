@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Convertisseur d'Unité de Mesures de Température 1</title>
+<title>Convertisseur d'Unités de Température</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -31,7 +31,6 @@ body {
   z-index: 0;
 }
 
-/* ── Back button ── */
 .back-btn {
   position: fixed;
   top: 20px;
@@ -92,7 +91,6 @@ body {
   margin-top: 6px;
 }
 
-/* ── Card ── */
 .card {
   background: #ffffff;
   border-radius: 24px;
@@ -102,17 +100,15 @@ body {
   min-width: 0;
 }
 
-/* ── Table wrapper ── */
 .table-wrapper {
   width: 100%;
   overflow-x: auto;
   border-radius: 16px;
 }
 
-/* ── Table ── */
 .converter-table {
   width: 100%;
-  min-width: 560px;
+  min-width: 640px;
   border: 2px solid #e0dce8;
   border-radius: 16px;
   overflow: hidden;
@@ -121,7 +117,6 @@ body {
   table-layout: fixed;
 }
 
-/* Header row */
 .converter-table thead tr th {
   padding: 11px 8px;
   background: #f7f3ff;
@@ -150,7 +145,6 @@ body {
   top: -1px;
 }
 
-/* Body cells */
 .converter-table tbody tr td {
   border-bottom: 2px solid #e0dce8;
   border-right: 2px solid #e0dce8;
@@ -164,7 +158,6 @@ body {
   border-bottom: none;
 }
 
-/* Input fields */
 .base-input {
   width: 100%;
   min-height: 70px;
@@ -198,7 +191,23 @@ body {
   background: #fff8f8;
 }
 
-/* Footer row */
+.ressenti-cell {
+  width: 100%;
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 12px 8px;
+  font-size: 0.95em;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  transition: background 0.2s, color 0.2s;
+  background: #faf8ff;
+  color: #c8c3de;
+}
+
 .footer-row td {
   background: #f7f3ff;
   padding: 8px 8px;
@@ -214,7 +223,6 @@ body {
   text-overflow: ellipsis;
 }
 
-/* ── Clear button ── */
 .clear-btn {
   margin-top: 20px;
   display: flex;
@@ -237,7 +245,6 @@ body {
   background: rgba(255,107,107,0.05);
 }
 
-/* ── Info badge ── */
 .info-row {
   display: flex;
   align-items: center;
@@ -262,7 +269,6 @@ body {
   border-radius: 50%;
 }
 
-/* ── Error message ── */
 .error-msg {
   text-align: center;
   font-size: 12px;
@@ -271,28 +277,6 @@ body {
   min-height: 20px;
   margin-top: 12px;
   transition: opacity 0.2s;
-}
-
-/* ── Toast ── */
-.toast {
-  position: fixed;
-  bottom: 32px;
-  left: 50%;
-  transform: translateX(-50%) translateY(80px);
-  background: #333;
-  color: #fff;
-  padding: 12px 24px;
-  border-radius: 999px;
-  font-size: 14px;
-  font-weight: 600;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s;
-  opacity: 0;
-  z-index: 100;
-}
-.toast.show {
-  transform: translateX(-50%) translateY(0);
-  opacity: 1;
 }
 
 @media (max-width: 640px) {
@@ -304,10 +288,8 @@ body {
 </head>
 <body>
 
-<!-- Confetti background -->
 <div id="confetti-container"></div>
 
-<!-- Back button -->
 <button class="back-btn" onclick="history.back()" title="Retour">
   <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
   Retour en arrière
@@ -315,53 +297,47 @@ body {
 
 <div class="page-wrapper">
   <div class="page-title">
-    <h1>Convertisseur de Système de Numération</h1>
-    <p>Saisissez une valeur dans n'importe quelle base pour la convertir en temps réel</p>
+    <h1>Convertisseur d'Unités de Température</h1>
+    <p>Saisissez une valeur dans n'importe quelle unité pour la convertir en temps réel</p>
   </div>
 
   <div class="card">
 
-    <!-- Base info badges -->
     <div class="info-row">
-      <div class="base-badge"><div class="dot" style="background:#e74c3c"></div> Unaire — base 1</div>
-      <div class="base-badge"><div class="dot" style="background:#e67e22"></div> Binaire — base 2</div>
-      <div class="base-badge"><div class="dot" style="background:#f1c40f"></div> Octal — base 8</div>
-      <div class="base-badge"><div class="dot" style="background:#2ecc71"></div> Décimal — base 10</div>
-      <div class="base-badge"><div class="dot" style="background:#3498db"></div> Hexadécimal — base 16</div>
-      <div class="base-badge"><div class="dot" style="background:#9b59b6"></div> Chiffres Romains</div>
+      <div class="base-badge"><div class="dot" style="background:#e74c3c"></div> Celsius — °C</div>
+      <div class="base-badge"><div class="dot" style="background:#e67e22"></div> Centigrade — °C</div>
+      <div class="base-badge"><div class="dot" style="background:#3498db"></div> Fahrenheit — °F</div>
+      <div class="base-badge"><div class="dot" style="background:#2ecc71"></div> Rankine — °R</div>
+      <div class="base-badge"><div class="dot" style="background:#9b59b6"></div> Ressenti humain</div>
     </div>
 
-    <!-- Converter table -->
     <div class="table-wrapper">
     <table class="converter-table">
       <thead>
         <tr>
-          <th><span class="col-dot-inline" style="background:#e74c3c"></span>Unaire</th>
-          <th><span class="col-dot-inline" style="background:#e67e22"></span>Binaire</th>
-          <th><span class="col-dot-inline" style="background:#f1c40f"></span>Octal</th>
-          <th><span class="col-dot-inline" style="background:#2ecc71"></span>Décimal</th>
-          <th><span class="col-dot-inline" style="background:#3498db"></span>Hexadécimal</th>
-          <th><span class="col-dot-inline" style="background:#9b59b6"></span>Chiffres Romains</th>
+          <th><span class="col-dot-inline" style="background:#e74c3c"></span>Celsius</th>
+          <th><span class="col-dot-inline" style="background:#e67e22"></span>Centigrade</th>
+          <th><span class="col-dot-inline" style="background:#3498db"></span>Fahrenheit</th>
+          <th><span class="col-dot-inline" style="background:#2ecc71"></span>Rankine</th>
+          <th><span class="col-dot-inline" style="background:#9b59b6"></span>Ressenti</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td><textarea class="base-input" id="unary"   placeholder="ex: 111…(×69)"  spellcheck="false" rows="3"></textarea></td>
-          <td><textarea class="base-input" id="binary"  placeholder="ex: 1000101"   spellcheck="false" rows="3"></textarea></td>
-          <td><textarea class="base-input" id="octal"   placeholder="ex: 105"     spellcheck="false" rows="3"></textarea></td>
-          <td><textarea class="base-input" id="decimal" placeholder="ex: 69"     spellcheck="false" rows="3"></textarea></td>
-          <td><textarea class="base-input" id="hex"     placeholder="ex: 45"      spellcheck="false" rows="3"></textarea></td>
-          <td><textarea class="base-input" id="roman"   placeholder="ex: LXIX"    spellcheck="false" rows="3" style="color:#9b59b6;font-weight:700;"></textarea></td>
+          <td><textarea class="base-input" id="celsius"    placeholder="ex: 20"    spellcheck="false" rows="3"></textarea></td>
+          <td><textarea class="base-input" id="centigrade" placeholder="ex: 20"    spellcheck="false" rows="3"></textarea></td>
+          <td><textarea class="base-input" id="fahrenheit" placeholder="ex: 68"    spellcheck="false" rows="3"></textarea></td>
+          <td><textarea class="base-input" id="rankine"    placeholder="ex: 527.67" spellcheck="false" rows="3"></textarea></td>
+          <td><div class="ressenti-cell" id="ressenti">—</div></td>
         </tr>
       </tbody>
       <tfoot>
         <tr class="footer-row">
-          <td>Répétitions de 1</td>
-          <td>Chiffres 0-1</td>
-          <td>Chiffres 0-7</td>
-          <td>Chiffres 0-9</td>
-          <td>Chiffres 0-9, A-F</td>
-          <td>I, V, X, L, C, D, M (1–3999)</td>
+          <td>Eau gèle à 0</td>
+          <td>= Celsius</td>
+          <td>Eau gèle à 32</td>
+          <td>Zéro absolu = 0</td>
+          <td>Selon le ressenti</td>
         </tr>
       </tfoot>
     </table>
@@ -379,126 +355,151 @@ body {
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
-
 <script>
-const UNARY_MAX = 64; // max unary digits to display
+const ABS_ZERO_C = -273.15;
 
-// ── DOM refs ──────────────────────────────────────────────────
-const unaryEl   = document.getElementById('unary');
-const binaryEl  = document.getElementById('binary');
-const octalEl   = document.getElementById('octal');
-const decimalEl = document.getElementById('decimal');
-const hexEl     = document.getElementById('hex');
-const romanEl   = document.getElementById('roman');
-const errorMsg  = document.getElementById('errorMsg');
-const clearBtn  = document.getElementById('clearBtn');
-
-// ── Roman numeral conversion ──────────────────────────────────
-function toRoman(n) {
-  if (n <= 0 || n > 3999) return n === 0 ? 'N' : '—';
-  const vals = [1000,900,500,400,100,90,50,40,10,9,5,4,1];
-  const syms = ['M','CM','D','CD','C','XC','L','XL','X','IX','V','IV','I'];
-  let result = '';
-  for (let i = 0; i < vals.length; i++) {
-    while (n >= vals[i]) { result += syms[i]; n -= vals[i]; }
-  }
-  return result;
-}
-
-// Validates and parses a Roman numeral string → integer (or throws)
-function fromRoman(str) {
-  const v = str.trim().toUpperCase();
-  if (v === '') return null;
-  if (v === 'N') return 0;
-  // Only valid Roman characters
-  if (!/^[IVXLCDM]+$/.test(v)) throw new Error('Romain : caractères valides : I V X L C D M');
-  // Validate via round-trip: convert candidate to decimal then back to Roman
-  const map = {I:1,V:5,X:10,L:50,C:100,D:500,M:1000};
-  let total = 0;
-  for (let i = 0; i < v.length; i++) {
-    const cur = map[v[i]], nxt = map[v[i+1]];
-    if (!cur) throw new Error('Chiffre romain invalide : ' + v[i]);
-    total += (nxt && nxt > cur) ? -cur : cur;
-  }
-  if (total <= 0 || total > 3999) throw new Error('Romain : valeur hors limites (1–3999)');
-  // Round-trip check: ensure canonical form
-  if (toRoman(total) !== v) throw new Error('Chiffres romains : format non canonique');
-  return total;
-}
+const celsiusEl    = document.getElementById('celsius');
+const centigradeEl = document.getElementById('centigrade');
+const fahrenheitEl = document.getElementById('fahrenheit');
+const rankineEl    = document.getElementById('rankine');
+const ressentiEl   = document.getElementById('ressenti');
+const errorMsg     = document.getElementById('errorMsg');
+const clearBtn     = document.getElementById('clearBtn');
 
 const fields = [
-  { el: unaryEl,   id: 'unary' },
-  { el: binaryEl,  id: 'binary' },
-  { el: octalEl,   id: 'octal' },
-  { el: decimalEl, id: 'decimal' },
-  { el: hexEl,     id: 'hex' },
-  { el: romanEl,   id: 'roman' },
+  { el: celsiusEl,    id: 'celsius' },
+  { el: centigradeEl, id: 'centigrade' },
+  { el: fahrenheitEl, id: 'fahrenheit' },
+  { el: rankineEl,    id: 'rankine' },
 ];
 
-// ── Conversion helpers ────────────────────────────────────────
+function getRessenti(c) {
+  if (c <= -5)  return { label: 'Mort',       color: '#1a1a2e' };
+  if (c <= 5)   return { label: 'Très froid', color: '#2980b9' };
+  if (c <= 15)  return { label: 'Froid',      color: '#5dade2' };
+  if (c <= 22)  return { label: 'Frais',      color: '#48c9b0' };
+  if (c <= 29)  return { label: 'Bon',        color: '#2ecc71' };
+  if (c <= 36)  return { label: 'Chaude',     color: '#f39c12' };
+  if (c <= 45)  return { label: 'Très chaud', color: '#e67e22' };
+  return { label: 'Mort',       color: '#7b241c' };
+}
+
+function updateRessenti(c) {
+  if (c === null) {
+    ressentiEl.textContent = '—';
+    ressentiEl.style.color = '#c8c3de';
+    ressentiEl.style.background = '#faf8ff';
+    return;
+  }
+  const r = getRessenti(c);
+  ressentiEl.textContent = r.label;
+  ressentiEl.style.color = r.color;
+  ressentiEl.style.background = '#faf8ff';
+}
+
+const pageTitleEl = document.querySelector('.page-title h1');
+
+function updateThemeColors(c) {
+  if (c === null) {
+    document.body.style.background = 'linear-gradient(135deg, #f7f3ff, #e6e1ff)';
+    pageTitleEl.style.color = '#6c63ff';
+    return;
+  }
+  const min = -10, max = 45;
+  const t = Math.max(0, Math.min(1, (c - min) / (max - min)));
+  const hueStart = 260 + t * (355 - 260);
+  const hueEnd = hueStart - 10;
+  const titleHue = hueStart - 17;
+  document.body.style.background = `linear-gradient(135deg, hsl(${hueStart}, 100%, 97%), hsl(${hueEnd}, 100%, 93%))`;
+  pageTitleEl.style.color = `hsl(${titleHue}, 100%, 70%)`;
+}
+
+let coldConfettiActive = false;
+let hotConfettiActive = false;
+
+function makeWeatherConfetti(emoji, className) {
+  const container = document.getElementById('confetti-container');
+  for (let i = 0; i < 7; i++) {
+    const el = document.createElement('div');
+    el.className = `confetti-piece ${className}`;
+    const size = 20 + Math.random() * 14;
+    el.style.cssText = `
+      left: ${Math.random() * 100}vw;
+      width: ${size}px; height: ${size}px;
+      font-size: ${size}px;
+      line-height: 1;
+      background: none;
+      display: flex; align-items: center; justify-content: center;
+      --dur: ${6 + Math.random() * 8}s;
+      --delay: -${Math.random() * 12}s;
+      --rot: ${Math.random() > 0.5 ? '' : '-'}${20 + Math.random() * 40}deg;
+      opacity: 0.75;
+    `;
+    el.textContent = emoji;
+    container.appendChild(el);
+  }
+}
+
+function addPenguins() {
+  if (coldConfettiActive) return;
+  coldConfettiActive = true;
+  makeWeatherConfetti('🐧', 'penguin-piece');
+}
+function removePenguins() {
+  coldConfettiActive = false;
+  document.querySelectorAll('.penguin-piece').forEach(el => el.remove());
+}
+function addParrots() {
+  if (hotConfettiActive) return;
+  hotConfettiActive = true;
+  makeWeatherConfetti('🦜', 'parrot-piece');
+}
+function removeParrots() {
+  hotConfettiActive = false;
+  document.querySelectorAll('.parrot-piece').forEach(el => el.remove());
+}
+
+function updateConfettiZone(c) {
+  if (c === null) { removePenguins(); removeParrots(); return; }
+  if (c <= 15) { addPenguins(); } else { removePenguins(); }
+  if (c > 29) { addParrots(); } else { removeParrots(); }
+}
+
 function parseValue(id, raw) {
   const v = raw.trim();
   if (v === '') return null;
+  if (!/^-?\d+(\.\d+)?$/.test(v)) throw new Error('Utilisez uniquement des chiffres (ex: -12.5)');
+  const n = parseFloat(v);
+  if (isNaN(n)) throw new Error('Valeur invalide');
 
+  let celsius;
   switch (id) {
-    case 'unary': {
-      if (!/^1*$/.test(v)) throw new Error('Unaire : uniquement des "1"');
-      return v.length;
-    }
-    case 'binary': {
-      if (!/^[01]+$/.test(v)) throw new Error('Binaire : uniquement des 0 et 1');
-      const n = parseInt(v, 2);
-      if (isNaN(n)) throw new Error('Binaire invalide');
-      return n;
-    }
-    case 'octal': {
-      if (!/^[0-7]+$/.test(v)) throw new Error('Octal : chiffres 0 à 7 uniquement');
-      const n = parseInt(v, 8);
-      if (isNaN(n)) throw new Error('Octal invalide');
-      return n;
-    }
-    case 'decimal': {
-      if (!/^\d+$/.test(v)) throw new Error('Décimal : chiffres 0 à 9 uniquement');
-      const n = parseInt(v, 10);
-      if (isNaN(n)) throw new Error('Décimal invalide');
-      return n;
-    }
-    case 'hex': {
-      if (!/^[0-9a-fA-F]+$/.test(v)) throw new Error('Hexadécimal : 0-9 et A-F uniquement');
-      const n = parseInt(v, 16);
-      if (isNaN(n)) throw new Error('Hexadécimal invalide');
-      return n;
-    }
-    case 'roman': {
-      return fromRoman(v);
-    }
+    case 'celsius':    celsius = n; break;
+    case 'centigrade': celsius = n; break;
+    case 'fahrenheit': celsius = (n - 32) * 5 / 9; break;
+    case 'rankine':    celsius = (n - 491.67) * 5 / 9; break;
   }
+
+  if (celsius < ABS_ZERO_C - 0.01) {
+    throw new Error('Impossible : température sous le zéro absolu (-273,15 °C)');
+  }
+  return celsius;
 }
 
-function toDisplay(id, decimal) {
-  if (decimal === null) return '';
+function toDisplay(id, celsius) {
+  const round = (x) => Math.round(x * 100) / 100;
   switch (id) {
-    case 'unary':
-      if (decimal === 0) return '0';
-      if (decimal > UNARY_MAX) return '1'.repeat(UNARY_MAX) + '…';
-      return '1'.repeat(decimal);
-    case 'binary':  return decimal === 0 ? '0' : decimal.toString(2);
-    case 'octal':   return decimal === 0 ? '0' : decimal.toString(8);
-    case 'decimal': return decimal.toString(10);
-    case 'hex':     return decimal === 0 ? '0' : decimal.toString(16).toUpperCase();
-    case 'roman':   return toRoman(decimal);
+    case 'celsius':    return String(round(celsius));
+    case 'centigrade': return String(round(celsius));
+    case 'fahrenheit': return String(round(celsius * 9 / 5 + 32));
+    case 'rankine':    return String(round((celsius + 273.15) * 9 / 5));
   }
 }
-
-// ── Update from a given source field ─────────────────────────
-let activeId = null;
 
 function updateFrom(sourceId) {
   const source = fields.find(f => f.id === sourceId);
   const raw = source.el.value;
 
-  // Clear error
   errorMsg.textContent = '';
 
   if (raw.trim() === '') {
@@ -509,85 +510,66 @@ function updateFrom(sourceId) {
       }
     });
     source.el.classList.remove('has-value', 'error');
+    updateRessenti(null);
+    updateThemeColors(null);
+    updateConfettiZone(null);
     return;
   }
 
-  let decVal;
+  let celsius;
   try {
-    decVal = parseValue(sourceId, raw);
+    celsius = parseValue(sourceId, raw);
   } catch (e) {
     source.el.classList.add('error');
     source.el.classList.remove('has-value');
     errorMsg.textContent = '⚠ ' + e.message;
+    updateRessenti(null);
+    updateThemeColors(null);
+    updateConfettiZone(null);
     return;
   }
 
-  if (decVal === null) return;
-
-  // Negative / too large safeguard
-  if (decVal < 0) {
-    errorMsg.textContent = '⚠ Les nombres négatifs ne sont pas pris en charge';
-    source.el.classList.add('error');
-    return;
-  }
-  if (decVal > Number.MAX_SAFE_INTEGER) {
-    errorMsg.textContent = '⚠ Nombre trop grand';
-    source.el.classList.add('error');
-    return;
-  }
+  if (celsius === null) return;
 
   source.el.classList.remove('error');
   source.el.classList.add('has-value');
 
   fields.forEach(f => {
     if (f.id !== sourceId) {
-      f.el.value = toDisplay(f.id, decVal);
+      f.el.value = toDisplay(f.id, celsius);
       f.el.classList.toggle('has-value', f.el.value !== '');
       f.el.classList.remove('error');
     }
   });
+
+  updateRessenti(celsius);
+  updateThemeColors(celsius);
+  updateConfettiZone(celsius);
 }
 
-// ── Bind events ───────────────────────────────────────────────
 fields.forEach(f => {
-  f.el.addEventListener('input', () => {
-    activeId = f.id;
-    updateFrom(f.id);
-  });
-  f.el.addEventListener('focus', () => {
-    activeId = f.id;
-  });
+  f.el.addEventListener('input', () => updateFrom(f.id));
 
-  // Auto-uppercase hex and roman input
-  if (f.id === 'hex' || f.id === 'roman') {
-    f.el.addEventListener('input', () => {
-      const pos = f.el.selectionStart;
-      f.el.value = f.el.value.toUpperCase();
-      f.el.setSelectionRange(pos, pos);
-    });
-  }
-
-  // Prevent newlines
   f.el.addEventListener('keydown', e => {
     if (e.key === 'Enter') e.preventDefault();
   });
 });
 
-// ── Clear button ──────────────────────────────────────────────
 clearBtn.addEventListener('click', () => {
   fields.forEach(f => {
     f.el.value = '';
     f.el.classList.remove('has-value', 'error');
   });
   errorMsg.textContent = '';
+  updateRessenti(null);
+  updateThemeColors(null);
+  updateConfettiZone(null);
 });
 
-// ── Confetti ──────────────────────────────────────────────────
 (function generateConfetti() {
   const colors = ['#6c63ff','#ffb703','#00c9a7','#ff6b6b','#a18cd1','#ffd93d'];
   const container = document.getElementById('confetti-container');
 
-  // Regular confetti
   for (let i = 0; i < 30; i++) {
     const el = document.createElement('div');
     el.className = 'confetti-piece';
@@ -606,7 +588,6 @@ clearBtn.addEventListener('click', () => {
     container.appendChild(el);
   }
 
-  // Llamas 🦙
   for (let i = 0; i < 8; i++) {
     const el = document.createElement('div');
     el.className = 'confetti-piece';
