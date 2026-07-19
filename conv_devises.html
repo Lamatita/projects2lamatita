@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Convertisseur de Devises</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: "Segoe UI", sans-serif;
+  background: linear-gradient(135deg, #f7f3ff, #e6e1ff);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-10vh) rotate(0deg); opacity: 0.9; }
+  100% { transform: translateY(115vh) rotate(var(--rot)); opacity: 0.5; }
+}
+.confetti-piece {
+  position: fixed;
+  top: -30px;
+  animation: confetti-fall var(--dur) linear infinite;
+  animation-delay: var(--delay);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Back button */
+.back-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 10;
+  height: 42px;
+  padding: 0 18px 0 12px;
+  border: none;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #6c63ff;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: "Segoe UI", sans-serif;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 7px;
+  box-shadow: 0 4px 16px rgba(108,99,255,0.2);
+  transition: all 0.2s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.back-btn:hover {
+  background: #6c63ff;
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(108,99,255,0.4);
+  transform: translateY(-1px);
+}
+.back-btn svg {
+  width: 16px; height: 16px;
+  stroke: currentColor; fill: none; stroke-width: 2.5;
+  flex-shrink: 0;
+}
+
+.page-wrapper {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 560px;
+  padding: 90px 24px 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+.page-title { text-align: center; }
+.page-title h1 {
+  font-size: 2em;
+  font-weight: 800;
+  color: #6c63ff;
+  letter-spacing: -0.5px;
+}
+.page-title p {
+  color: #9992bb;
+  font-size: 0.95em;
+  margin-top: 6px;
+}
+
+/* Card */
+.card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 32px 36px;
+  box-shadow: 0 15px 45px rgba(0,0,0,0.12);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.field-label {
+  font-size: 0.78em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #9992bb;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.amount-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e0dce8;
+  border-radius: 14px;
+  font-size: 1.25em;
+  font-family: "Segoe UI", sans-serif;
+  color: #3a3550;
+  background: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+.amount-input::placeholder { color: rgba(108, 99, 255, 0.4); }
+.amount-input:focus {
+  border-color: #6c63ff;
+  box-shadow: 0 0 0 4px rgba(108,99,255,0.12);
+}
+
+.currency-select {
+  width: 100%;
+  padding: 13px 14px;
+  border: 2px solid #e0dce8;
+  border-radius: 14px;
+  font-size: 1em;
+  font-family: "Segoe UI", sans-serif;
+  color: #3a3550;
+  background: #fff;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.currency-select:focus {
+  border-color: #6c63ff;
+  box-shadow: 0 0 0 4px rgba(108,99,255,0.12);
+}
+
+/* Swap button */
+.swap-row {
+  display: flex;
+  justify-content: center;
+  margin: -4px 0;
+}
+.swap-btn {
+  width: 46px; height: 46px;
+  border: none;
+  border-radius: 50%;
+  background: #6c63ff;
+  color: #fff;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 6px 18px rgba(108,99,255,0.35);
+  transition: all 0.2s ease;
+}
+.swap-btn:hover {
+  background: #574fd6;
+  transform: translateY(-1px) rotate(180deg);
+  box-shadow: 0 8px 22px rgba(108,99,255,0.45);
+}
+.swap-btn svg {
+  width: 20px; height: 20px;
+  stroke: currentColor; fill: none; stroke-width: 2.5;
+}
+
+/* Result */
+.result-box {
+  background: #f7f3ff;
+  border: 2px solid #e0dce8;
+  border-radius: 16px;
+  padding: 20px 22px;
+  text-align: center;
+  min-height: 92px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+.result-amount {
+  font-size: 1.8em;
+  font-weight: 800;
+  color: #6c63ff;
+  word-break: break-word;
+}
+.result-rate {
+  font-size: 0.85em;
+  color: #9992bb;
+}
+.result-placeholder {
+  color: #b7b0d6;
+  font-size: 1em;
+}
+
+.error-msg {
+  color: #e74c3c;
+  font-size: 0.9em;
+  font-weight: 600;
+  text-align: center;
+  min-height: 1.2em;
+}
+
+.loading { opacity: 0.55; }
+
+@media (max-width: 480px) {
+  .card { padding: 24px 20px; }
+  .page-title h1 { font-size: 1.6em; }
+}
+</style>
+</head>
+<body>
+
+<div id="confetti-container"></div>
+
+<button class="back-btn" onclick="window.location.href='index.html'" title="Retour" data-testid="button-back">
+  <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+  Retour à l'accueil
+</button>
+
+<div class="page-wrapper">
+  <div class="page-title">
+    <h1 data-testid="text-title">Convertisseur de Devises 💱</h1>
+    <p>Convertissez un montant d'une devise à une autre en temps réel</p>
+  </div>
+
+  <div class="card">
+    <div>
+      <label class="field-label" for="amountInput">Montant</label>
+      <input type="text" inputmode="decimal" id="amountInput" class="amount-input"
+             placeholder="Devise initiale" autocomplete="off" data-testid="input-amount">
+    </div>
+
+    <div>
+      <label class="field-label" for="fromSelect">Devise de départ</label>
+      <select id="fromSelect" class="currency-select" data-testid="select-from"></select>
+    </div>
+
+    <div class="swap-row">
+      <button class="swap-btn" id="swapBtn" title="Inverser les devises" data-testid="button-swap">
+        <svg viewBox="0 0 24 24"><polyline points="17 4 21 8 17 12"/><line x1="21" y1="8" x2="7" y2="8"/><polyline points="7 12 3 16 7 20"/><line x1="3" y1="16" x2="17" y2="16"/></svg>
+      </button>
+    </div>
+
+    <div>
+      <label class="field-label" for="toSelect">Devise cible</label>
+      <select id="toSelect" class="currency-select" data-testid="select-to"></select>
+    </div>
+
+    <div class="result-box" id="resultBox" data-testid="text-result">
+      <span class="result-placeholder" id="resultPlaceholder">Entrez un montant pour voir la conversion</span>
+    </div>
+
+    <div class="error-msg" id="errorMsg" data-testid="text-error"></div>
+  </div>
+</div>
+
+<script>
+// ── Devises ───────────────────────────────────────────────────
+const CURRENCIES = [
+  ['EUR', '🇪🇺 Euro (EUR)'],
+  ['USD', '🇺🇸 Dollar américain (USD)'],
+  ['GBP', '🇬🇧 Livre sterling (GBP)'],
+  ['CHF', '🇨🇭 Franc suisse (CHF)'],
+  ['JPY', '🇯🇵 Yen japonais (JPY)'],
+  ['CAD', '🇨🇦 Dollar canadien (CAD)'],
+  ['AUD', '🇦🇺 Dollar australien (AUD)'],
+  ['CNY', '🇨🇳 Yuan chinois (CNY)'],
+  ['SEK', '🇸🇪 Couronne suédoise (SEK)'],
+  ['NOK', '🇳🇴 Couronne norvégienne (NOK)'],
+  ['DKK', '🇩🇰 Couronne danoise (DKK)'],
+  ['PLN', '🇵🇱 Zloty polonais (PLN)'],
+  ['CZK', '🇨🇿 Couronne tchèque (CZK)'],
+  ['HUF', '🇭🇺 Forint hongrois (HUF)'],
+  ['RON', '🇷🇴 Leu roumain (RON)'],
+  ['BGN', '🇧🇬 Lev bulgare (BGN)'],
+  ['TRY', '🇹🇷 Livre turque (TRY)'],
+  ['INR', '🇮🇳 Roupie indienne (INR)'],
+  ['BRL', '🇧🇷 Réal brésilien (BRL)'],
+  ['MXN', '🇲🇽 Peso mexicain (MXN)'],
+  ['ZAR', '🇿🇦 Rand sud-africain (ZAR)'],
+  ['KRW', '🇰🇷 Won sud-coréen (KRW)'],
+  ['SGD', '🇸🇬 Dollar de Singapour (SGD)'],
+  ['HKD', '🇭🇰 Dollar de Hong Kong (HKD)'],
+  ['NZD', '🇳🇿 Dollar néo-zélandais (NZD)'],
+  ['THB', '🇹🇭 Baht thaïlandais (THB)'],
+  ['ILS', '🇮🇱 Shekel israélien (ILS)'],
+  ['AED', '🇦🇪 Dirham des É.A.U. (AED)'],
+  ['MAD', '🇲🇦 Dirham marocain (MAD)'],
+  ['TND', '🇹🇳 Dinar tunisien (TND)'],
+  ['XOF', '🌍 Franc CFA - BCEAO (XOF)'],
+  ['XAF', '🌍 Franc CFA - BEAC (XAF)']
+];
+
+const amountInput = document.getElementById('amountInput');
+const fromSelect  = document.getElementById('fromSelect');
+const toSelect    = document.getElementById('toSelect');
+const swapBtn     = document.getElementById('swapBtn');
+const resultBox   = document.getElementById('resultBox');
+const errorMsg    = document.getElementById('errorMsg');
+
+CURRENCIES.forEach(([code, label]) => {
+  fromSelect.add(new Option(label, code));
+  toSelect.add(new Option(label, code));
+});
+fromSelect.value = 'EUR';
+toSelect.value   = 'USD';
+
+// ── Taux de change (cache par devise de base) ─────────────────
+const ratesCache = {};
+
+async function fetchRates(base) {
+  if (ratesCache[base]) return ratesCache[base];
+  // Service principal : open.er-api.com (gratuit, sans clé)
+  try {
+    const r = await fetch('https://open.er-api.com/v6/latest/' + base);
+    if (r.ok) {
+      const d = await r.json();
+      if (d && d.result === 'success' && d.rates) {
+        ratesCache[base] = d.rates;
+        return d.rates;
+      }
+    }
+    throw new Error('réponse invalide');
+  } catch (e) {
+    // Repli : frankfurter.app (sans clé, moins de devises)
+    const r2 = await fetch('https://api.frankfurter.app/latest?base=' + base);
+    if (!r2.ok) throw new Error('service indisponible');
+    const d2 = await r2.json();
+    if (!d2 || !d2.rates) throw new Error('réponse invalide');
+    d2.rates[base] = 1;
+    ratesCache[base] = d2.rates;
+    return d2.rates;
+  }
+}
+
+// ── Conversion ────────────────────────────────────────────────
+function parseAmount(raw) {
+  const cleaned = raw.replace(/\s/g, '').replace(',', '.');
+  if (cleaned === '') return null;
+  const n = Number(cleaned);
+  return Number.isFinite(n) && n >= 0 ? n : NaN;
+}
+
+function fmt(n, code) {
+  try {
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: code, maximumFractionDigits: n >= 1000 ? 2 : 4 }).format(n);
+  } catch (e) {
+    return n.toLocaleString('fr-FR', { maximumFractionDigits: 4 }) + ' ' + code;
+  }
+}
+
+let convertSeq = 0;
+
+async function convert() {
+  errorMsg.textContent = '';
+  const from = fromSelect.value;
+  const to   = toSelect.value;
+  const amount = parseAmount(amountInput.value);
+
+  if (amount === null) {
+    resultBox.innerHTML = '<span class="result-placeholder">Entrez un montant pour voir la conversion</span>';
+    return;
+  }
+  if (Number.isNaN(amount)) {
+    resultBox.innerHTML = '<span class="result-placeholder">Montant invalide</span>';
+    errorMsg.textContent = 'Veuillez entrer un nombre valide (ex. 123,45).';
+    return;
+  }
+
+  const seq = ++convertSeq;
+  resultBox.classList.add('loading');
+  try {
+    const rates = await fetchRates(from);
+    if (seq !== convertSeq) return;
+    const rate = rates[to];
+    if (!rate) throw new Error('taux indisponible pour ' + to);
+    const converted = amount * rate;
+    resultBox.innerHTML =
+      '<span class="result-amount" data-testid="text-converted">' + fmt(converted, to) + '</span>' +
+      '<span class="result-rate">1 ' + from + ' = ' + rate.toLocaleString('fr-FR', { maximumFractionDigits: 6 }) + ' ' + to + '</span>';
+  } catch (e) {
+    if (seq !== convertSeq) return;
+    resultBox.innerHTML = '<span class="result-placeholder">—</span>';
+    errorMsg.textContent = 'Impossible de récupérer le taux de change (' + e.message + '). Vérifiez votre connexion et réessayez.';
+  } finally {
+    if (seq === convertSeq) resultBox.classList.remove('loading');
+  }
+}
+
+let debounceTimer;
+amountInput.addEventListener('input', () => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(convert, 300);
+});
+fromSelect.addEventListener('change', convert);
+toSelect.addEventListener('change', convert);
+
+swapBtn.addEventListener('click', () => {
+  const tmp = fromSelect.value;
+  fromSelect.value = toSelect.value;
+  toSelect.value = tmp;
+  convert();
+});
+
+// ── Confettis + lamas ─────────────────────────────────────────
+(function generateConfetti() {
+  const colors = ['#6c63ff','#ffb703','#00c9a7','#ff6b6b','#a18cd1','#ffd93d'];
+  const container = document.getElementById('confetti-container');
+  for (let i = 0; i < 30; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    if (i % 4 === 3) {
+      el.textContent = '🦙';
+      el.style.cssText =
+        'left:' + (Math.random()*100) + 'vw;' +
+        'font-size:' + (16 + Math.random()*12) + 'px;' +
+        '--dur:' + (5 + Math.random()*8) + 's;' +
+        '--delay:-' + (Math.random()*10) + 's;' +
+        '--rot:' + (Math.random()>0.5?'':'-') + (180 + Math.random()*360) + 'deg;' +
+        'opacity:0.5;';
+    } else {
+      const size = 6 + Math.random() * 8;
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      el.style.cssText =
+        'left:' + (Math.random()*100) + 'vw;' +
+        'width:' + size + 'px;height:' + size + 'px;' +
+        'background:' + color + ';' +
+        'border-radius:' + (Math.random()>0.5?'50%':'2px') + ';' +
+        '--dur:' + (4 + Math.random()*8) + 's;' +
+        '--delay:-' + (Math.random()*10) + 's;' +
+        '--rot:' + (Math.random()>0.5?'':'-') + (180 + Math.random()*360) + 'deg;' +
+        'opacity:0.4;';
+    }
+    container.appendChild(el);
+  }
+})();
+</script>
+</body>
+</html>
