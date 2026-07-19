@@ -719,6 +719,33 @@ function polyColor(f) {
   return 'rgba(255,255,255,0.75)';
 }
 
+// Localisation approximative de l'utilisateur (par IP, sans clé)
+let userPos = null;
+async function getUserPos() {
+  if (userPos) return userPos;
+  try {
+    const r = await fetch('https://ipwho.is/');
+    if (r.ok) {
+      const d = await r.json();
+      if (d && d.success && Number.isFinite(d.latitude) && Number.isFinite(d.longitude)) {
+        userPos = { lat: d.latitude, lng: d.longitude };
+        return userPos;
+      }
+    }
+  } catch (e) {}
+  try {
+    const r2 = await fetch('https://ipapi.co/json/');
+    if (r2.ok) {
+      const d2 = await r2.json();
+      if (d2 && Number.isFinite(d2.latitude) && Number.isFinite(d2.longitude)) {
+        userPos = { lat: d2.latitude, lng: d2.longitude };
+        return userPos;
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+
 function zoomGlobe(factor) {
   if (!globe) return;
   const pov = globe.pointOfView();
@@ -768,6 +795,11 @@ async function initGlobe() {
       .arcDashAnimateTime(3000);
     globe.globeMaterial().color.set('#8f83e8');
     globe.pointOfView({ lat: 25, lng: 5, altitude: 2.1 });
+    getUserPos().then(pos => {
+      if (pos && globe && !depPick && !arrPick) {
+        globe.pointOfView({ lat: pos.lat, lng: pos.lng, altitude: 1.6 }, 1200);
+      }
+    });
     window.addEventListener('resize', () => {
       if (globe) globe.width(globeContainer.clientWidth).height(globeContainer.clientHeight);
     });
