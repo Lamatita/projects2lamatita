@@ -301,6 +301,30 @@ body {
   background: radial-gradient(circle at 50% 40%, #cfc6ff, #a89cf0);
   position: relative;
 }
+.zoom-controls {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.zoom-btn {
+  width: 40px; height: 40px;
+  border: none;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #6c63ff;
+  font-size: 22px;
+  font-weight: 700;
+  font-family: "Segoe UI", sans-serif;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+.zoom-btn:hover { background: #6c63ff; color: #fff; }
 #globeContainer .globe-loading {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
@@ -378,7 +402,13 @@ body {
         <div class="dep"><span class="sel-label">Départ</span><span id="depInfo" data-testid="text-depart">—</span></div>
         <div class="arr"><span class="sel-label">Arrivé</span><span id="arrInfo" data-testid="text-arrive">—</span></div>
       </div>
-      <div id="globeContainer"><div class="globe-loading">Chargement du globe…</div></div>
+      <div id="globeContainer">
+        <div class="globe-loading">Chargement du globe…</div>
+        <div class="zoom-controls">
+          <button class="zoom-btn" id="zoomInBtn" title="Zoomer" data-testid="button-zoom-in">+</button>
+          <button class="zoom-btn" id="zoomOutBtn" title="Dézoomer" data-testid="button-zoom-out">−</button>
+        </div>
+      </div>
     </div>
 
     <div class="result-box" id="resultBox" data-testid="text-result">
@@ -689,6 +719,13 @@ function polyColor(f) {
   return 'rgba(255,255,255,0.75)';
 }
 
+function zoomGlobe(factor) {
+  if (!globe) return;
+  const pov = globe.pointOfView();
+  const alt = Math.min(5, Math.max(0.3, pov.altitude * factor));
+  globe.pointOfView({ lat: pov.lat, lng: pov.lng, altitude: alt }, 300);
+}
+
 async function initGlobe() {
   if (globe || globeLoading) return;
   globeLoading = true;
@@ -700,8 +737,12 @@ async function initGlobe() {
     if (!resp.ok) throw new Error('données pays indisponibles');
     const countries = await resp.json();
 
-    globeContainer.innerHTML = '';
-    globe = Globe()(globeContainer)
+    const loadingEl = globeContainer.querySelector('.globe-loading');
+    if (loadingEl) loadingEl.remove();
+    const globeMount = document.createElement('div');
+    globeMount.style.cssText = 'position:absolute;inset:0;';
+    globeContainer.insertBefore(globeMount, globeContainer.firstChild);
+    globe = Globe()(globeMount)
       .width(globeContainer.clientWidth)
       .height(globeContainer.clientHeight)
       .backgroundColor('rgba(0,0,0,0)')
@@ -722,24 +763,21 @@ async function initGlobe() {
       .arcColor(() => '#2f6fed')
       .arcStroke(0.9)
       .arcAltitudeAutoScale(0.6)
-      .htmlAltitude(d => d.alt)
-      .htmlElement(() => {
-        const el = document.createElement('div');
-        el.textContent = '✈️';
-        el.style.fontSize = '26px';
-        el.style.pointerEvents = 'none';
-        el.style.transform = 'translate(-50%,-50%)';
-        return el;
-      });
+      .arcDashLength(0.4)
+      .arcDashGap(0.15)
+      .arcDashAnimateTime(3000);
     globe.globeMaterial().color.set('#8f83e8');
-    globe.controls().autoRotate = true;
-    globe.controls().autoRotateSpeed = 0.6;
     globe.pointOfView({ lat: 25, lng: 5, altitude: 2.1 });
     window.addEventListener('resize', () => {
       if (globe) globe.width(globeContainer.clientWidth).height(globeContainer.clientHeight);
     });
+    document.getElementById('zoomInBtn').addEventListener('click', () => zoomGlobe(0.7));
+    document.getElementById('zoomOutBtn').addEventListener('click', () => zoomGlobe(1/0.7));
   } catch (e) {
-    globeContainer.innerHTML = '<div class="globe-loading">Impossible de charger le globe (' + e.message + ')</div>';
+    const errEl = document.createElement('div');
+    errEl.className = 'globe-loading';
+    errEl.textContent = 'Impossible de charger le globe (' + e.message + ')';
+    globeContainer.appendChild(errEl);
     globe = null;
   } finally {
     globeLoading = false;
@@ -789,9 +827,7 @@ function refreshMapUI() {
   convert();
 }
 
-// ── Trajet + avion ────────────────────────────────────────────
-let planeAnimId = null;
-
+// ── Trajet ────────────────────────────────────────────────────
 function latLngToVec(lat, lng) {
   const phi = (90 - lat) * Math.PI / 180;
   const theta = (lng + 180) * Math.PI / 180;
@@ -814,14 +850,11 @@ function slerp(a, b, t) {
 }
 
 function updateRoute() {
-  if (planeAnimId) { cancelAnimationFrame(planeAnimId); planeAnimId = null; }
   if (!globe) return;
   if (!depPick || !arrPick) {
     globe.arcsData([]);
-    globe.htmlElementsData([]);
     return;
   }
-  globe.controls().autoRotate = false;
   const a = { lat: depPick.lat, lng: depPick.lng };
   const b = { lat: arrPick.lat, lng: arrPick.lng };
   globe.arcsData([{ startLat: a.lat, startLng: a.lng, endLat: b.lat, endLng: b.lng }]);
@@ -831,30 +864,7 @@ function updateRoute() {
   const mid = vecToLatLng(midV);
   globe.pointOfView({ lat: mid.lat, lng: mid.lng, altitude: 2.1 }, 900);
 
-  // altitude max de l'arc ~ celle calculée par globe.gl (autoScale 0.6 * dist/2 en radians approx.)
-  const va = latLngToVec(a.lat, a.lng), vb = latLngToVec(b.lat, b.lng);
-  let dot = va[0]*vb[0] + va[1]*vb[1] + va[2]*vb[2];
-  dot = Math.min(1, Math.max(-1, dot));
-  const angDist = Math.acos(dot);
-  const maxAlt = (angDist / 2) * 0.6 / Math.PI * 2; // approximation visuelle
 
-  const plane = { lat: a.lat, lng: a.lng, alt: 0.02 };
-  globe.htmlElementsData([plane]);
-  const DURATION = 6000;
-  let start = null;
-  function step(ts) {
-    if (!start) start = ts;
-    let t = ((ts - start) % (DURATION + 1200)) / DURATION; // pause à l'atterrissage
-    if (t > 1) t = 1;
-    const v = slerp(va, vb, t);
-    const p = vecToLatLng(v);
-    plane.lat = p.lat;
-    plane.lng = p.lng;
-    plane.alt = 0.02 + Math.sin(Math.PI * t) * maxAlt; // décollage → croisière → atterrissage
-    globe.htmlElementsData([plane]);
-    planeAnimId = requestAnimationFrame(step);
-  }
-  planeAnimId = requestAnimationFrame(step);
 }
 
 // ── Confettis + lamas ─────────────────────────────────────────
