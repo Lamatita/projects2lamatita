@@ -218,6 +218,106 @@ body {
 
 .loading { opacity: 0.55; }
 
+/* Mode buttons */
+.mode-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+.mode-btn {
+  flex: 1;
+  padding: 11px 0;
+  border: 2px solid #e0dce8;
+  border-radius: 14px;
+  background: #fff;
+  color: #9992bb;
+  font-size: 0.95em;
+  font-weight: 700;
+  font-family: "Segoe UI", sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.mode-btn:hover { border-color: #6c63ff; color: #6c63ff; }
+.mode-btn.active {
+  background: #6c63ff;
+  border-color: #6c63ff;
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(108,99,255,0.35);
+}
+
+/* Map mode */
+.map-section { display: none; flex-direction: column; gap: 14px; }
+.map-section.visible { display: flex; }
+.map-pick-row { display: flex; gap: 10px; }
+.pick-btn {
+  flex: 1;
+  padding: 11px 0;
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  font-size: 0.95em;
+  font-weight: 700;
+  font-family: "Segoe UI", sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0.85;
+}
+.pick-btn:hover { opacity: 1; transform: translateY(-1px); }
+.pick-btn.arming { opacity: 1; box-shadow: 0 0 0 4px rgba(0,0,0,0.08); outline: 3px solid rgba(108,99,255,0.5); }
+.pick-btn.depart { background: #2ecc71; }
+.pick-btn.arrive { background: #e74c3c; }
+.pick-status {
+  font-size: 0.85em;
+  color: #6c63ff;
+  font-weight: 600;
+  text-align: center;
+  min-height: 1.2em;
+}
+.pick-selection {
+  display: flex;
+  gap: 10px;
+}
+.pick-selection > div {
+  flex: 1;
+  border: 2px solid #e0dce8;
+  border-radius: 14px;
+  padding: 10px 12px;
+  font-size: 0.85em;
+  color: #3a3550;
+  text-align: center;
+}
+.pick-selection .sel-label { font-size: 0.72em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; display: block; margin-bottom: 3px; }
+.pick-selection .dep .sel-label { color: #2ecc71; }
+.pick-selection .arr .sel-label { color: #e74c3c; }
+.pick-selection select {
+  border: none; background: transparent; font-family: "Segoe UI", sans-serif;
+  font-size: 1em; color: #3a3550; cursor: pointer; outline: none; max-width: 100%;
+}
+#globeContainer {
+  width: 100%;
+  height: 440px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 40%, #cfc6ff, #a89cf0);
+  position: relative;
+}
+#globeContainer .globe-loading {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 700;
+}
+
+#directSection { display: flex; flex-direction: column; gap: 18px; }
+#directSection.hidden { display: none; }
+
+/* Source footer */
+.source-note {
+  text-align: center;
+  font-size: 0.82em;
+  color: #9992bb;
+}
+.source-note a { color: #6c63ff; font-weight: 600; }
+
 @media (max-width: 480px) {
   .card { padding: 24px 20px; }
   .page-title h1 { font-size: 1.6em; }
@@ -235,7 +335,7 @@ body {
 
 <div class="page-wrapper">
   <div class="page-title">
-    <h1 data-testid="text-title">Convertisseur de Devises 💱</h1>
+    <h1 data-testid="text-title">Convertisseur de Devises</h1>
     <p>Convertissez un montant d'une devise à une autre en temps réel</p>
   </div>
 
@@ -244,8 +344,13 @@ body {
       <label class="field-label" for="amountInput">Montant</label>
       <input type="text" inputmode="decimal" id="amountInput" class="amount-input"
              placeholder="Devise initiale" autocomplete="off" data-testid="input-amount">
+      <div class="mode-row">
+        <button class="mode-btn" id="modeCarteBtn" data-testid="button-mode-carte">Carte</button>
+        <button class="mode-btn active" id="modeDirectBtn" data-testid="button-mode-direct">Direct</button>
+      </div>
     </div>
 
+    <div id="directSection">
     <div>
       <label class="field-label" for="fromSelect">Devise de départ</label>
       <select id="fromSelect" class="currency-select" data-testid="select-from"></select>
@@ -261,6 +366,20 @@ body {
       <label class="field-label" for="toSelect">Devise cible</label>
       <select id="toSelect" class="currency-select" data-testid="select-to"></select>
     </div>
+    </div>
+
+    <div class="map-section" id="mapSection">
+      <div class="map-pick-row">
+        <button class="pick-btn depart" id="pickDepartBtn" data-testid="button-pick-depart">Départ</button>
+        <button class="pick-btn arrive" id="pickArriveBtn" data-testid="button-pick-arrive">Arrivé</button>
+      </div>
+      <div class="pick-status" id="pickStatus">Cliquez sur « Départ » puis choisissez un pays sur le globe</div>
+      <div class="pick-selection">
+        <div class="dep"><span class="sel-label">Départ</span><span id="depInfo" data-testid="text-depart">—</span></div>
+        <div class="arr"><span class="sel-label">Arrivé</span><span id="arrInfo" data-testid="text-arrive">—</span></div>
+      </div>
+      <div id="globeContainer"><div class="globe-loading">Chargement du globe…</div></div>
+    </div>
 
     <div class="result-box" id="resultBox" data-testid="text-result">
       <span class="result-placeholder" id="resultPlaceholder">Entrez un montant pour voir la conversion</span>
@@ -268,43 +387,46 @@ body {
 
     <div class="error-msg" id="errorMsg" data-testid="text-error"></div>
   </div>
+
+  <p class="source-note" data-testid="text-source">Les taux de change sont récupérés en temps réel depuis
+    <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener" data-testid="link-source">ExchangeRate-API (open.er-api.com)</a>.</p>
 </div>
 
 <script>
 // ── Devises ───────────────────────────────────────────────────
 const CURRENCIES = [
-  ['EUR', '🇪🇺 Euro (EUR)'],
-  ['USD', '🇺🇸 Dollar américain (USD)'],
-  ['GBP', '🇬🇧 Livre sterling (GBP)'],
-  ['CHF', '🇨🇭 Franc suisse (CHF)'],
-  ['JPY', '🇯🇵 Yen japonais (JPY)'],
-  ['CAD', '🇨🇦 Dollar canadien (CAD)'],
-  ['AUD', '🇦🇺 Dollar australien (AUD)'],
-  ['CNY', '🇨🇳 Yuan chinois (CNY)'],
-  ['SEK', '🇸🇪 Couronne suédoise (SEK)'],
-  ['NOK', '🇳🇴 Couronne norvégienne (NOK)'],
-  ['DKK', '🇩🇰 Couronne danoise (DKK)'],
-  ['PLN', '🇵🇱 Zloty polonais (PLN)'],
-  ['CZK', '🇨🇿 Couronne tchèque (CZK)'],
-  ['HUF', '🇭🇺 Forint hongrois (HUF)'],
-  ['RON', '🇷🇴 Leu roumain (RON)'],
-  ['BGN', '🇧🇬 Lev bulgare (BGN)'],
-  ['TRY', '🇹🇷 Livre turque (TRY)'],
-  ['INR', '🇮🇳 Roupie indienne (INR)'],
-  ['BRL', '🇧🇷 Réal brésilien (BRL)'],
-  ['MXN', '🇲🇽 Peso mexicain (MXN)'],
-  ['ZAR', '🇿🇦 Rand sud-africain (ZAR)'],
-  ['KRW', '🇰🇷 Won sud-coréen (KRW)'],
-  ['SGD', '🇸🇬 Dollar de Singapour (SGD)'],
-  ['HKD', '🇭🇰 Dollar de Hong Kong (HKD)'],
-  ['NZD', '🇳🇿 Dollar néo-zélandais (NZD)'],
-  ['THB', '🇹🇭 Baht thaïlandais (THB)'],
-  ['ILS', '🇮🇱 Shekel israélien (ILS)'],
-  ['AED', '🇦🇪 Dirham des É.A.U. (AED)'],
-  ['MAD', '🇲🇦 Dirham marocain (MAD)'],
-  ['TND', '🇹🇳 Dinar tunisien (TND)'],
-  ['XOF', '🌍 Franc CFA - BCEAO (XOF)'],
-  ['XAF', '🌍 Franc CFA - BEAC (XAF)']
+  ['EUR', 'Euro (EUR)'],
+  ['USD', 'Dollar américain (USD)'],
+  ['GBP', 'Livre sterling (GBP)'],
+  ['CHF', 'Franc suisse (CHF)'],
+  ['JPY', 'Yen japonais (JPY)'],
+  ['CAD', 'Dollar canadien (CAD)'],
+  ['AUD', 'Dollar australien (AUD)'],
+  ['CNY', 'Yuan chinois (CNY)'],
+  ['SEK', 'Couronne suédoise (SEK)'],
+  ['NOK', 'Couronne norvégienne (NOK)'],
+  ['DKK', 'Couronne danoise (DKK)'],
+  ['PLN', 'Zloty polonais (PLN)'],
+  ['CZK', 'Couronne tchèque (CZK)'],
+  ['HUF', 'Forint hongrois (HUF)'],
+  ['RON', 'Leu roumain (RON)'],
+  ['BGN', 'Lev bulgare (BGN)'],
+  ['TRY', 'Livre turque (TRY)'],
+  ['INR', 'Roupie indienne (INR)'],
+  ['BRL', 'Réal brésilien (BRL)'],
+  ['MXN', 'Peso mexicain (MXN)'],
+  ['ZAR', 'Rand sud-africain (ZAR)'],
+  ['KRW', 'Won sud-coréen (KRW)'],
+  ['SGD', 'Dollar de Singapour (SGD)'],
+  ['HKD', 'Dollar de Hong Kong (HKD)'],
+  ['NZD', 'Dollar néo-zélandais (NZD)'],
+  ['THB', 'Baht thaïlandais (THB)'],
+  ['ILS', 'Shekel israélien (ILS)'],
+  ['AED', 'Dirham des É.A.U. (AED)'],
+  ['MAD', 'Dirham marocain (MAD)'],
+  ['TND', 'Dinar tunisien (TND)'],
+  ['XOF', 'Franc CFA - BCEAO (XOF)'],
+  ['XAF', 'Franc CFA - BEAC (XAF)']
 ];
 
 const amountInput = document.getElementById('amountInput');
@@ -387,8 +509,18 @@ let convertSeq = 0;
 
 async function convert() {
   errorMsg.textContent = '';
-  const from = fromSelect.value;
-  const to   = toSelect.value;
+  let from, to;
+  if (currentMode === 'carte') {
+    if (!depPick || !arrPick) {
+      resultBox.innerHTML = '<span class="result-placeholder">Sélectionnez un pays de départ et un pays d\'arrivée sur le globe</span>';
+      return;
+    }
+    from = depPick.currency;
+    to   = arrPick.currency;
+  } else {
+    from = fromSelect.value;
+    to   = toSelect.value;
+  }
   const amount = parseAmount(amountInput.value);
 
   if (amount === null) {
@@ -437,6 +569,294 @@ swapBtn.addEventListener('click', () => {
   convert();
 });
 
+// ── Modes Carte / Direct ──────────────────────────────────────
+let currentMode = 'direct';
+const modeCarteBtn  = document.getElementById('modeCarteBtn');
+const modeDirectBtn = document.getElementById('modeDirectBtn');
+const directSection = document.getElementById('directSection');
+const mapSection    = document.getElementById('mapSection');
+
+function setMode(mode) {
+  currentMode = mode;
+  modeCarteBtn.classList.toggle('active', mode === 'carte');
+  modeDirectBtn.classList.toggle('active', mode === 'direct');
+  directSection.classList.toggle('hidden', mode === 'carte');
+  mapSection.classList.toggle('visible', mode === 'carte');
+  if (mode === 'carte') initGlobe();
+  convert();
+}
+modeCarteBtn.addEventListener('click', () => setMode('carte'));
+modeDirectBtn.addEventListener('click', () => setMode('direct'));
+
+// ── Devises par pays (code ISO 3166-1 alpha-2 → devises) ─────
+const COUNTRY_CURRENCIES = {
+  AD:['EUR'],AE:['AED'],AF:['AFN'],AG:['XCD'],AL:['ALL'],AM:['AMD'],AO:['AOA'],AR:['ARS'],AT:['EUR'],AU:['AUD'],AZ:['AZN'],
+  BA:['BAM'],BB:['BBD'],BD:['BDT'],BE:['EUR'],BF:['XOF'],BG:['BGN'],BH:['BHD'],BI:['BIF'],BJ:['XOF'],BN:['BND'],BO:['BOB'],
+  BR:['BRL'],BS:['BSD'],BT:['BTN','INR'],BW:['BWP'],BY:['BYN'],BZ:['BZD'],
+  CA:['CAD'],CD:['CDF'],CF:['XAF'],CG:['XAF'],CH:['CHF'],CI:['XOF'],CL:['CLP'],CM:['XAF'],CN:['CNY'],CO:['COP'],CR:['CRC'],
+  CU:['CUP'],CV:['CVE'],CY:['EUR'],CZ:['CZK'],
+  DE:['EUR'],DJ:['DJF'],DK:['DKK'],DO:['DOP'],DZ:['DZD'],
+  EC:['USD'],EE:['EUR'],EG:['EGP'],EH:['MAD'],ER:['ERN'],ES:['EUR'],ET:['ETB'],
+  FI:['EUR'],FJ:['FJD'],FK:['FKP'],FR:['EUR'],
+  GA:['XAF'],GB:['GBP'],GE:['GEL'],GH:['GHS'],GL:['DKK'],GM:['GMD'],GN:['GNF'],GQ:['XAF'],GR:['EUR'],GT:['GTQ'],GW:['XOF'],GY:['GYD'],
+  HN:['HNL'],HR:['EUR'],HT:['HTG','USD'],HU:['HUF'],
+  ID:['IDR'],IE:['EUR'],IL:['ILS'],IN:['INR'],IQ:['IQD'],IR:['IRR'],IS:['ISK'],IT:['EUR'],
+  JM:['JMD'],JO:['JOD'],JP:['JPY'],
+  KE:['KES'],KG:['KGS'],KH:['KHR'],KP:['KPW'],KR:['KRW'],KW:['KWD'],KZ:['KZT'],
+  LA:['LAK'],LB:['LBP'],LK:['LKR'],LR:['LRD','USD'],LS:['LSL','ZAR'],LT:['EUR'],LU:['EUR'],LV:['EUR'],LY:['LYD'],
+  MA:['MAD'],MD:['MDL'],ME:['EUR'],MG:['MGA'],MK:['MKD'],ML:['XOF'],MM:['MMK'],MN:['MNT'],MR:['MRU'],MT:['EUR'],MU:['MUR'],
+  MV:['MVR'],MW:['MWK'],MX:['MXN'],MY:['MYR'],MZ:['MZN'],
+  NA:['NAD','ZAR'],NC:['XPF'],NE:['XOF'],NG:['NGN'],NI:['NIO'],NL:['EUR'],NO:['NOK'],NP:['NPR'],NZ:['NZD'],
+  OM:['OMR'],
+  PA:['PAB','USD'],PE:['PEN'],PG:['PGK'],PH:['PHP'],PK:['PKR'],PL:['PLN'],PR:['USD'],PS:['ILS','JOD'],PT:['EUR'],PY:['PYG'],
+  QA:['QAR'],
+  RO:['RON'],RS:['RSD'],RU:['RUB'],RW:['RWF'],
+  SA:['SAR'],SB:['SBD'],SD:['SDG'],SE:['SEK'],SG:['SGD'],SI:['EUR'],SK:['EUR'],SL:['SLE'],SN:['XOF'],SO:['SOS'],SR:['SRD'],
+  SS:['SSP'],SV:['USD'],SY:['SYP'],SZ:['SZL','ZAR'],
+  TD:['XAF'],TF:['EUR'],TG:['XOF'],TH:['THB'],TJ:['TJS'],TL:['USD'],TM:['TMT'],TN:['TND'],TR:['TRY'],TT:['TTD'],TW:['TWD'],TZ:['TZS'],
+  UA:['UAH'],UG:['UGX'],US:['USD'],UY:['UYU'],UZ:['UZS'],
+  VE:['VES'],VN:['VND'],VU:['VUV'],
+  XK:['EUR'],
+  YE:['YER'],
+  ZA:['ZAR'],ZM:['ZMW'],ZW:['USD','ZWL']
+};
+const regionNamesFr = (typeof Intl !== 'undefined' && Intl.DisplayNames)
+  ? new Intl.DisplayNames(['fr'], { type: 'region' }) : null;
+function countryNameFr(iso2, fallback) {
+  if (regionNamesFr && iso2 && /^[A-Z]{2}$/.test(iso2)) {
+    try { const n = regionNamesFr.of(iso2); if (n && n !== iso2) return n; } catch (e) {}
+  }
+  return fallback;
+}
+
+// ── Globe 3D ──────────────────────────────────────────────────
+let globe = null;
+let globeLoading = false;
+let pickingFor = null;   // 'dep' | 'arr' | null
+let depPick = null;      // { iso2, name, lat, lng, currency, currencies }
+let arrPick = null;
+
+const pickDepartBtn = document.getElementById('pickDepartBtn');
+const pickArriveBtn = document.getElementById('pickArriveBtn');
+const pickStatus    = document.getElementById('pickStatus');
+const depInfo       = document.getElementById('depInfo');
+const arrInfo       = document.getElementById('arrInfo');
+const globeContainer = document.getElementById('globeContainer');
+
+pickDepartBtn.addEventListener('click', () => setPicking(pickingFor === 'dep' ? null : 'dep'));
+pickArriveBtn.addEventListener('click', () => setPicking(pickingFor === 'arr' ? null : 'arr'));
+
+function setPicking(which) {
+  pickingFor = which;
+  pickDepartBtn.classList.toggle('arming', which === 'dep');
+  pickArriveBtn.classList.toggle('arming', which === 'arr');
+  pickStatus.textContent =
+    which === 'dep' ? 'Cliquez sur le pays de départ sur le globe' :
+    which === 'arr' ? 'Cliquez sur le pays d\'arrivée sur le globe' :
+    (!depPick || !arrPick) ? 'Cliquez sur « Départ » puis choisissez un pays sur le globe' : '';
+}
+
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = () => rej(new Error('échec du chargement de ' + src));
+    document.head.appendChild(s);
+  });
+}
+
+function polyIso2(f) {
+  const p = f.properties || {};
+  let c = p.ISO_A2;
+  if (!c || c === '-99') c = p.ISO_A2_EH;
+  if (!c || c === '-99') c = ({ France:'FR', Norway:'NO', Kosovo:'XK', Somaliland:'SO', 'N. Cyprus':'CY' })[p.ADMIN] || null;
+  return c;
+}
+
+function polyCentroid(f) {
+  // moyenne grossière des sommets du plus grand anneau
+  let best = null, bestLen = 0;
+  const geoms = f.geometry.type === 'MultiPolygon' ? f.geometry.coordinates : [f.geometry.coordinates];
+  geoms.forEach(rings => { if (rings[0].length > bestLen) { bestLen = rings[0].length; best = rings[0]; } });
+  let lat = 0, lng = 0;
+  best.forEach(([x, y]) => { lng += x; lat += y; });
+  return { lat: lat / best.length, lng: lng / best.length };
+}
+
+function polyColor(f) {
+  const c = polyIso2(f);
+  if (depPick && c === depPick.iso2) return 'rgba(46,204,113,0.85)';
+  if (arrPick && c === arrPick.iso2) return 'rgba(231,76,60,0.85)';
+  return 'rgba(255,255,255,0.75)';
+}
+
+async function initGlobe() {
+  if (globe || globeLoading) return;
+  globeLoading = true;
+  try {
+    if (typeof Globe === 'undefined') {
+      await loadScript('https://unpkg.com/globe.gl@2.32.3/dist/globe.gl.min.js');
+    }
+    const resp = await fetch('https://globe.gl/example/datasets/ne_110m_admin_0_countries.geojson');
+    if (!resp.ok) throw new Error('données pays indisponibles');
+    const countries = await resp.json();
+
+    globeContainer.innerHTML = '';
+    globe = Globe()(globeContainer)
+      .width(globeContainer.clientWidth)
+      .height(globeContainer.clientHeight)
+      .backgroundColor('rgba(0,0,0,0)')
+      .showAtmosphere(true)
+      .atmosphereColor('#a89cf0')
+      .polygonsData(countries.features.filter(f => f.properties.ADMIN !== 'Antarctica'))
+      .polygonCapColor(polyColor)
+      .polygonSideColor(() => 'rgba(108,99,255,0.25)')
+      .polygonStrokeColor(() => '#6c63ff')
+      .polygonAltitude(0.006)
+      .polygonLabel(f => {
+        const c = polyIso2(f);
+        const name = countryNameFr(c, f.properties.ADMIN);
+        const curs = (COUNTRY_CURRENCIES[c] || []).join(', ') || 'devise inconnue';
+        return '<div style="background:#fff;color:#3a3550;padding:5px 10px;border-radius:8px;font-family:Segoe UI,sans-serif;font-size:12px;box-shadow:0 4px 12px rgba(0,0,0,0.2)"><b>' + name + '</b><br>' + curs + '</div>';
+      })
+      .onPolygonClick(f => onCountryClick(f))
+      .arcColor(() => '#2f6fed')
+      .arcStroke(0.9)
+      .arcAltitudeAutoScale(0.6)
+      .htmlAltitude(d => d.alt)
+      .htmlElement(() => {
+        const el = document.createElement('div');
+        el.textContent = '✈️';
+        el.style.fontSize = '26px';
+        el.style.pointerEvents = 'none';
+        el.style.transform = 'translate(-50%,-50%)';
+        return el;
+      });
+    globe.globeMaterial().color.set('#8f83e8');
+    globe.controls().autoRotate = true;
+    globe.controls().autoRotateSpeed = 0.6;
+    globe.pointOfView({ lat: 25, lng: 5, altitude: 2.1 });
+    window.addEventListener('resize', () => {
+      if (globe) globe.width(globeContainer.clientWidth).height(globeContainer.clientHeight);
+    });
+  } catch (e) {
+    globeContainer.innerHTML = '<div class="globe-loading">Impossible de charger le globe (' + e.message + ')</div>';
+    globe = null;
+  } finally {
+    globeLoading = false;
+  }
+}
+
+function onCountryClick(f) {
+  if (!pickingFor) {
+    pickStatus.textContent = 'Cliquez d\'abord sur « Départ » ou « Arrivé »';
+    return;
+  }
+  const iso2 = polyIso2(f);
+  const currencies = COUNTRY_CURRENCIES[iso2] || [];
+  if (!currencies.length) {
+    pickStatus.textContent = 'Désolé, pas de devise connue pour ce pays.';
+    return;
+  }
+  const name = countryNameFr(iso2, f.properties.ADMIN);
+  const centroid = polyCentroid(f);
+  const pick = { iso2, name, lat: centroid.lat, lng: centroid.lng, currency: currencies[0], currencies };
+  if (pickingFor === 'dep') depPick = pick; else arrPick = pick;
+  setPicking(pickingFor === 'dep' && !arrPick ? 'arr' : null);
+  refreshMapUI();
+}
+
+function currencySelectorHtml(which, pick) {
+  if (pick.currencies.length === 1) return pick.name + ' — ' + pick.currency;
+  const opts = pick.currencies.map(c =>
+    '<option value="' + c + '"' + (c === pick.currency ? ' selected' : '') + '>' + c + '</option>').join('');
+  return pick.name + ' — <select data-which="' + which + '" data-testid="select-currency-' + which + '">' + opts + '</select>';
+}
+
+function refreshMapUI() {
+  depInfo.innerHTML = depPick ? currencySelectorHtml('dep', depPick) : '—';
+  arrInfo.innerHTML = arrPick ? currencySelectorHtml('arr', arrPick) : '—';
+  [depInfo, arrInfo].forEach(box => {
+    const sel = box.querySelector('select');
+    if (sel) sel.addEventListener('change', () => {
+      if (sel.dataset.which === 'dep') depPick.currency = sel.value; else arrPick.currency = sel.value;
+      convert();
+    });
+  });
+  if (globe) {
+    globe.polygonCapColor(polyColor);
+    updateRoute();
+  }
+  convert();
+}
+
+// ── Trajet + avion ────────────────────────────────────────────
+let planeAnimId = null;
+
+function latLngToVec(lat, lng) {
+  const phi = (90 - lat) * Math.PI / 180;
+  const theta = (lng + 180) * Math.PI / 180;
+  return [Math.sin(phi) * Math.cos(theta), Math.cos(phi), Math.sin(phi) * Math.sin(theta)];
+}
+function vecToLatLng(v) {
+  const len = Math.hypot(v[0], v[1], v[2]);
+  const lat = 90 - Math.acos(v[1] / len) * 180 / Math.PI;
+  const lng = (Math.atan2(v[2], v[0]) * 180 / Math.PI) - 180;
+  return { lat, lng };
+}
+function slerp(a, b, t) {
+  let dot = a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+  dot = Math.min(1, Math.max(-1, dot));
+  const omega = Math.acos(dot);
+  if (omega < 1e-6) return a.slice();
+  const so = Math.sin(omega);
+  const k1 = Math.sin((1 - t) * omega) / so, k2 = Math.sin(t * omega) / so;
+  return [a[0]*k1 + b[0]*k2, a[1]*k1 + b[1]*k2, a[2]*k1 + b[2]*k2];
+}
+
+function updateRoute() {
+  if (planeAnimId) { cancelAnimationFrame(planeAnimId); planeAnimId = null; }
+  if (!globe) return;
+  if (!depPick || !arrPick) {
+    globe.arcsData([]);
+    globe.htmlElementsData([]);
+    return;
+  }
+  globe.controls().autoRotate = false;
+  const a = { lat: depPick.lat, lng: depPick.lng };
+  const b = { lat: arrPick.lat, lng: arrPick.lng };
+  globe.arcsData([{ startLat: a.lat, startLng: a.lng, endLat: b.lat, endLng: b.lng }]);
+
+  // cadrer la vue sur le milieu du trajet
+  const midV = slerp(latLngToVec(a.lat, a.lng), latLngToVec(b.lat, b.lng), 0.5);
+  const mid = vecToLatLng(midV);
+  globe.pointOfView({ lat: mid.lat, lng: mid.lng, altitude: 2.1 }, 900);
+
+  // altitude max de l'arc ~ celle calculée par globe.gl (autoScale 0.6 * dist/2 en radians approx.)
+  const va = latLngToVec(a.lat, a.lng), vb = latLngToVec(b.lat, b.lng);
+  let dot = va[0]*vb[0] + va[1]*vb[1] + va[2]*vb[2];
+  dot = Math.min(1, Math.max(-1, dot));
+  const angDist = Math.acos(dot);
+  const maxAlt = (angDist / 2) * 0.6 / Math.PI * 2; // approximation visuelle
+
+  const plane = { lat: a.lat, lng: a.lng, alt: 0.02 };
+  globe.htmlElementsData([plane]);
+  const DURATION = 6000;
+  let start = null;
+  function step(ts) {
+    if (!start) start = ts;
+    let t = ((ts - start) % (DURATION + 1200)) / DURATION; // pause à l'atterrissage
+    if (t > 1) t = 1;
+    const v = slerp(va, vb, t);
+    const p = vecToLatLng(v);
+    plane.lat = p.lat;
+    plane.lng = p.lng;
+    plane.alt = 0.02 + Math.sin(Math.PI * t) * maxAlt; // décollage → croisière → atterrissage
+    globe.htmlElementsData([plane]);
+    planeAnimId = requestAnimationFrame(step);
+  }
+  planeAnimId = requestAnimationFrame(step);
+}
+
 // ── Confettis + lamas ─────────────────────────────────────────
 (function generateConfetti() {
   const colors = ['#6c63ff','#ffb703','#00c9a7','#ff6b6b','#a18cd1','#ffd93d'];
@@ -444,16 +864,7 @@ swapBtn.addEventListener('click', () => {
   for (let i = 0; i < 30; i++) {
     const el = document.createElement('div');
     el.className = 'confetti-piece';
-    if (i % 4 === 3) {
-      el.textContent = '🦙';
-      el.style.cssText =
-        'left:' + (Math.random()*100) + 'vw;' +
-        'font-size:' + (16 + Math.random()*12) + 'px;' +
-        '--dur:' + (5 + Math.random()*8) + 's;' +
-        '--delay:-' + (Math.random()*10) + 's;' +
-        '--rot:' + (Math.random()>0.5?'':'-') + (180 + Math.random()*360) + 'deg;' +
-        'opacity:0.5;';
-    } else {
+    {
       const size = 6 + Math.random() * 8;
       const color = colors[Math.floor(Math.random() * colors.length)];
       el.style.cssText =
