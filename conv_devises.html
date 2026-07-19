@@ -198,6 +198,11 @@ body {
   font-size: 0.85em;
   color: #9992bb;
 }
+.result-updated {
+  font-size: 0.72em;
+  color: #b7b0d6;
+  font-style: italic;
+}
 .result-placeholder {
   color: #b7b0d6;
   font-size: 1em;
@@ -318,6 +323,16 @@ toSelect.value   = 'USD';
 
 // ── Taux de change (cache par devise de base) ─────────────────
 const ratesCache = {};
+const ratesDateCache = {};
+
+function fmtUpdateDate(base) {
+  const d = ratesDateCache[base];
+  if (!d) return '';
+  try {
+    const txt = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+    return '<span class="result-updated" data-testid="text-rate-updated">Taux mis à jour le ' + txt + '</span>';
+  } catch (e) { return ''; }
+}
 
 async function fetchRates(base) {
   if (ratesCache[base]) return ratesCache[base];
@@ -328,6 +343,10 @@ async function fetchRates(base) {
       const d = await r.json();
       if (d && d.result === 'success' && d.rates) {
         ratesCache[base] = d.rates;
+        if (d.time_last_update_utc) {
+          const dt = new Date(d.time_last_update_utc);
+          if (!Number.isNaN(dt.getTime())) ratesDateCache[base] = dt;
+        }
         return d.rates;
       }
     }
@@ -340,6 +359,10 @@ async function fetchRates(base) {
     if (!d2 || !d2.rates) throw new Error('réponse invalide');
     d2.rates[base] = 1;
     ratesCache[base] = d2.rates;
+    if (d2.date) {
+      const dt2 = new Date(d2.date + 'T00:00:00');
+      if (!Number.isNaN(dt2.getTime())) ratesDateCache[base] = dt2;
+    }
     return d2.rates;
   }
 }
@@ -388,7 +411,8 @@ async function convert() {
     const converted = amount * rate;
     resultBox.innerHTML =
       '<span class="result-amount" data-testid="text-converted">' + fmt(converted, to) + '</span>' +
-      '<span class="result-rate">1 ' + from + ' = ' + rate.toLocaleString('fr-FR', { maximumFractionDigits: 6 }) + ' ' + to + '</span>';
+      '<span class="result-rate">1 ' + from + ' = ' + rate.toLocaleString('fr-FR', { maximumFractionDigits: 6 }) + ' ' + to + '</span>' +
+      fmtUpdateDate(from);
   } catch (e) {
     if (seq !== convertSeq) return;
     resultBox.innerHTML = '<span class="result-placeholder">—</span>';
