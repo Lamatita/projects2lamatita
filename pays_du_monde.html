@@ -247,9 +247,9 @@ body {
             </div>
         </div>
 
-        <!-- Carte : image + SVG superposé -->
+        <!-- Carte SVG vectorielle -->
         <div class="map-container" id="mapContainer">
-            
+            <svg id="world-map" viewBox="0 0 875 620" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
             <path data-id="FRA" d="M426.6,143.2 L433.1,142.0 L432.7,148.2 L434.4,150.7 L433.6,160.0 L441.0,160.6 L445.4,163.7 L449.3,159.3 L455.4,159.3 L455.9,158.1 L454.1,154.4 L454.6,151.9 L451.9,150.0 L453.2,146.3 L457.6,145.1 L455.9,143.2 L456.8,141.4 L452.8,139.5 L451.9,139.5 L449.3,137.6 L444.9,135.2 L443.6,133.9 L442.3,134.5 L442.3,138.3 L437.9,140.1 L436.2,141.4 L434.0,142.6 L426.6,143.2 Z"/>
 <path data-id="ESP" d="M414.8,159.3 L418.7,159.3 L426.6,160.0 L430.1,160.6 L433.6,160.6 L433.6,160.6 L438.4,162.4 L445.4,164.3 L445.4,165.5 L444.9,168.0 L439.2,171.7 L437.9,176.7 L439.7,179.2 L440.6,179.2 L437.1,181.0 L434.9,183.5 L432.2,184.1 L424.8,185.4 L421.8,183.5 L419.1,182.3 L416.1,179.2 L414.3,176.7 L415.2,175.5 L416.1,172.4 L416.5,165.5 L417.4,163.7 L414.8,159.3 Z"/>
 <path data-id="PRT" d="M414.8,165.5 L417.4,164.9 L416.5,165.5 L416.1,172.4 L415.2,175.5 L414.3,176.7 L415.6,182.3 L419.1,182.3 L420.4,179.2 L419.6,173.0 L420.4,173.0 L420.4,171.7 L420.9,171.1 L421.3,168.6 L422.6,166.8 L423.1,165.5 L421.8,165.5 L421.8,164.9 L419.1,165.5 L417.4,164.9 L414.8,165.5 Z"/>
@@ -781,7 +781,7 @@ function endGame(won) {
 
 function showMissed() {
     document.querySelectorAll("#world-map path").forEach(p => {
-        if (!p.classList.contains("found") && p.dataset.id) p.classList.add("missed");
+        if (!p.classList.contains("found") && DISPLAY[p.dataset.id]) p.classList.add("missed");
     });
     document.getElementById("ovEnd").style.display = "none";
 }
