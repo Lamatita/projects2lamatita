@@ -561,6 +561,7 @@ async function buildMap() {
             el.setAttribute("class", "country");
             attachTooltip(el, id);
             if (found.has(id)) el.classList.add("found");
+            else if (showingMissed) el.classList.add("missed");
         } else {
             el.setAttribute("class", "nc");
         }
@@ -575,15 +576,29 @@ async function buildMap() {
         el.setAttribute("class", "country");
         attachTooltip(el, c.id);
         if (found.has(c.id)) el.classList.add("found");
+        else if (showingMissed) el.classList.add("missed");
         svg.appendChild(el);
     });
     const noShape = COUNTRIES.filter(c => !svg.querySelector('[data-id="' + c.id + '"]')).map(c => c.id);
     if (noShape.length) console.warn("Sans forme sur la carte :", noShape.join(", "));
 }
-buildMap().catch(err => console.error("Erreur chargement carte :", err));
+function loadMap() {
+    const oldMsg = document.getElementById("map-error");
+    if (oldMsg) oldMsg.remove();
+    buildMap().catch(err => {
+        console.error("Erreur chargement carte :", err);
+        const div = document.createElement("div");
+        div.id = "map-error";
+        div.style.cssText = "position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:4;background:rgba(247,243,255,0.9);border-radius:14px;";
+        div.innerHTML = '<div style="color:#666;font-weight:600;">Impossible de charger la carte du monde.</div>' +
+            '<button class="btn btn-primary" style="width:auto;padding:9px 24px;" onclick="loadMap()">Réessayer</button>';
+        mapWrap.appendChild(div);
+    });
+}
+loadMap();
 
 // ── État ──────────────────────────────────────────────────────────────────────
-let found = new Set(), timeLeft = 900, timerInt = null, running = false;
+let found = new Set(), timeLeft = 900, timerInt = null, running = false, showingMissed = false;
 
 function startGame() {
     found.clear(); timeLeft = 900; running = true;
@@ -597,6 +612,7 @@ function startGame() {
     inp.disabled = false; inp.value = ""; inp.focus();
     document.getElementById("btnStart").style.display   = "none";
     document.getElementById("btnGiveUp").style.display  = "";
+    showingMissed = false;
     document.querySelectorAll("#world-map .country").forEach(p => p.classList.remove("found","missed"));
     clearInterval(timerInt);
     timerInt = setInterval(() => {
@@ -633,6 +649,7 @@ function endGame(won) {
 }
 
 function showMissed() {
+    showingMissed = true;
     document.querySelectorAll("#world-map .country").forEach(p => {
         if (!p.classList.contains("found")) p.classList.add("missed");
     });
