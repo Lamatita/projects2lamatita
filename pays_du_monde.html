@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pays du Monde - Quiz</title>
+<title>Pays du Monde</title>
 <style>
 :root {
     --fond: #f7f3ff;
@@ -198,18 +198,18 @@ body {
 
 <div class="top-bar">
     <a href="index.html" class="back-link">← Retour à l'accueil</a>
-    <h1 class="page-title">🌍 Pays du Monde</h1>
+    <h1 class="page-title">Pays du Monde</h1>
     <div class="spacer"></div>
 </div>
 
 <div class="main-layout">
     <div class="left-panel">
         <div class="card timer-card">
-            <div class="lbl">⏱ Temps restant</div>
+            <div class="lbl">Temps restant</div>
             <div class="timer-display" id="timer">15:00</div>
         </div>
         <div class="card score-card">
-            <div class="lbl">🏳️ Pays trouvés</div>
+            <div class="lbl">Pays trouvés</div>
             <div class="score-val" id="score">0</div>
             <div class="score-sub">sur 197</div>
         </div>
@@ -218,11 +218,11 @@ body {
             <input type="text" id="inp" placeholder="Ex: France…" autocomplete="off" spellcheck="false" disabled>
         </div>
         <div class="card" style="padding:10px 14px;display:flex;flex-direction:column;gap:6px;">
-            <button class="btn btn-primary" id="btnStart">▶ Commencer</button>
-            <button class="btn btn-danger"  id="btnGiveUp" style="display:none;">🏳️ Abandonner</button>
+            <button class="btn btn-primary" id="btnStart">Commencer</button>
+            <button class="btn btn-danger"  id="btnGiveUp" style="display:none;">Abandonner</button>
         </div>
         <div class="card found-card">
-            <h3>✅ Trouvés</h3>
+            <h3>Trouvés</h3>
             <div id="found-list"></div>
         </div>
     </div>
@@ -233,7 +233,7 @@ body {
         <!-- Overlay départ -->
         <div class="overlay" id="ovStart">
             <div class="ov-card">
-                <h2>🌍 Pays du Monde</h2>
+                <h2>Pays du Monde</h2>
                 <p>Tu as <strong>15 minutes</strong> pour nommer les <strong>197 pays</strong>.<br>
                 À chaque bonne réponse, le pays devient <span style="color:#22c55e;font-weight:700;">vert</span> sur la carte !</p>
                 <button class="btn btn-primary" onclick="startGame()" style="width:auto;padding:11px 32px;font-size:1.05em;">▶ Commencer</button>
@@ -243,13 +243,13 @@ body {
         <!-- Overlay fin -->
         <div class="overlay" id="ovEnd" style="display:none;">
             <div class="ov-card">
-                <h2 id="endTitle">⏰ Temps écoulé !</h2>
+                <h2 id="endTitle">Temps écoulé !</h2>
                 <div class="big" id="endScore">0</div>
                 <div class="sub" id="endSub">pays trouvés sur 197</div>
                 <p id="endMsg"></p>
                 <div class="ov-btns">
-                    <button class="btn btn-primary" onclick="startGame()">🔄 Rejouer</button>
-                    <button class="btn btn-danger"  onclick="showMissed()">👁 Pays manqués</button>
+                    <button class="btn btn-primary" onclick="startGame()">Rejouer</button>
+                    <button class="btn btn-danger"  onclick="showMissed()">Pays manqués</button>
                 </div>
             </div>
         </div>
